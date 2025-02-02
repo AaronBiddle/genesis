@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Code Collaboration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col items-center justify-center">
+    
+    <div class="w-11/12 h-5/6 bg-white shadow-lg rounded-lg flex">
+        <!-- Chat and Code Editor Combined -->
+        <aside class="w-1/4 bg-gray-50 p-4 flex flex-col">
+            <div class="flex justify-between items-center bg-gray-200 px-2 py-1 rounded-md shadow-sm mb-2">
+                <h2 class="text-lg font-bold">Chat</h2>
+            </div>
+            
+            <!-- Chat Selector -->
+            <select class="mb-2 p-2 border rounded-md bg-white" id="chat-selector">
+                <option>Recent Chat 1</option>
+                <option>Recent Chat 2</option>
+                <option>Recent Chat 3</option>
+                <option>Recent Chat 4</option>
+                <option>Recent Chat 5</option>
+                <option>Recent Chat 6</option>
+                <option>Recent Chat 7</option>
+                <option>Recent Chat 8</option>
+                <option>Recent Chat 9</option>
+                <option>Recent Chat 10</option>
+                <option>Other...</option>
+            </select>
+            
+            <div class="flex-1 overflow-y-auto border p-2 rounded-md bg-white">
+                <!-- Chat messages -->
+                <p><span class="font-bold text-blue-600">User:</span> <span class="text-gray-700">How do I refactor this function?</span></p>
+                <p><span class="font-bold text-green-600">AI:</span> <span class="text-gray-600">You can break it into smaller functions to improve readability.</span></p>
+                <p><span class="font-bold text-blue-600">User:</span> <span class="text-gray-700">Can you give me an example?</span></p>
+                <p><span class="font-bold text-green-600">AI:</span> <span class="text-gray-600">Sure! Here's a more modular version of your function...</span></p>
+            </div>
+            <input type="text" placeholder="Type a message..." class="p-2 border rounded-md w-full mt-2">
+            <button class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 mt-2">Send</button>
+        </aside>
+        
+        <main class="w-3/4 p-4 flex flex-col">
+            <div class="flex items-center mb-2">
+                <div class="bg-gray-200 px-2 py-1 rounded-md shadow-sm flex-grow">
+                    <h2 class="text-lg font-bold">Code Editor</h2>
+                </div>
+                <div class="flex space-x-1 ml-2">
+                    <button class="p-1 rounded hover:bg-gray-300" title="Open Project">
+                        <i data-lucide="folder-open"></i>
+                    </button>
+                    <button class="p-1 rounded hover:bg-gray-300" title="Save Project">
+                        <i data-lucide="save"></i>
+                    </button>
+                    <button class="p-1 rounded hover:bg-gray-300" title="Close Project">
+                        <i data-lucide="x-circle"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Editor Toolbar -->
+            <div class="flex space-x-1 bg-white border border-gray-300 px-2 py-1 rounded-md shadow-sm mb-2">
+                <select class="px-2 py-1 border rounded-md bg-white">
+                    <option>Recent File 1</option>
+                    <option>Recent File 2</option>
+                    <option>Recent File 3</option>
+                    <option>Recent File 4</option>
+                    <option>Recent File 5</option>
+                    <option>Recent File 6</option>
+                    <option>Recent File 7</option>
+                    <option>Recent File 8</option>
+                    <option>Recent File 9</option>
+                    <option>Recent File 10</option>
+                    <option>New...</option>
+                    <option>Open...</option>
+                </select>
+                <button class="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Save</button>
+                <button class="px-2 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Undo</button>
+                <button class="px-2 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Redo</button>
+                <button class="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600">AI Suggest</button>
+            </div>
+            
+            <div class="flex-1 border p-2 rounded-md bg-white overflow-auto">
+                <pre><code class="language-python">def greet(name):
+    return f"Hello, {name}!"
+
+def farewell(name):
+    return f"Goodbye, {name}. See you soon!"
+
+print(greet("Alice"))
+print(farewell("Bob"))</code></pre>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        hljs.highlightAll();
+        lucide.createIcons();
+    </script>
+</body>
+</html>
