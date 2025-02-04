@@ -5,4 +5,5 @@ npm install -D tailwindcss @tailwindcss/cli postcss autoprefixer
 # https://github.com/AaronBiddle/genesis.git
 
 # Run:
+npm install
 npm run dev
