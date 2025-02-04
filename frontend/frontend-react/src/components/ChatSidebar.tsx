@@ -1,6 +1,43 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { sendMessage, ChatMessage } from '../services/chatService';
 
 const ChatSidebar: React.FC = () => {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputText, setInputText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSendMessage = async () => {
+    if (!inputText.trim()) return;
+
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: inputText,
+    };
+
+    // Add user message to chat
+    setMessages(prev => [...prev, userMessage]);
+    setInputText('');
+    setIsLoading(true);
+
+    try {
+      // Send message to backend
+      const updatedMessages = [...messages, userMessage];
+      const response = await sendMessage(updatedMessages);
+
+      // Add AI response to chat
+      const aiMessage: ChatMessage = {
+        role: 'assistant',
+        content: response.response,
+      };
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      // Optionally add error handling UI here
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <aside className="w-1/4 bg-gray-50 p-4 flex flex-col">
       <div className="flex justify-between items-center bg-gray-200 px-2 py-1 rounded-md shadow-sm mb-2">
@@ -22,32 +59,37 @@ const ChatSidebar: React.FC = () => {
       </select>
       
       <div className="flex-1 overflow-y-auto border p-2 rounded-md bg-white">
-        <p>
-          <span className="font-bold text-blue-600">User:</span>{" "}
-          <span className="text-gray-700">How do I refactor this function?</span>
-        </p>
-        <p>
-          <span className="font-bold text-green-600">AI:</span>{" "}
-          <span className="text-gray-600">You can break it into smaller functions to improve readability.</span>
-        </p>
-        <p>
-          <span className="font-bold text-blue-600">User:</span>{" "}
-          <span className="text-gray-700">Can you give me an example?</span>
-        </p>
-        <p>
-          <span className="font-bold text-green-600">AI:</span>{" "}
-          <span className="text-gray-600">Sure! Here's a more modular version of your function...</span>
-        </p>
+        {messages.map((message, index) => (
+          <p key={index} className="mb-2">
+            <span className={`font-bold ${message.role === 'user' ? 'text-blue-600' : 'text-green-600'}`}>
+              {message.role === 'user' ? 'User:' : 'AI:'}
+            </span>{" "}
+            <span className="text-gray-700">{message.content}</span>
+          </p>
+        ))}
+        {isLoading && (
+          <p className="text-gray-500 italic">AI is typing...</p>
+        )}
       </div>
       
-      <input 
-        type="text" 
-        placeholder="Type a message..." 
-        className="p-2 border rounded-md w-full mt-2" 
-      />
-      <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 mt-2">
-        Send
-      </button>
+      <div className="mt-2 flex flex-col gap-2">
+        <input 
+          type="text" 
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+          placeholder="Type a message..." 
+          className="p-2 border rounded-md w-full" 
+          disabled={isLoading}
+        />
+        <button 
+          onClick={handleSendMessage}
+          disabled={isLoading || !inputText.trim()}
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed"
+        >
+          Send
+        </button>
+      </div>
     </aside>
   );
 };
