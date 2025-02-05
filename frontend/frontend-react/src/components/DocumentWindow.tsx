@@ -2,7 +2,11 @@ import React, { useEffect } from 'react';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/default.css';
 
-const CodeEditor: React.FC = () => {
+interface CodeEditorProps {
+  initialContent?: string;
+}
+
+const CodeEditor: React.FC<CodeEditorProps> = ({ initialContent }) => {
   useEffect(() => {
     hljs.highlightAll();
   }, []);

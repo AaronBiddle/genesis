@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { sendMessage, ChatMessage } from '../services/chatService';
 
-const ChatSidebar: React.FC = () => {
+interface ChatSidebarProps {
+  isWindowed?: boolean;
+}
+
+const ChatSidebar: React.FC<ChatSidebarProps> = ({ isWindowed = false }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +43,7 @@ const ChatSidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-1/4 bg-gray-50 p-4 flex flex-col">
+    <aside className="h-full flex-1 bg-gray-50 p-4 flex flex-col">
       <div className="flex justify-between items-center bg-gray-200 px-2 py-1 rounded-md shadow-sm mb-2">
         <h2 className="text-lg font-bold">Chat</h2>
       </div>
