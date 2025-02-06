@@ -1,11 +1,11 @@
-import { motion } from 'framer-motion'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs'
-import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card'
-import { Input } from './components/ui/input'
-import { Button } from './components/ui/button'
-import './App.css'
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
-export default function App() {
+export default function VSCodeLikeLayout() {
   return (
     <div className="min-h-screen grid grid-cols-[200px_minmax(0,1fr)_350px] gap-4 p-4 bg-gray-50 text-gray-900">
       {/* Left Control Panel */}
@@ -54,6 +54,7 @@ export default function App() {
         </CardHeader>
         <CardContent className="flex flex-col h-full">
           <div className="flex-grow overflow-auto space-y-2 mb-4">
+            {/* Chat messages would go here */}
             <div className="p-2 bg-gray-100 rounded-xl">Hello! How can I help you?</div>
             <div className="p-2 bg-blue-100 rounded-xl self-end">I have a question...</div>
           </div>
@@ -64,5 +65,5 @@ export default function App() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

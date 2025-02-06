@@ -1,0 +1,23 @@
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* Remove any fixed max-width constraints */
+@media (min-width: 640px) {
+  #root {
+    padding: 0;
+  }
+}
+
+/* Basic button styles that won't conflict with our UI components */
+button {
+  cursor: pointer;
+}
+
+/* Ensure proper tab content display */
+[role="tabpanel"] {
+  height: 100%;
+}
