@@ -1,11 +1,53 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs'
 import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card'
 import { Input } from './components/ui/input'
 import { Button } from './components/ui/button'
+import { chatService } from './services/chatService'
+import { ChatMessage } from './types/chat'
 import './App.css'
 
 export default function App() {
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { role: 'assistant', content: 'Hello! How can I help you?' }
+  ])
+  const [inputMessage, setInputMessage] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || isLoading) return
+
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: inputMessage.trim()
+    }
+
+    setMessages(prev => [...prev, userMessage])
+    setInputMessage('')
+    setIsLoading(true)
+
+    try {
+      const response = await chatService.sendMessage([...messages, userMessage])
+      setMessages(prev => [...prev, { role: 'assistant', content: response }])
+    } catch (error) {
+      console.error('Failed to send message:', error)
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: 'Sorry, I encountered an error. Please try again.' 
+      }])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage()
+    }
+  }
+
   return (
     <div className="min-h-screen grid grid-cols-[200px_minmax(0,1fr)_350px] gap-4 p-4 bg-gray-50 text-gray-900">
       {/* Left Control Panel */}
@@ -54,12 +96,35 @@ export default function App() {
         </CardHeader>
         <CardContent className="flex flex-col h-full">
           <div className="flex-grow overflow-auto space-y-2 mb-4">
-            <div className="p-2 bg-gray-100 rounded-xl">Hello! How can I help you?</div>
-            <div className="p-2 bg-blue-100 rounded-xl self-end">I have a question...</div>
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`p-2 rounded-xl ${
+                  message.role === 'assistant' 
+                    ? 'bg-gray-100' 
+                    : 'bg-blue-100 self-end'
+                }`}
+              >
+                {message.content}
+              </div>
+            ))}
           </div>
           <div className="flex gap-2">
-            <Input placeholder="Type your message" className="flex-grow" />
-            <Button variant="default">Send</Button>
+            <Input
+              placeholder="Type your message"
+              className="flex-grow"
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              disabled={isLoading}
+            />
+            <Button 
+              variant="default" 
+              onClick={handleSendMessage}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Sending...' : 'Send'}
+            </Button>
           </div>
         </CardContent>
       </Card>
