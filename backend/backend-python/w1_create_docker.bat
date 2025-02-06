@@ -19,12 +19,11 @@ if defined CONTAINERS (
     echo No existing container found.
 )
 
-REM Run the new container
+REM Run the new container and follow logs
 echo Starting new container...
-docker run -d ^
+docker run --name python-backend ^
     -p 8000:8000 ^
-    -v %cd%:/app ^
-    --name python-backend ^
+    -v %cd%/app:/app ^
     python-backend
 
-echo Docker container created and started successfully!
+echo If you see this message, the container exited unexpectedly.

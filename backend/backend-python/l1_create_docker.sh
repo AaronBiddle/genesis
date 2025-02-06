@@ -11,12 +11,11 @@ if [ "$(docker ps -aq -f name=python-backend)" ]; then
     docker rm python-backend
 fi
 
-# Run the new container
+# Run the new container and follow logs
 echo "Starting new container..."
-docker run -d \
+docker run --name python-backend \
     -p 8000:8000 \
-    -v $(pwd):/app \
-    --name python-backend \
+    -v $(pwd)/app:/app \
     python-backend
 
-echo "Docker container created and started successfully!"
+echo "If you see this message, the container exited unexpectedly."

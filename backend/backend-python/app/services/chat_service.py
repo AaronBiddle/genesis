@@ -1,4 +1,4 @@
-from ..models.chat import ChatRequest, ChatResponse
+from models.chat import ChatRequest, ChatResponse
 
 class ChatService:
     async def process_message(self, request: ChatRequest) -> ChatResponse:
