@@ -60,7 +60,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex bg-gray-300 text-gray-900">
+    <div className="h-screen flex bg-gray-300 text-gray-900 pt-2 pb-2">
       {/* Left Control Panel */}
       <Card className="shadow-md rounded-2xl mx-1 my-2" style={{ width: leftWidth }}>
         <CardHeader>
