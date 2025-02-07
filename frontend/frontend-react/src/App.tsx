@@ -7,6 +7,7 @@ import { Button } from './components/ui/button'
 import { chatService } from './services/chatService'
 import { ChatMessage } from './types/chat'
 import './App.css'
+import { ResizableDivider } from './components/ui/resizable'
 
 export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -14,6 +15,8 @@ export default function App() {
   ])
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [leftWidth, setLeftWidth] = useState(200);
+  const [rightWidth, setRightWidth] = useState(350);
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return
@@ -48,10 +51,18 @@ export default function App() {
     }
   }
 
+  const handleLeftResize = (delta: number) => {
+    setLeftWidth(prev => Math.min(Math.max(150, prev + delta), 400));
+  };
+
+  const handleRightResize = (delta: number) => {
+    setRightWidth(prev => Math.min(Math.max(250, prev - delta), 500));
+  };
+
   return (
-    <div className="min-h-screen grid grid-cols-[200px_minmax(0,1fr)_350px] gap-4 p-4 bg-gray-50 text-gray-900">
+    <div className="min-h-screen flex bg-gray-300 text-gray-900">
       {/* Left Control Panel */}
-      <Card className="shadow-md rounded-2xl">
+      <Card className="shadow-md rounded-2xl mx-1 my-2" style={{ width: leftWidth }}>
         <CardHeader>
           <CardTitle>Control Panel</CardTitle>
         </CardHeader>
@@ -64,12 +75,14 @@ export default function App() {
         </CardContent>
       </Card>
 
+      <ResizableDivider onResize={handleLeftResize} className="my-4" />
+
       {/* Middle Tabbed Document Window */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="rounded-2xl bg-white shadow-md flex flex-col"
+        className="rounded-2xl bg-white shadow-md flex flex-col mx-1 my-2 flex-grow"
       >
         <Tabs defaultValue="tab1">
           <TabsList className="bg-gray-100">
@@ -89,8 +102,10 @@ export default function App() {
         </Tabs>
       </motion.div>
 
+      <ResizableDivider onResize={handleRightResize} className="my-4" />
+
       {/* Right Chat Box */}
-      <Card className="shadow-md rounded-2xl flex flex-col">
+      <Card className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" style={{ width: rightWidth }}>
         <CardHeader>
           <CardTitle>Chat</CardTitle>
         </CardHeader>
