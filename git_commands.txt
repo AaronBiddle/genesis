@@ -1,1 +1,2 @@
 git show --name-only HEAD
+git ls-tree -r HEAD --long| awk '{size+=$2} END {print "Total size (bytes):", size}'
