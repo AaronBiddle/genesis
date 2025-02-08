@@ -21,9 +21,9 @@ if defined CONTAINERS (
 
 REM Run the new container and follow logs
 echo Starting new container...
-docker run --name python-backend ^
+docker run -it --name python-backend ^
     -p 8000:8000 ^
     -v %cd%/app:/app ^
-    python-backend
+    python-backend bash
 
 echo If you see this message, the container exited unexpectedly.

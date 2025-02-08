@@ -1,9 +1,0 @@
-npm create vite@latest frontend-react --template react
-npm install -D tailwindcss@3.4.17 postcss autoprefixer
-# I think the cli is optional. No more need for tailwind.config.js
-# I decided to go back to tailwind 3.4.17
-# https://github.com/AaronBiddle/genesis.git
-
-# Run:
-npm install
-npm run dev

@@ -1,36 +1,24 @@
-#root {
-  width: 100%;
-  min-height: 100vh;
-  margin: 0;
-  padding: 0;
-}
-
-/* Remove any fixed max-width constraints */
-@media (min-width: 640px) {
-  #root {
+body {
+    margin: 0;
     padding: 0;
   }
-}
-
-/* Basic button styles that won't conflict with our UI components */
-button {
-  cursor: pointer;
-}
-
-/* Ensure proper tab content display */
-[role="tabpanel"] {
-  height: 100%;
-}
-
-/* Add this to prevent text selection while resizing */
-.cursor-col-resize {
-  user-select: none;
-  cursor: col-resize;
-}
-
-/* Smooth transitions for resize handle */
-.transition-all {
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
+  
+  .h-screen {
+    height: 100vh;
+  }
+  
+  .flex {
+    display: flex;
+  }
+  
+  .flex-col {
+    flex-direction: column;
+  }
+  
+  .flex-grow {
+    flex-grow: 1;
+  }
+  
+  .gap-2 {
+    gap: 0.5rem;
+  }

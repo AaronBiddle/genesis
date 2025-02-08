@@ -4,44 +4,20 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs'
 import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card'
 import { Input } from './components/ui/input'
 import { Button } from './components/ui/button'
-import { chatService } from './services/chatService'
-import { ChatMessage } from './types/chat'
-import './App.css'
+import { useAIChat } from './hooks/useAIChat'
 import { ResizableDivider } from './components/ui/resizable'
+import './App.css'
 
 export default function App() {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'assistant', content: 'Hello! How can I help you?' }
-  ])
+  const { messages, isConnected, sendPrompt } = useAIChat();
   const [inputMessage, setInputMessage] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const [leftWidth, setLeftWidth] = useState(200);
   const [rightWidth, setRightWidth] = useState(350);
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || isLoading) return
-
-    const userMessage: ChatMessage = {
-      role: 'user',
-      content: inputMessage.trim()
-    }
-
-    setMessages(prev => [...prev, userMessage])
+    if (!inputMessage.trim() || !isConnected) return
+    sendPrompt(inputMessage.trim())
     setInputMessage('')
-    setIsLoading(true)
-
-    try {
-      const response = await chatService.sendMessage([...messages, userMessage])
-      setMessages(prev => [...prev, { role: 'assistant', content: response }])
-    } catch (error) {
-      console.error('Failed to send message:', error)
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: 'Sorry, I encountered an error. Please try again.' 
-      }])
-    } finally {
-      setIsLoading(false)
-    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -107,7 +83,7 @@ export default function App() {
       {/* Right Chat Box */}
       <Card className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" style={{ width: rightWidth }}>
         <CardHeader>
-          <CardTitle>Chat</CardTitle>
+          <CardTitle>Chat {isConnected ? '(Connected)' : '(Disconnected)'}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col h-full">
           <div className="flex-grow overflow-auto space-y-2 mb-4">
@@ -115,12 +91,12 @@ export default function App() {
               <div
                 key={index}
                 className={`p-2 rounded-xl ${
-                  message.role === 'assistant' 
+                  message.response 
                     ? 'bg-gray-100' 
                     : 'bg-blue-100 self-end'
                 }`}
               >
-                {message.content}
+                {message.response || message.prompt}
               </div>
             ))}
           </div>
@@ -131,14 +107,14 @@ export default function App() {
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              disabled={isLoading}
+              disabled={!isConnected}
             />
             <Button 
               variant="default" 
               onClick={handleSendMessage}
-              disabled={isLoading}
+              disabled={!isConnected}
             >
-              {isLoading ? 'Sending...' : 'Send'}
+              {!isConnected ? 'Connecting...' : 'Send'}
             </Button>
           </div>
         </CardContent>
