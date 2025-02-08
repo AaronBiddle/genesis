@@ -17,3 +17,14 @@ class ChatService:
         except Exception as e:
             print(f"Error processing message: {e}")
             return ChatResponse(response="I apologize, but I encountered an error. Please try again.")
+
+    async def process_message_stream(self, request: ChatRequest):
+        messages = [
+            {
+                "role": "system",
+                "content": "Please provide concise responses, aiming for 50 words or less when possible."
+            },
+            *[{"role": m.role, "content": m.content} for m in request.messages]
+        ]
+        async for token in self.ai_service.generate_response_stream(messages):
+            yield token

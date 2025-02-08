@@ -22,3 +22,23 @@ class AIService:
         except Exception as e:
             print(f"Error generating AI response: {e}")
             raise
+
+    async def generate_response_stream(self, messages):
+        try:
+            # Enable streaming by setting stream=True
+            response = await self.client.chat.completions.create(
+                model=settings.api_model,
+                messages=messages,
+                max_tokens=settings.max_tokens,
+                temperature=settings.temperature,
+                stream=True
+            )
+            # Assume response is an async generator yielding token chunks.
+            async for chunk in response:
+                # Each chunk should include a delta that may contain a token segment.
+                token = chunk.choices[0].delta.get("content", "")
+                if token:
+                    yield token
+        except Exception as e:
+            print(f"Error generating AI streamed response: {e}")
+            raise
