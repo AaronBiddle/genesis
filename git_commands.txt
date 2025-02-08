@@ -1,2 +1,3 @@
 git show --name-only HEAD
+git fetch origin main          # fetch the latest changes from the main branch
 git reset --hard origin/main   # git pull origin main in bulldozer mode

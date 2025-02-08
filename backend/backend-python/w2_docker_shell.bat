@@ -24,10 +24,3 @@ if defined CONTAINERS (
 
 REM Connect to the container
 docker exec -it python-backend /bin/bash
-
-REM Only pause if there was an error
-if %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo Press any key to close this window...
-    pause >nul
-)
