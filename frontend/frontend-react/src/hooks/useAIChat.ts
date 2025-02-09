@@ -1,9 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-
-export type ChatMessage = {
-  prompt: string;
-  response: string;
-};
+import { ChatMessage } from '../types/chat';
 
 export function useAIChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -33,7 +29,7 @@ export function useAIChat() {
               const currentMsg = newMessages[index];
               newMessages[index] = {
                 ...currentMsg,
-                response: currentMsg.response + data.token,
+                content: currentMsg.content + data.token,
               };
               return newMessages;
             });
@@ -62,8 +58,11 @@ export function useAIChat() {
   const sendPrompt = (prompt: string) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       setMessages((prev) => {
-        const newMessages = [...prev, { prompt, response: "" }];
-        // Save the index of the new message so it can be updated as tokens stream in.
+        const newMessages: ChatMessage[] = [
+          ...prev,
+          { role: 'user' as const, content: prompt },
+          { role: 'assistant' as const, content: '' }
+        ];
         currentMessageIndexRef.current = newMessages.length - 1;
         return newMessages;
       });

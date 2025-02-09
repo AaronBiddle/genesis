@@ -7,12 +7,16 @@ import { Button } from './components/ui/button'
 import { useAIChat } from './hooks/useAIChat'
 import { ResizableDivider } from './components/ui/resizable'
 import './App.css'
+import { ChatMessage } from './types/chat'
 
 export default function App() {
   const { messages, isConnected, sendPrompt } = useAIChat();
   const [inputMessage, setInputMessage] = useState('')
   const [leftWidth, setLeftWidth] = useState(200);
-  const [rightWidth, setRightWidth] = useState(350);
+  const [rightWidth, setRightWidth] = useState(400);
+  
+  const MIN_WIDTH = 200;
+  const MAX_WIDTH = 800;
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || !isConnected) return
@@ -20,19 +24,18 @@ export default function App() {
     setInputMessage('')
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
-    }
-  }
-
   const handleLeftResize = (delta: number) => {
-    setLeftWidth(prev => Math.min(Math.max(150, prev + delta), 400));
+    setLeftWidth(prevWidth => {
+      const newWidth = prevWidth + delta;
+      return Math.min(Math.max(newWidth, MIN_WIDTH), MAX_WIDTH);
+    });
   };
 
   const handleRightResize = (delta: number) => {
-    setRightWidth(prev => Math.min(Math.max(250, prev - delta), 500));
+    setRightWidth(prevWidth => {
+      const newWidth = prevWidth - delta;
+      return Math.min(Math.max(newWidth, MIN_WIDTH), MAX_WIDTH);
+    });
   };
 
   return (
@@ -83,41 +86,40 @@ export default function App() {
       {/* Right Chat Box */}
       <Card className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" style={{ width: rightWidth }}>
         <CardHeader>
-          <CardTitle>Chat {isConnected ? '(Connected)' : '(Disconnected)'}</CardTitle>
+          <CardTitle>Chat</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col h-full">
-          <div className="flex-grow overflow-auto space-y-2 mb-4">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`p-2 rounded-xl ${
-                  message.response 
-                    ? 'bg-gray-100' 
-                    : 'bg-blue-100 self-end'
-                }`}
-              >
-                {message.response || message.prompt}
+        <div className="flex-grow overflow-auto p-4">
+          {messages.map((message, index) => (
+            <div key={index} className={`mb-4 ${message.role === 'assistant' ? 'pl-4' : 'pr-4'}`}>
+              <div className={`p-2 rounded-lg ${
+                message.role === 'assistant' 
+                  ? 'bg-gray-100' 
+                  : 'bg-blue-100 ml-auto'
+              }`}>
+                {message.content}
               </div>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Type your message"
-              className="flex-grow"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              disabled={!isConnected}
-            />
-            <Button 
-              variant="default" 
-              onClick={handleSendMessage}
-              disabled={!isConnected}
-            >
-              {!isConnected ? 'Connecting...' : 'Send'}
-            </Button>
-          </div>
-        </CardContent>
+            </div>
+          ))}
+        </div>
+        <div className="p-4">
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const input = e.currentTarget.elements.namedItem('message') as HTMLInputElement;
+            if (input.value.trim()) {
+              sendPrompt(input.value);
+              input.value = '';
+            }
+          }}>
+            <div className="flex gap-2">
+              <Input 
+                name="message"
+                placeholder="Type your message..."
+                className="flex-grow"
+              />
+              <Button type="submit">Send</Button>
+            </div>
+          </form>
+        </div>
       </Card>
     </div>
   )
