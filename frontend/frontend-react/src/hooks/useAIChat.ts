@@ -1,9 +1,29 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChatMessage } from '../types/chat';
+import { useWebSocket } from './useWebSocket';
 
 export function useAIChat() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
+  // Pre-populate the chat history with a test markdown message.
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      role: 'assistant',
+      content: `# Welcome to the Chat!
+
+This is a **test2 message** with markdown formatting. Try these examples:
+
+- **Bold** text
+- *Italic* text
+- \`Inline code\`
+
+\`\`\`javascript
+// A code block example:
+console.log('Hello, Markdown!');
+\`\`\`
+`
+    }
+  ]);
+
+  const { isConnected, sendMessage, subscribeToMessages } = useWebSocket();
   const socketRef = useRef<WebSocket | null>(null);
   // Holds the index of the chat message currently being streamed
   const currentMessageIndexRef = useRef<number | null>(null);
@@ -14,7 +34,6 @@ export function useAIChat() {
 
     socket.onopen = () => {
       console.log("Connected to AI Chat WebSocket");
-      setIsConnected(true);
     };
 
     socket.onmessage = (event) => {
@@ -46,7 +65,6 @@ export function useAIChat() {
 
     socket.onclose = () => {
       console.log("Disconnected from AI Chat WebSocket");
-      setIsConnected(false);
     };
 
     return () => {
@@ -60,8 +78,8 @@ export function useAIChat() {
       setMessages((prev) => {
         const newMessages: ChatMessage[] = [
           ...prev,
-          { role: 'user' as const, content: prompt },
-          { role: 'assistant' as const, content: '' }
+          { role: 'user', content: prompt },
+          { role: 'assistant', content: '' }
         ];
         currentMessageIndexRef.current = newMessages.length - 1;
         return newMessages;

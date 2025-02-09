@@ -8,6 +8,7 @@ import { useAIChat } from './hooks/useAIChat'
 import { ResizableDivider } from './components/ui/resizable'
 import './App.css'
 import { ChatMessage } from './types/chat'
+import ReactMarkdown from 'react-markdown'
 
 export default function App() {
   const { messages, isConnected, sendPrompt } = useAIChat();
@@ -69,8 +70,31 @@ export default function App() {
             <TabsTrigger value="tab2">Tab Two</TabsTrigger>
             <TabsTrigger value="tab3">Tab Three</TabsTrigger>
           </TabsList>
-          <TabsContent value="tab1" className="p-4">
-            <p>Content of Tab One</p>
+          <TabsContent value="tab1" className="p-4 markdown-content">
+            <ReactMarkdown>{`# Main Heading
+
+## Getting Started
+Here's a sample list:
+- First item with **bold text**
+- Second item with *italic text*
+- Third item with \`inline code\`
+
+### Code Examples
+Here's a simple TypeScript function:
+
+\`\`\`typescript
+function hello(name: string) {
+  return "Hello, " + name;
+}
+\`\`\`
+
+#### Additional Notes
+You can also use markdown for:
+- Links
+- Tables
+- Block quotes
+- And more!
+`}</ReactMarkdown>
           </TabsContent>
           <TabsContent value="tab2" className="p-4">
             <p>Content of Tab Two</p>
@@ -91,31 +115,29 @@ export default function App() {
         <div className="flex-grow overflow-auto p-4">
           {messages.map((message, index) => (
             <div key={index} className={`mb-4 ${message.role === 'assistant' ? 'pl-4' : 'pr-4'}`}>
-              <div className={`p-2 rounded-lg ${
-                message.role === 'assistant' 
-                  ? 'bg-gray-100' 
-                  : 'bg-blue-100 ml-auto'
-              }`}>
-                {message.content}
+              <div
+                className={`p-2 rounded-lg markdown-content ${
+                  message.role === 'assistant' ? 'bg-gray-100' : 'bg-blue-100 ml-auto'
+                }`}
+              >
+                <ReactMarkdown>{message.content}</ReactMarkdown>
               </div>
             </div>
           ))}
         </div>
         <div className="p-4">
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            const input = e.currentTarget.elements.namedItem('message') as HTMLInputElement;
-            if (input.value.trim()) {
-              sendPrompt(input.value);
-              input.value = '';
-            }
-          }}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const input = e.currentTarget.elements.namedItem('message') as HTMLInputElement;
+              if (input.value.trim()) {
+                sendPrompt(input.value);
+                input.value = '';
+              }
+            }}
+          >
             <div className="flex gap-2">
-              <Input 
-                name="message"
-                placeholder="Type your message..."
-                className="flex-grow"
-              />
+              <Input name="message" placeholder="Type your message..." className="flex-grow" />
               <Button type="submit">Send</Button>
             </div>
           </form>
