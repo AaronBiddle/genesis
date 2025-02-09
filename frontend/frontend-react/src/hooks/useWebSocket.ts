@@ -1,21 +1,27 @@
 import { useState, useEffect, useRef } from 'react'
 
+const DEBUG_WEBSOCKET = true
+
 export function useWebSocket() {
   const [isConnected, setIsConnected] = useState(false)
   const socketRef = useRef<WebSocket | null>(null)
 
   useEffect(() => {
-    const socket = new WebSocket('ws://localhost:8000/ws')
+    const socket = new WebSocket('ws://localhost:8000/ws/chat')
     socketRef.current = socket
 
     socket.onopen = () => {
-      console.log('Connected to Python WebSocket')
+      if (DEBUG_WEBSOCKET) console.log('🌐 WebSocket Connected')
       setIsConnected(true)
     }
 
     socket.onclose = () => {
-      console.log('Disconnected from WebSocket')
+      if (DEBUG_WEBSOCKET) console.log('🌐 WebSocket Disconnected')
       setIsConnected(false)
+    }
+
+    socket.onerror = (error) => {
+      if (DEBUG_WEBSOCKET) console.log('🌐 WebSocket Error:', error)
     }
 
     return () => {
@@ -25,6 +31,7 @@ export function useWebSocket() {
 
   const sendMessage = (message: any) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
+      if (DEBUG_WEBSOCKET) console.log('📤 Websocket Sending message:', message)
       socketRef.current.send(JSON.stringify(message))
     }
   }
@@ -33,6 +40,7 @@ export function useWebSocket() {
     if (socketRef.current) {
       socketRef.current.onmessage = (event) => {
         const data = JSON.parse(event.data)
+        if (DEBUG_WEBSOCKET) console.log('📥 WebsocketReceived message:', data)
         callback(data)
       }
     }

@@ -17,6 +17,8 @@ client = OpenAI(
 MODEL = os.environ.get("DEEPSEEK_API_MODEL", "gpt-4o")
 TEMPERATURE = 0.7
 
+DEBUG_OPENAI = True
+
 def chat_completion_sync(prompt: str) -> str:
     """
     Synchronously gets a chat completion using the new API.
@@ -60,11 +62,18 @@ async def stream_chat_response(prompt: str) -> AsyncGenerator[str, None]:
     """
     Asynchronously yields tokens from a streaming chat completion.
     """
+    if DEBUG_OPENAI: print(f"🤖 Starting chat stream for prompt: {prompt}")
     loop = asyncio.get_running_loop()
-    generator = await loop.run_in_executor(
-        None,
-        lambda: stream_chat_completion_sync(prompt)
-    )
-    for chunk in generator:
-        token = getattr(chunk.choices[0].delta, "content", "")
-        yield token
+    try:
+        generator = await loop.run_in_executor(
+            None,
+            lambda: stream_chat_completion_sync(prompt)
+        )
+        for chunk in generator:
+            token = getattr(chunk.choices[0].delta, "content", "")
+            if DEBUG_OPENAI and token: print(f"🤖 Token generated: {token}", end="", flush=True)
+            yield token
+        if DEBUG_OPENAI: print("\n🤖 Stream complete")
+    except Exception as e:
+        if DEBUG_OPENAI: print(f"🤖 Error in stream_chat_response: {e}")
+        raise

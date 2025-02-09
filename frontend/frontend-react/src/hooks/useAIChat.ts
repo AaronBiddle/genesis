@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { ChatMessage } from '../types/chat';
 import { useWebSocket } from './useWebSocket';
 
+const DEBUG_CHAT = true // Add this at the top
+
 export function useAIChat() {
   // Pre-populate the chat history with a test markdown message.
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -24,25 +26,18 @@ console.log('Hello, Markdown!');
   ]);
 
   const { isConnected, sendMessage, subscribeToMessages } = useWebSocket();
-  const socketRef = useRef<WebSocket | null>(null);
   // Holds the index of the chat message currently being streamed
   const currentMessageIndexRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const socket = new WebSocket("ws://localhost:8000/ws/chat");
-    socketRef.current = socket;
-
-    socket.onopen = () => {
-      console.log("Connected to AI Chat WebSocket");
-    };
-
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      // Process streaming tokens sent on the "chatStream" channel
+    subscribeToMessages((data) => {
+      if (DEBUG_CHAT) console.log('🤖 AI Chat: Processing chat data:', data);
+      
       if (data.channel === "chatStream") {
         if (data.token) {
           const index = currentMessageIndexRef.current;
           if (index !== null) {
+            if (DEBUG_CHAT) console.log('🤖 AI Chat: Adding token to message:', data.token);
             setMessages((prev) => {
               const newMessages = [...prev];
               const currentMsg = newMessages[index];
@@ -55,26 +50,19 @@ console.log('Hello, Markdown!');
           }
         }
         if (data.done === true) {
-          // Mark the end of the streaming session.
+          if (DEBUG_CHAT) console.log('🤖 AI Chat: Chat stream complete');
           currentMessageIndexRef.current = null;
         }
       } else if (data.error) {
-        console.error("Error from server:", data.error);
+        if (DEBUG_CHAT) console.error("AI Chat: Error from server:", data.error);
       }
-    };
-
-    socket.onclose = () => {
-      console.log("Disconnected from AI Chat WebSocket");
-    };
-
-    return () => {
-      socket.close();
-    };
-  }, []);
+    });
+  }, [subscribeToMessages]);
 
   // Sends the prompt to the AI API and adds a new chat message in state.
   const sendPrompt = (prompt: string) => {
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
+    if (isConnected) {
+      if (DEBUG_CHAT) console.log('🤖 Sending prompt:', prompt);
       setMessages((prev) => {
         const newMessages: ChatMessage[] = [
           ...prev,
@@ -84,7 +72,10 @@ console.log('Hello, Markdown!');
         currentMessageIndexRef.current = newMessages.length - 1;
         return newMessages;
       });
-      socketRef.current.send(JSON.stringify({ prompt }));
+      // Format the message to match what the Python backend expects
+      sendMessage({
+        prompt: prompt
+      });
     }
   };
 
