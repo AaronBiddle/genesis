@@ -55,9 +55,13 @@ export function useAIChat() {
         currentMessageIndexRef.current = newMessages.length - 1;
         return newMessages;
       });
-      // Format the message to match what the Python backend expects
+      // Format the message to include chat history
       sendMessage({
-        prompt: prompt
+        prompt: prompt,
+        history: messages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }))
       });
     }
   };

@@ -58,17 +58,32 @@ def stream_chat_completion_sync(prompt: str):
         stream=True  # Enable streaming
     )
 
-async def stream_chat_response(prompt: str) -> AsyncGenerator[str, None]:
+async def stream_chat_response(prompt: str, history: list = None) -> AsyncGenerator[str, None]:
     """
     Asynchronously yields tokens from a streaming chat completion.
     """
     if DEBUG_OPENAI: print(f"🤖 Starting chat stream for prompt: {prompt}")
     loop = asyncio.get_running_loop()
     try:
+        # Build messages array with history
+        messages = []
+        if history:
+            messages.extend([{"role": msg["role"], "content": msg["content"]} for msg in history])
+        messages.extend([
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": prompt}
+        ])
+        
         generator = await loop.run_in_executor(
             None,
-            lambda: stream_chat_completion_sync(prompt)
+            lambda: client.chat.completions.create(
+                messages=messages,
+                model=MODEL,
+                temperature=TEMPERATURE,
+                stream=True
+            )
         )
+        
         for chunk in generator:
             token = getattr(chunk.choices[0].delta, "content", "")
             if DEBUG_OPENAI and token: print(f"🤖 Token generated: {token}", end="", flush=True)

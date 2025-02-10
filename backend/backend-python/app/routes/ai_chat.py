@@ -16,9 +16,11 @@ async def ai_chat_endpoint(websocket: WebSocket):
             if DEBUG_CHAT: print(f"🐍 Received message: {data_text}")
             data = json.loads(data_text)
             prompt = data.get("prompt")
+            history = data.get("history", [])
+            
             if prompt:
-                if DEBUG_CHAT: print(f"🐍 Processing prompt: {prompt}")
-                async for token in stream_chat_response(prompt):
+                if DEBUG_CHAT: print(f"🐍 Processing prompt with history length: {len(history)}")
+                async for token in stream_chat_response(prompt, history):
                     message = {"channel": "chatStream", "token": token, "done": False}
                     if DEBUG_CHAT: print(f"🐍 Sending token: {token}", end="", flush=True)
                     await websocket.send_text(json.dumps(message))

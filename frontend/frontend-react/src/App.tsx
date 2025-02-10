@@ -129,7 +129,7 @@ You can also use markdown for:
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              const input = e.currentTarget.elements.namedItem('message') as HTMLInputElement;
+              const input = e.currentTarget.elements.namedItem('message') as HTMLTextAreaElement;
               if (input.value.trim()) {
                 sendPrompt(input.value);
                 input.value = '';
@@ -137,7 +137,21 @@ You can also use markdown for:
             }}
           >
             <div className="flex gap-2">
-              <Input name="message" placeholder="Type your message..." className="flex-grow" />
+              <Input 
+                name="message" 
+                placeholder="Type your message..." 
+                className="flex-grow"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    const input = e.currentTarget;
+                    if (input.value.trim()) {
+                      sendPrompt(input.value);
+                      input.value = '';
+                    }
+                  }
+                }}
+              />
               <Button type="submit">Send</Button>
             </div>
           </form>
