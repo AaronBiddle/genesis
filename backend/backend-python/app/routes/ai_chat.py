@@ -4,7 +4,7 @@ from services.openai_client import stream_chat_response
 
 router = APIRouter()
 
-DEBUG_CHAT = True
+DEBUG_CHAT = False
 
 @router.websocket("/ws/chat")
 async def ai_chat_endpoint(websocket: WebSocket):

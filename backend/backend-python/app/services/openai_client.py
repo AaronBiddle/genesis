@@ -17,7 +17,7 @@ client = OpenAI(
 MODEL = os.environ.get("DEEPSEEK_API_MODEL", "gpt-4o")
 TEMPERATURE = 0.7
 
-DEBUG_OPENAI = True
+DEBUG_OPENAI = False
 
 def chat_completion_sync(prompt: str) -> str:
     """

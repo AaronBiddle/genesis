@@ -2,28 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { ChatMessage } from '../types/chat';
 import { useWebSocket } from './useWebSocket';
 
-const DEBUG_CHAT = true // Add this at the top
+const DEBUG_CHAT = false
 
 export function useAIChat() {
   // Pre-populate the chat history with a test markdown message.
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: 'assistant',
-      content: `# Welcome to the Chat!
-
-This is a **test2 message** with markdown formatting. Try these examples:
-
-- **Bold** text
-- *Italic* text
-- \`Inline code\`
-
-\`\`\`javascript
-// A code block example:
-console.log('Hello, Markdown!');
-\`\`\`
-`
-    }
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   const { isConnected, sendMessage, subscribeToMessages } = useWebSocket();
   // Holds the index of the chat message currently being streamed

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 
-const DEBUG_WEBSOCKET = true
+const DEBUG_WEBSOCKET = false
 
 export function useWebSocket() {
   const [isConnected, setIsConnected] = useState(false)
