@@ -48,7 +48,7 @@ export function useAIChat() {
   }, [subscribeToMessages]);
 
   // Sends the prompt to the AI API and adds a new chat message in state.
-  const sendPrompt = (prompt: string) => {
+  const sendPrompt = (prompt: string, systemPrompt: string, temperature: number) => {
     if (isConnected) {
       if (DEBUG_CHAT) console.log('🤖 Sending prompt:', prompt);
       setMessages((prev) => {
@@ -63,6 +63,8 @@ export function useAIChat() {
       // Format the message to include chat history
       sendMessage({
         prompt: prompt,
+        system_prompt: systemPrompt,
+        temperature: temperature,
         history: messages.map(msg => ({
           role: msg.role,
           content: msg.content

@@ -47,6 +47,9 @@ export default function App() {
   const { messages, isConnected, sendPrompt, removeMessage } = useAIChat();
   const [leftWidth, setLeftWidth] = useState(200);
   const [rightWidth, setRightWidth] = useState(400);
+  const [showChatSettings, setShowChatSettings] = useState(false);
+  const [temperature, setTemperature] = useState(0.7);
+  const [systemPrompt, setSystemPrompt] = useState("You are a helpful assistant.");
   
   const MIN_WIDTH = 200;
   const MAX_WIDTH = 1000;
@@ -149,14 +152,47 @@ You can also use markdown for:
       {/* Right Chat Box */}
       <Card className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" style={{ width: rightWidth }}>
         <CardHeader className="flex items-center">
-          <CardTitle>Chat</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle>Chat</CardTitle>
+            <button 
+              onClick={() => setShowChatSettings(!showChatSettings)}
+              className="p-1 hover:bg-gray-100 rounded-lg"
+            >
+              ⚙️
+            </button>
+          </div>
           <span 
             className={`ml-2 w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
             title={isConnected ? "Connected" : "Disconnected"}
           />
         </CardHeader>
         <div className="flex-grow overflow-auto p-4">
-          {messages.map((message, index) => (
+          {showChatSettings ? (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">System Prompt</label>
+                <Input
+                  value={systemPrompt}
+                  onChange={(e) => setSystemPrompt(e.target.value)}
+                  className="h-32"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Temperature: {temperature}
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                  value={temperature}
+                  onChange={(e) => setTemperature(Number(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          ) : messages.map((message, index) => (
             <MessageContainer
               key={index}
               message={message}
@@ -171,7 +207,7 @@ You can also use markdown for:
               e.preventDefault();
               const input = e.currentTarget.elements.namedItem('message') as HTMLTextAreaElement;
               if (input.value.trim()) {
-                sendPrompt(input.value);
+                sendPrompt(input.value, systemPrompt, temperature);
                 input.value = '';
               }
             }}
@@ -186,7 +222,7 @@ You can also use markdown for:
                     e.preventDefault();
                     const input = e.currentTarget;
                     if (input.value.trim()) {
-                      sendPrompt(input.value);
+                      sendPrompt(input.value, systemPrompt, temperature);
                       input.value = '';
                     }
                   }

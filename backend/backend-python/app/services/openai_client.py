@@ -59,7 +59,7 @@ def stream_chat_completion_sync(prompt: str):
         stream=True  # Enable streaming
     )
 
-async def stream_chat_response(prompt: str, history: list = None) -> AsyncGenerator[tuple[str, Any], None]:
+async def stream_chat_response(prompt: str, history: list = None, system_prompt: str = "You are a helpful assistant.", temperature: float = 0.7) -> AsyncGenerator[tuple[str, Any], None]:
     """
     Asynchronously yields tokens from a streaming chat completion.
     """
@@ -70,24 +70,29 @@ async def stream_chat_response(prompt: str, history: list = None) -> AsyncGenera
         if history:
             messages.extend([{"role": msg["role"], "content": msg["content"]} for msg in history])
         messages.extend([
-            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt}
         ])
+        
+        # Calculate total input tokens
+        total_input_length = sum(len(msg["content"]) for msg in messages)
+        log(LogLevel.DEBUGGING, f"🤖 Total input length: {total_input_length} characters")
         
         completion = await loop.run_in_executor(
             None,
             lambda: client.chat.completions.create(
                 messages=messages,
                 model=MODEL,
-                temperature=TEMPERATURE,
+                temperature=temperature,
                 stream=True
             )
         )
         
+        received_any_tokens = False
         for chunk in completion:
+            received_any_tokens = True
             token = getattr(chunk.choices[0].delta, "content", "")
             
-            # Check if this is the final chunk (it will have finish_reason set)
             if chunk.choices[0].finish_reason is not None:
                 log(LogLevel.DEBUGGING, f"🤖 Final chunk with usage stats: {chunk.usage}")
                 yield token, chunk.usage
@@ -95,7 +100,11 @@ async def stream_chat_response(prompt: str, history: list = None) -> AsyncGenera
                 if token:
                     log(LogLevel.VERBOSE, f"🤖 Token generated: {token}", end="")
                 yield token, None
+        
+        if not received_any_tokens:
+            log(LogLevel.MINIMUM, "🤖 Warning: No tokens were received from the API")
+            raise Exception("No response received from API")
             
     except Exception as e:
-        log(LogLevel.MINIMUM, f"🤖 Error in stream_chat_response: {e}")
+        log(LogLevel.MINIMUM, f"🤖 Error in stream_chat_response: {str(e)}")
         raise
