@@ -1,68 +1,26 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs'
-import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card'
-import { Input } from './components/ui/input'
-import { Button } from './components/ui/button'
-import { useAIChat } from './hooks/useAIChat'
 import { ResizableDivider } from './components/ui/resizable'
+import { ControlPanel } from './components/ControlPanel'
+import { TabbedWindow } from './components/TabbedWindow'
+import { ChatBox } from './components/ChatBox'
 import './App.css'
-import ReactMarkdown from 'react-markdown'
-import { ChatMessage } from './types/chat'
-
-const MessageContainer = ({ message, index, onRemove }: { 
-  message: ChatMessage; 
-  index: number; 
-  onRemove: (index: number) => void 
-}) => {
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <div 
-      className={`relative mb-4 ${message.role === 'assistant' ? 'pl-4' : 'pr-4'}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div
-        className={`p-2 rounded-lg markdown-content ${
-          message.role === 'assistant' ? 'bg-gray-100' : 'bg-blue-100 ml-auto'
-        }`}
-      >
-        {isHovered && (
-          <button
-            onClick={() => onRemove(index)}
-            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
-            title="Remove message"
-          >
-            ×
-          </button>
-        )}
-        <ReactMarkdown>{message.content}</ReactMarkdown>
-      </div>
-    </div>
-  );
-};
 
 export default function App() {
-  const { messages, isConnected, sendPrompt, removeMessage } = useAIChat();
   const [leftWidth, setLeftWidth] = useState(200);
   const [rightWidth, setRightWidth] = useState(400);
-  const [showChatSettings, setShowChatSettings] = useState(false);
-  const [temperature, setTemperature] = useState(0.7);
-  const [systemPrompt, setSystemPrompt] = useState("You are a helpful assistant.");
-  
+
   const MIN_WIDTH = 200;
   const MAX_WIDTH = 1000;
 
   const handleLeftResize = (delta: number) => {
-    setLeftWidth(prevWidth => {
+    setLeftWidth((prevWidth) => {
       const newWidth = prevWidth + delta;
       return Math.min(Math.max(newWidth, MIN_WIDTH), MAX_WIDTH);
     });
   };
 
   const handleRightResize = (delta: number) => {
-    setRightWidth(prevWidth => {
+    setRightWidth((prevWidth) => {
       const newWidth = prevWidth - delta;
       return Math.min(Math.max(newWidth, MIN_WIDTH), MAX_WIDTH);
     });
@@ -71,168 +29,17 @@ export default function App() {
   return (
     <div className="h-screen flex bg-gray-300 text-gray-900 pt-2 pb-2">
       {/* Left Control Panel */}
-      <Card className="shadow-md rounded-2xl mx-1 my-2" style={{ width: leftWidth }}>
-        <CardHeader>
-          <CardTitle>Control Panel</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-2">
-            <Button variant="outline">Command 1</Button>
-            <Button variant="outline">Command 2</Button>
-            <Button variant="outline">Command 3</Button>
-          </div>
-        </CardContent>
-      </Card>
+      <ControlPanel width={leftWidth} />
 
       <ResizableDivider onResize={handleLeftResize} className="my-4" />
 
       {/* Middle Tabbed Document Window */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="rounded-2xl bg-white shadow-md flex flex-col mx-1 my-2 flex-grow"
-      >
-        <Tabs defaultValue="tab1">
-          <TabsList className="bg-gray-100">
-            <TabsTrigger value="tab1">Tab One</TabsTrigger>
-            <TabsTrigger value="tab2">Tab Two</TabsTrigger>
-            <TabsTrigger value="tab3">Tab Three</TabsTrigger>
-          </TabsList>
-          <TabsContent value="tab1" className="p-4 markdown-content">
-            <ReactMarkdown>{`# Main Heading
-
-## Getting Started
-Here's a nested bullet list:
-- First level item
-  - Second level item
-    - Third level item with **bold text**
-  - Another second level
-- First level with *italic text*
-  - Second level with \`inline code\`
-    - Third level item
-
-## Numbered Lists
-1. First level item
-   1. Second level item
-      1. Third level item
-   2. Another second level
-2. Back to first level
-   1. More nested items
-      1. Deep nested item
-
-### Code Examples
-Here's a simple TypeScript function:
-
-\`\`\`typescript
-function hello(name: string) {
-  return "Hello, " + name;
-}
-\`\`\`
-
-#### Additional Notes
-You can also use markdown for:
-- Links
-- Tables
-- Block quotes
-- And more!
-`}</ReactMarkdown>
-          </TabsContent>
-          <TabsContent value="tab2" className="p-4">
-            <p>Content of Tab Two</p>
-          </TabsContent>
-          <TabsContent value="tab3" className="p-4">
-            <p>Content of Tab Three</p>
-          </TabsContent>
-        </Tabs>
-      </motion.div>
+      <TabbedWindow />
 
       <ResizableDivider onResize={handleRightResize} className="my-4" />
 
       {/* Right Chat Box */}
-      <Card className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" style={{ width: rightWidth }}>
-        <CardHeader className="flex items-center">
-          <div className="flex items-center gap-2">
-            <CardTitle>Chat</CardTitle>
-            <button 
-              onClick={() => setShowChatSettings(!showChatSettings)}
-              className="p-1 hover:bg-gray-100 rounded-lg"
-            >
-              ⚙️
-            </button>
-          </div>
-          <span 
-            className={`ml-2 w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
-            title={isConnected ? "Connected" : "Disconnected"}
-          />
-        </CardHeader>
-        <div className="flex-grow overflow-auto p-4">
-          {showChatSettings ? (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">System Prompt</label>
-                <Input
-                  value={systemPrompt}
-                  onChange={(e) => setSystemPrompt(e.target.value)}
-                  className="h-32"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Temperature: {temperature}
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="2"
-                  step="0.1"
-                  value={temperature}
-                  onChange={(e) => setTemperature(Number(e.target.value))}
-                  className="w-full"
-                />
-              </div>
-            </div>
-          ) : messages.map((message, index) => (
-            <MessageContainer
-              key={index}
-              message={message}
-              index={index}
-              onRemove={removeMessage}
-            />
-          ))}
-        </div>
-        <div className="p-4">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const input = e.currentTarget.elements.namedItem('message') as HTMLTextAreaElement;
-              if (input.value.trim()) {
-                sendPrompt(input.value, systemPrompt, temperature);
-                input.value = '';
-              }
-            }}
-          >
-            <div className="flex gap-2">
-              <Input 
-                name="message" 
-                placeholder="Type your message..." 
-                className="flex-grow"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    const input = e.currentTarget;
-                    if (input.value.trim()) {
-                      sendPrompt(input.value, systemPrompt, temperature);
-                      input.value = '';
-                    }
-                  }
-                }}
-              />
-              <Button type="submit">Send</Button>
-            </div>
-          </form>
-        </div>
-      </Card>
+      <ChatBox width={rightWidth} />
     </div>
   )
 }
