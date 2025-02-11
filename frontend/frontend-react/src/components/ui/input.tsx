@@ -11,12 +11,21 @@ export function Input({ className = '', minHeight = 100, maxHeight = 200, value,
 
   useEffect(() => {
     const textarea = textareaRef.current;
-    if (textarea) {
-      // Reset height to min to get correct scrollHeight
+    if (!textarea) return;
+
+    const updateHeight = () => {
+      // Reset height first to get correct scrollHeight
       textarea.style.height = `${minHeight}px`;
       const newHeight = Math.min(textarea.scrollHeight, maxHeight);
       textarea.style.height = `${newHeight}px`;
-    }
+    };
+
+    // Batch height updates with animation frame
+    const frameId = requestAnimationFrame(updateHeight);
+    
+    return () => {
+      cancelAnimationFrame(frameId);
+    };
   }, [value, minHeight, maxHeight]);
 
   return (
