@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Card, CardHeader, CardTitle } from './ui/card';
+import React, { useState } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { useAIChat } from '../hooks/useAIChat';
@@ -18,17 +18,18 @@ export function ChatBox({ width }: { width: number }) {
       <CardHeader className="flex items-center">
         <div className="flex items-center gap-2">
           <CardTitle>Chat</CardTitle>
-          <button
-            onClick={() => setShowChatSettings(!showChatSettings)}
-            className="p-1 hover:bg-gray-100 rounded-lg"
-          >
-            ⚙️
-          </button>
+          <span
+            className={`ml-2 w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+            title={isConnected ? 'Connected' : 'Disconnected'}
+          />
         </div>
-        <span
-          className={`ml-2 w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
-          title={isConnected ? 'Connected' : 'Disconnected'}
-        />
+        <div className="flex-grow" />
+        <button
+          onClick={() => setShowChatSettings(!showChatSettings)}
+          className="p-1 hover:bg-gray-100 rounded-lg"
+        >
+          ⚙️
+        </button>
       </CardHeader>
       <div className="flex-grow overflow-auto p-4">
         {showChatSettings ? (
@@ -38,7 +39,8 @@ export function ChatBox({ width }: { width: number }) {
               <Input
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
-                className="h-32"
+                minHeight={150}
+                maxHeight={300}
               />
             </div>
             <div>
@@ -83,6 +85,8 @@ export function ChatBox({ width }: { width: number }) {
               name="message"
               placeholder="Type your message..."
               className="flex-grow"
+              minHeight={100}
+              maxHeight={200}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
