@@ -2,6 +2,14 @@ import { useState, useEffect, useRef } from 'react'
 
 const DEBUG_WEBSOCKET = false
 
+const LOG_LEVEL = {
+  NONE: 0,
+  MINIMUM: 1,
+  DEBUGGING: 2
+} as const
+
+const CURRENT_LOG_LEVEL = LOG_LEVEL.MINIMUM  // Default to basic logging
+
 export function useWebSocket() {
   const [isConnected, setIsConnected] = useState(false)
   const socketRef = useRef<WebSocket | null>(null)
@@ -31,7 +39,12 @@ export function useWebSocket() {
 
   const sendMessage = (message: any) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
-      if (DEBUG_WEBSOCKET) console.log('📤 Websocket Sending message:', message)
+      if (CURRENT_LOG_LEVEL >= LOG_LEVEL.MINIMUM) {
+        console.log('📤 WebSocket: Sending message')
+      }
+      if (CURRENT_LOG_LEVEL >= LOG_LEVEL.DEBUGGING) {
+        console.log('📤 WebSocket: Message content:', message)
+      }
       socketRef.current.send(JSON.stringify(message))
     }
   }
@@ -40,7 +53,20 @@ export function useWebSocket() {
     if (socketRef.current) {
       socketRef.current.onmessage = (event) => {
         const data = JSON.parse(event.data)
-        if (DEBUG_WEBSOCKET) console.log('📥 WebsocketReceived message:', data)
+        
+        // Only log complete messages at MINIMUM level
+        if (CURRENT_LOG_LEVEL >= LOG_LEVEL.MINIMUM) {
+          if (data.done === true) {
+            console.log('📥 WebSocket: Response completed')
+          } else if (CURRENT_LOG_LEVEL >= LOG_LEVEL.DEBUGGING) {
+            console.log('📥 WebSocket: Incoming message:', data)
+          }
+        }
+        
+        if (CURRENT_LOG_LEVEL >= LOG_LEVEL.DEBUGGING) {
+          console.log('📥 Websocket raw event:', event)
+        }
+        
         callback(data)
       }
     }

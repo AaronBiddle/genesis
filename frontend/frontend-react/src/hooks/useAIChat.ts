@@ -12,6 +12,11 @@ export function useAIChat() {
   // Holds the index of the chat message currently being streamed
   const currentMessageIndexRef = useRef<number | null>(null);
 
+  // Add removeMessage function
+  const removeMessage = (index: number) => {
+    setMessages(prev => prev.filter((_, i) => i !== index));
+  };
+
   useEffect(() => {
     subscribeToMessages((data) => {
       if (DEBUG_CHAT) console.log('🤖 AI Chat: Processing chat data:', data);
@@ -66,5 +71,10 @@ export function useAIChat() {
     }
   };
 
-  return { messages, isConnected, sendPrompt };
+  return { 
+    messages, 
+    isConnected, 
+    sendPrompt,
+    removeMessage
+  };
 } 

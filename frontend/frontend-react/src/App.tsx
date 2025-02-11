@@ -8,14 +8,48 @@ import { useAIChat } from './hooks/useAIChat'
 import { ResizableDivider } from './components/ui/resizable'
 import './App.css'
 import ReactMarkdown from 'react-markdown'
+import { ChatMessage } from './types/chat'
+
+const MessageContainer = ({ message, index, onRemove }: { 
+  message: ChatMessage; 
+  index: number; 
+  onRemove: (index: number) => void 
+}) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div 
+      className={`relative mb-4 ${message.role === 'assistant' ? 'pl-4' : 'pr-4'}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div
+        className={`p-2 rounded-lg markdown-content ${
+          message.role === 'assistant' ? 'bg-gray-100' : 'bg-blue-100 ml-auto'
+        }`}
+      >
+        {isHovered && (
+          <button
+            onClick={() => onRemove(index)}
+            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+            title="Remove message"
+          >
+            ×
+          </button>
+        )}
+        <ReactMarkdown>{message.content}</ReactMarkdown>
+      </div>
+    </div>
+  );
+};
 
 export default function App() {
-  const { messages, sendPrompt } = useAIChat();
+  const { messages, isConnected, sendPrompt, removeMessage } = useAIChat();
   const [leftWidth, setLeftWidth] = useState(200);
   const [rightWidth, setRightWidth] = useState(400);
   
   const MIN_WIDTH = 200;
-  const MAX_WIDTH = 800;
+  const MAX_WIDTH = 1000;
 
   const handleLeftResize = (delta: number) => {
     setLeftWidth(prevWidth => {
@@ -66,10 +100,23 @@ export default function App() {
             <ReactMarkdown>{`# Main Heading
 
 ## Getting Started
-Here's a sample list:
-- First item with **bold text**
-- Second item with *italic text*
-- Third item with \`inline code\`
+Here's a nested bullet list:
+- First level item
+  - Second level item
+    - Third level item with **bold text**
+  - Another second level
+- First level with *italic text*
+  - Second level with \`inline code\`
+    - Third level item
+
+## Numbered Lists
+1. First level item
+   1. Second level item
+      1. Third level item
+   2. Another second level
+2. Back to first level
+   1. More nested items
+      1. Deep nested item
 
 ### Code Examples
 Here's a simple TypeScript function:
@@ -101,20 +148,21 @@ You can also use markdown for:
 
       {/* Right Chat Box */}
       <Card className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" style={{ width: rightWidth }}>
-        <CardHeader>
+        <CardHeader className="flex items-center">
           <CardTitle>Chat</CardTitle>
+          <span 
+            className={`ml-2 w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+            title={isConnected ? "Connected" : "Disconnected"}
+          />
         </CardHeader>
         <div className="flex-grow overflow-auto p-4">
           {messages.map((message, index) => (
-            <div key={index} className={`mb-4 ${message.role === 'assistant' ? 'pl-4' : 'pr-4'}`}>
-              <div
-                className={`p-2 rounded-lg markdown-content ${
-                  message.role === 'assistant' ? 'bg-gray-100' : 'bg-blue-100 ml-auto'
-                }`}
-              >
-                <ReactMarkdown>{message.content}</ReactMarkdown>
-              </div>
-            </div>
+            <MessageContainer
+              key={index}
+              message={message}
+              index={index}
+              onRemove={removeMessage}
+            />
           ))}
         </div>
         <div className="p-4">
