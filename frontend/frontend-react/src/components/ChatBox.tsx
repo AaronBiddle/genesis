@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
+import { useState } from 'react';
+import { Card, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { useAIChat } from '../hooks/useAIChat';
@@ -12,6 +12,7 @@ export function ChatBox({ width }: { width: number }) {
   const [systemPrompt, setSystemPrompt] = useState(
     "You are a helpful assistant. Your personality is like Data from Star Trek, but not roleplaying. Be direct, reasonable, and engaged."
   );
+  const [messageInput, setMessageInput] = useState('');
 
   return (
     <Card className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" style={{ width }}>
@@ -39,8 +40,8 @@ export function ChatBox({ width }: { width: number }) {
               <Input
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
-                minHeight={150}
-                maxHeight={300}
+                minHeight={300}
+                maxHeight={500}
               />
             </div>
             <div>
@@ -73,10 +74,9 @@ export function ChatBox({ width }: { width: number }) {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            const input = e.currentTarget.elements.namedItem('message') as HTMLTextAreaElement;
-            if (input.value.trim()) {
-              sendPrompt(input.value, systemPrompt, temperature);
-              input.value = '';
+            if (messageInput.trim()) {
+              sendPrompt(messageInput, systemPrompt, temperature);
+              setMessageInput('');
             }
           }}
         >
@@ -87,18 +87,29 @@ export function ChatBox({ width }: { width: number }) {
               className="flex-grow"
               minHeight={100}
               maxHeight={200}
+              value={messageInput}
+              onChange={(e) => setMessageInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
-                  const input = e.currentTarget;
-                  if (input.value.trim()) {
-                    sendPrompt(input.value, systemPrompt, temperature);
-                    input.value = '';
+                  if (messageInput.trim()) {
+                    sendPrompt(messageInput, systemPrompt, temperature);
+                    setMessageInput('');
                   }
                 }
               }}
             />
-            <Button type="submit">Send</Button>
+            <Button 
+              type="submit"
+              onClick={() => {
+                if (messageInput.trim()) {
+                  sendPrompt(messageInput, systemPrompt, temperature);
+                  setMessageInput('');
+                }
+              }}
+            >
+              Send
+            </Button>
           </div>
         </form>
       </div>
