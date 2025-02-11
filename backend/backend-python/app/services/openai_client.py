@@ -1,8 +1,9 @@
 import os
 import asyncio
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Any
 from openai import OpenAI
 from dotenv import load_dotenv
+from utils.logging import LogLevel, log
 
 # Load environment variables from .env file.
 load_dotenv()
@@ -58,14 +59,13 @@ def stream_chat_completion_sync(prompt: str):
         stream=True  # Enable streaming
     )
 
-async def stream_chat_response(prompt: str, history: list = None) -> AsyncGenerator[str, None]:
+async def stream_chat_response(prompt: str, history: list = None) -> AsyncGenerator[tuple[str, Any], None]:
     """
     Asynchronously yields tokens from a streaming chat completion.
     """
-    if DEBUG_OPENAI: print(f"🤖 Starting chat stream for prompt: {prompt}")
+    log(LogLevel.DEBUGGING, f"🤖 Starting chat stream for prompt: {prompt}")
     loop = asyncio.get_running_loop()
     try:
-        # Build messages array with history
         messages = []
         if history:
             messages.extend([{"role": msg["role"], "content": msg["content"]} for msg in history])
@@ -74,7 +74,7 @@ async def stream_chat_response(prompt: str, history: list = None) -> AsyncGenera
             {"role": "user", "content": prompt}
         ])
         
-        generator = await loop.run_in_executor(
+        completion = await loop.run_in_executor(
             None,
             lambda: client.chat.completions.create(
                 messages=messages,
@@ -84,11 +84,18 @@ async def stream_chat_response(prompt: str, history: list = None) -> AsyncGenera
             )
         )
         
-        for chunk in generator:
+        for chunk in completion:
             token = getattr(chunk.choices[0].delta, "content", "")
-            if DEBUG_OPENAI and token: print(f"🤖 Token generated: {token}", end="", flush=True)
-            yield token
-        if DEBUG_OPENAI: print("\n🤖 Stream complete")
+            
+            # Check if this is the final chunk (it will have finish_reason set)
+            if chunk.choices[0].finish_reason is not None:
+                log(LogLevel.DEBUGGING, f"🤖 Final chunk with usage stats: {chunk.usage}")
+                yield token, chunk.usage
+            else:
+                if token:
+                    log(LogLevel.VERBOSE, f"🤖 Token generated: {token}", end="")
+                yield token, None
+            
     except Exception as e:
-        if DEBUG_OPENAI: print(f"🤖 Error in stream_chat_response: {e}")
+        log(LogLevel.MINIMUM, f"🤖 Error in stream_chat_response: {e}")
         raise

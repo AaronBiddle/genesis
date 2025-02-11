@@ -57,14 +57,17 @@ export function useWebSocket() {
         // Only log complete messages at MINIMUM level
         if (CURRENT_LOG_LEVEL >= LOG_LEVEL.MINIMUM) {
           if (data.done === true) {
-            console.log('📥 WebSocket: Response completed')
+            const sentTokens = data.tokensSent ? `sent: ${data.tokensSent}, ` : '';
+            const receivedTokens = data.tokensReceived ? `received: ${data.tokensReceived}` : '';
+            console.log(`📥 WebSocket: Response completed (${sentTokens}${receivedTokens} tokens)`);
+          } else if (data.error) {
+            console.error('📥 WebSocket Error:', data.error);
+            if (data.size && data.limit) {
+              console.error(`Message size ${data.size} exceeds limit of ${data.limit} bytes`);
+            }
           } else if (CURRENT_LOG_LEVEL >= LOG_LEVEL.DEBUGGING) {
-            console.log('📥 WebSocket: Incoming message:', data)
+            console.log('📥 WebSocket: Incoming message:', data);
           }
-        }
-        
-        if (CURRENT_LOG_LEVEL >= LOG_LEVEL.DEBUGGING) {
-          console.log('📥 Websocket raw event:', event)
         }
         
         callback(data)
