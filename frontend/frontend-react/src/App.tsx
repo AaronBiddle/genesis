@@ -7,23 +7,15 @@ import { Button } from './components/ui/button'
 import { useAIChat } from './hooks/useAIChat'
 import { ResizableDivider } from './components/ui/resizable'
 import './App.css'
-import { ChatMessage } from './types/chat'
 import ReactMarkdown from 'react-markdown'
 
 export default function App() {
-  const { messages, isConnected, sendPrompt } = useAIChat();
-  const [inputMessage, setInputMessage] = useState('')
+  const { messages, sendPrompt } = useAIChat();
   const [leftWidth, setLeftWidth] = useState(200);
   const [rightWidth, setRightWidth] = useState(400);
   
   const MIN_WIDTH = 200;
   const MAX_WIDTH = 800;
-
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || !isConnected) return
-    sendPrompt(inputMessage.trim())
-    setInputMessage('')
-  }
 
   const handleLeftResize = (delta: number) => {
     setLeftWidth(prevWidth => {
