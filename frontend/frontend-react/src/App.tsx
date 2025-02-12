@@ -35,14 +35,43 @@ export default function App() {
     });
   };
 
-  const handleOpenDocument = async (title: string, content: string) => {
+  const handleNewDocument = () => {
     const newDoc = {
       id: `doc-${Date.now()}`,
-      title,
-      content
+      title: "Untitled",
+      content: ""
     };
     setDocuments(prev => [...prev, newDoc]);
     setActiveDocument(newDoc.id);
+  };
+
+  const handleOpenDocument = async () => {
+    const title = prompt('Enter document name:');
+    if (title) {
+      try {
+        const response = await fetch('http://localhost:8000/load_document', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: title })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to load document');
+        }
+        
+        const data = await response.json();
+        const newDoc = {
+          id: `doc-${Date.now()}`,
+          title,
+          content: data.content
+        };
+        setDocuments(prev => [...prev, newDoc]);
+        setActiveDocument(newDoc.id);
+      } catch (error) {
+        console.error('Error loading document:', error);
+        alert('Failed to load document');
+      }
+    }
   };
 
   const handleCloseDocument = (id: string) => {
@@ -73,7 +102,6 @@ export default function App() {
         throw new Error('Failed to save document');
       }
 
-      // Could add a visual confirmation here
       console.log('Document saved successfully');
     } catch (error) {
       console.error('Error saving document:', error);
@@ -93,6 +121,8 @@ export default function App() {
         onDocumentSave={handleSaveDocument}
         markdownEnabled={markdownEnabled}
         onMarkdownToggle={() => setMarkdownEnabled(!markdownEnabled)}
+        onNewDocument={handleNewDocument}
+        onOpenDocument={handleOpenDocument}
       />
       <ResizableDivider onResize={handleRightResize} className="my-4" />
       <ChatBox width={rightWidth} />

@@ -2,7 +2,13 @@ import { motion } from 'framer-motion';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import ReactMarkdown from 'react-markdown';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSave, faFileAlt, faFileCode } from '@fortawesome/free-solid-svg-icons';
+import { 
+  faFileCode, 
+  faFileAlt, 
+  faSave, 
+  faFileCirclePlus, 
+  faFolderOpen 
+} from '@fortawesome/free-solid-svg-icons';
 import { Button } from './ui/button';
 
 interface TabbedWindowProps {
@@ -13,6 +19,8 @@ interface TabbedWindowProps {
   onDocumentSave: () => void;
   markdownEnabled: boolean;
   onMarkdownToggle: () => void;
+  onNewDocument: () => void;
+  onOpenDocument: () => void;
 }
 
 export function TabbedWindow({ 
@@ -22,7 +30,9 @@ export function TabbedWindow({
   onDocumentClose,
   onDocumentSave,
   markdownEnabled,
-  onMarkdownToggle
+  onMarkdownToggle,
+  onNewDocument,
+  onOpenDocument
 }: TabbedWindowProps) {
   return (
     <motion.div
@@ -35,20 +45,38 @@ export function TabbedWindow({
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={onMarkdownToggle}
-            className={`p-2 ${markdownEnabled ? 'bg-primary text-primary-foreground' : ''}`}
+            onClick={onNewDocument}
+            className="p-2"
+            title="New Document"
           >
-            <FontAwesomeIcon 
-              icon={markdownEnabled ? faFileCode : faFileAlt} 
-              className="h-4 w-4"
-            />
+            <FontAwesomeIcon icon={faFileCirclePlus} className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            onClick={onOpenDocument}
+            className="p-2"
+            title="Open Document"
+          >
+            <FontAwesomeIcon icon={faFolderOpen} className="h-4 w-4" />
           </Button>
           <Button
             variant="outline"
             onClick={onDocumentSave}
             className="p-2"
+            title="Save Document"
           >
             <FontAwesomeIcon icon={faSave} className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            onClick={onMarkdownToggle}
+            className={`p-2 ${markdownEnabled ? 'bg-primary text-primary-foreground' : ''}`}
+            title={markdownEnabled ? "Markdown View" : "Plain Text View"}
+          >
+            <FontAwesomeIcon 
+              icon={markdownEnabled ? faFileCode : faFileAlt} 
+              className="h-4 w-4"
+            />
           </Button>
         </div>
       </div>
@@ -73,9 +101,17 @@ export function TabbedWindow({
           <TabsContent
             key={doc.id}
             value={doc.id}
-            className="flex-1 relative"
+            className="flex-1 relative p-4 bg-white rounded-b-lg"
           >
-            <ReactMarkdown>{doc.content}</ReactMarkdown>
+            {markdownEnabled ? (
+              <div className="markdown-content">
+                <ReactMarkdown>{doc.content}</ReactMarkdown>
+              </div>
+            ) : (
+              <pre className="whitespace-pre-wrap font-mono text-sm">
+                {doc.content}
+              </pre>
+            )}
           </TabsContent>
         ))}
       </Tabs>
