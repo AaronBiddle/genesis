@@ -6,6 +6,10 @@ node_modules/
 # Testing
 /coverage
 
+# Ignore chat files but keep the directory structure
+/backend/user-data/chats/*
+!/backend/user-data/chats/.gitkeep
+
 # Production
 /dist
 /build
