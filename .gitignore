@@ -9,6 +9,8 @@ node_modules/
 # Ignore chat files but keep the directory structure
 /backend/user-data/chats/*
 !/backend/user-data/chats/.gitkeep
+/backend/user-data/documents/*
+!/backend/user-data/documents/.gitkeep
 
 # Production
 /dist

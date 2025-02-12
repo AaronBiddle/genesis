@@ -5,9 +5,18 @@ import { TabbedWindow } from './components/TabbedWindow'
 import { ChatBox } from './components/ChatBox'
 import './App.css'
 
+interface Document {
+  id: string;
+  title: string;
+  content: string;
+}
+
 export default function App() {
   const [leftWidth, setLeftWidth] = useState(200);
   const [rightWidth, setRightWidth] = useState(400);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [activeDocument, setActiveDocument] = useState<string | null>(null);
+  const [markdownEnabled, setMarkdownEnabled] = useState(true);
 
   const MIN_WIDTH = 200;
   const MAX_WIDTH = 1000;
@@ -26,20 +35,97 @@ export default function App() {
     });
   };
 
+  const handleNewDocument = () => {
+    const newDoc = {
+      id: `doc-${Date.now()}`,
+      title: "Untitled",
+      content: ""
+    };
+    setDocuments(prev => [...prev, newDoc]);
+    setActiveDocument(newDoc.id);
+  };
+
+  const handleOpenDocument = async () => {
+    const title = prompt('Enter document name:');
+    if (title) {
+      try {
+        const response = await fetch('http://localhost:8000/load_document', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: title })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to load document');
+        }
+        
+        const data = await response.json();
+        const newDoc = {
+          id: `doc-${Date.now()}`,
+          title,
+          content: data.content
+        };
+        setDocuments(prev => [...prev, newDoc]);
+        setActiveDocument(newDoc.id);
+      } catch (error) {
+        console.error('Error loading document:', error);
+        alert('Failed to load document');
+      }
+    }
+  };
+
+  const handleCloseDocument = (id: string) => {
+    setDocuments(prev => prev.filter(doc => doc.id !== id));
+    if (activeDocument === id) {
+      const remaining = documents.filter(doc => doc.id !== id);
+      setActiveDocument(remaining.length > 0 ? remaining[0].id : null);
+    }
+  };
+
+  const handleSaveDocument = async () => {
+    if (!activeDocument) return;
+    
+    const currentDoc = documents.find(doc => doc.id === activeDocument);
+    if (!currentDoc) return;
+
+    try {
+      const response = await fetch('http://localhost:8000/save_document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: currentDoc.title,
+          content: currentDoc.content
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save document');
+      }
+
+      console.log('Document saved successfully');
+    } catch (error) {
+      console.error('Error saving document:', error);
+      alert('Failed to save document');
+    }
+  };
+
   return (
     <div className="h-screen flex bg-gray-300 text-gray-900 pt-2 pb-2">
-      {/* Left Control Panel */}
-      <ControlPanel width={leftWidth} />
-
+      <ControlPanel width={leftWidth} onOpenDocument={handleOpenDocument} />
       <ResizableDivider onResize={handleLeftResize} className="my-4" />
-
-      {/* Middle Tabbed Document Window */}
-      <TabbedWindow />
-
+      <TabbedWindow 
+        documents={documents}
+        activeDocument={activeDocument}
+        onDocumentChange={setActiveDocument}
+        onDocumentClose={handleCloseDocument}
+        onDocumentSave={handleSaveDocument}
+        markdownEnabled={markdownEnabled}
+        onMarkdownToggle={() => setMarkdownEnabled(!markdownEnabled)}
+        onNewDocument={handleNewDocument}
+        onOpenDocument={handleOpenDocument}
+      />
       <ResizableDivider onResize={handleRightResize} className="my-4" />
-
-      {/* Right Chat Box */}
       <ChatBox width={rightWidth} />
     </div>
-  )
+  );
 }
