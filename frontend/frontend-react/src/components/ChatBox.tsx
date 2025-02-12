@@ -4,41 +4,66 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { useAIChat } from '../hooks/useAIChat';
 import { MessageContainer } from './MessageContainer';
+import { useChatSettings } from '../stores/chatSettingsStore';
 
 export function ChatBox({ width }: { width: number }) {
-  const { messages, isConnected, sendPrompt, removeMessage } = useAIChat();
+  const { messages, isConnected, sendPrompt, removeMessage, saveChat, loadChat } = useAIChat();
+  const { 
+    systemPrompt,
+    temperature,
+    setSystemPrompt,
+    setTemperature 
+  } = useChatSettings();
   const [showChatSettings, setShowChatSettings] = useState(false);
-  const [temperature, setTemperature] = useState(0.7);
-  const [systemPrompt, setSystemPrompt] = useState(
-    "You are a helpful assistant. Your personality is like Data from Star Trek, but not roleplaying. Be direct, reasonable, and engaged."
-  );
   const [messageInput, setMessageInput] = useState('');
   const [chatTitle, setChatTitle] = useState("untitled chat");
+
+  const handleSaveChat = async () => {
+    try {
+      const response = await saveChat(chatTitle);
+      console.log('Chat saved:', response.saved_path);
+      setChatTitle(response.saved_path.split('/').pop()?.replace('.json', '') || chatTitle);
+    } catch (error) {
+      console.error('Failed to save chat:', error);
+    }
+  };
+
+  const handleLoadChat = async () => {
+    const filename = prompt('Enter chat filename to load:');
+    if (filename) {
+      try {
+        const data = await loadChat(filename);
+        setChatTitle(filename);
+        setSystemPrompt(data.system_prompt);
+        setTemperature(data.temperature);
+      } catch (error) {
+        console.error('Failed to load chat:', error);
+      }
+    }
+  };
 
   return (
     <Card className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" style={{ width }}>
       <CardHeader className="flex items-center justify-between p-2 border-b">
         <div className="flex items-center gap-2">
-          <select
+          <input
+            type="text"
             value={chatTitle}
-            className="w-48 border-none focus:outline-none focus:ring-1 focus:ring-gray-200 rounded px-1 pr-8 bg-transparent appearance-none cursor-pointer"
+            className="w-48 border-none focus:outline-none focus:ring-1 focus:ring-gray-200 rounded px-1 bg-transparent"
             onChange={(e) => setChatTitle(e.target.value)}
-          >
-            <option value="untitled chat">untitled chat</option>
-          </select>
+            placeholder="Chat name"
+          />
           <button 
             className="p-1 hover:bg-gray-100 rounded"
             title="Save chat"
-            onClick={() => {
-              console.log("Saving chat with title:", chatTitle);
-            }}
+            onClick={handleSaveChat}
           >
             💾
           </button>  
           <button 
             className="p-1 hover:bg-gray-100 rounded"
             title="Open chat"
-            onClick={() => {/* Add open handler */}}
+            onClick={handleLoadChat}
           >
             📂
           </button>                  
@@ -92,7 +117,7 @@ export function ChatBox({ width }: { width: number }) {
           onSubmit={(e) => {
             e.preventDefault();
             if (messageInput.trim()) {
-              sendPrompt(messageInput, systemPrompt, temperature);
+              sendPrompt(messageInput);
               setMessageInput('');
             }
           }}
@@ -110,7 +135,7 @@ export function ChatBox({ width }: { width: number }) {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   if (messageInput.trim()) {
-                    sendPrompt(messageInput, systemPrompt, temperature);
+                    sendPrompt(messageInput);
                     setMessageInput('');
                   }
                 }
@@ -120,7 +145,7 @@ export function ChatBox({ width }: { width: number }) {
               type="submit"
               onClick={() => {
                 if (messageInput.trim()) {
-                  sendPrompt(messageInput, systemPrompt, temperature);
+                  sendPrompt(messageInput);
                   setMessageInput('');
                 }
               }}

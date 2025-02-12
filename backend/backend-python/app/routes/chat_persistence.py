@@ -14,6 +14,9 @@ class ChatData(BaseModel):
     system_prompt: str
     temperature: float
 
+class LoadRequest(BaseModel):
+    filename: str
+
 @router.post("/save_chat")
 async def save_chat(data: ChatData):
     try:
@@ -54,10 +57,10 @@ async def save_chat(data: ChatData):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/load_chat")
-async def load_chat(filename: str):
+async def load_chat(data: LoadRequest):
     try:
+        filename = data.filename.strip()
         # Sanitize filename and add .json extension if missing
-        filename = filename.strip()
         if not filename.endswith(".json"):
             filename += ".json"
             
