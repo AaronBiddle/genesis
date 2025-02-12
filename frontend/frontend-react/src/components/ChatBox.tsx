@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardHeader} from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { useAIChat } from '../hooks/useAIChat';
 import { MessageContainer } from './MessageContainer';
 import { useChatSettings } from '../stores/chatSettingsStore';
+import { ChatMessage } from '../types/chat';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSave, faSpinner, faCheck, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 
 export function ChatBox({ width }: { width: number }) {
   const { messages, isConnected, sendPrompt, removeMessage, saveChat, loadChat } = useAIChat();
@@ -17,14 +20,56 @@ export function ChatBox({ width }: { width: number }) {
   const [showChatSettings, setShowChatSettings] = useState(false);
   const [messageInput, setMessageInput] = useState('');
   const [chatTitle, setChatTitle] = useState("untitled chat");
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const isInitialMount = useRef(true);
+  const prevMessagesRef = useRef<ChatMessage[]>([]);
+  const prevTitleRef = useRef(chatTitle);
+
+  // Update the isGenerating check to include "waiting for AI response" state
+  const isGenerating = messages.length > 0 && (
+    // Check if last message is empty assistant message
+    (messages[messages.length - 1].role === 'assistant' && 
+     messages[messages.length - 1].content === '') ||
+    // OR if last message is user message with no AI response yet
+    (messages[messages.length - 1].role === 'user')
+  );
+
+  // Add this condition to check for a fresh/empty session
+  const isNewSession = messages.length === 0;
+
+  // Track message changes for unsaved state
+  useEffect(() => {
+    if (isInitialMount.current) {
+      prevMessagesRef.current = messages;
+      prevTitleRef.current = chatTitle;
+      isInitialMount.current = false;
+      // If starting with empty messages, consider it a new session
+      if (messages.length === 0) {
+        setHasUnsavedChanges(false);
+      }
+      return;
+    }
+    
+    // Mark changes if either messages or title have changed
+    if (
+      JSON.stringify(messages) !== JSON.stringify(prevMessagesRef.current) ||
+      chatTitle !== prevTitleRef.current
+    ) {
+      setHasUnsavedChanges(true);
+    }
+    prevMessagesRef.current = messages;
+    prevTitleRef.current = chatTitle;
+  }, [messages, chatTitle]);
 
   const handleSaveChat = async () => {
     try {
+      setIsSaving(true);
       const response = await saveChat(chatTitle);
-      console.log('Chat saved:', response.saved_path);
+      setHasUnsavedChanges(false);
       setChatTitle(response.saved_path.split('/').pop()?.replace('.json', '') || chatTitle);
-    } catch (error) {
-      console.error('Failed to save chat:', error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -36,11 +81,21 @@ export function ChatBox({ width }: { width: number }) {
         setChatTitle(filename);
         setSystemPrompt(data.system_prompt);
         setTemperature(data.temperature);
+        setHasUnsavedChanges(false);
       } catch (error) {
         console.error('Failed to load chat:', error);
       }
     }
   };
+
+  // Save button state conditions
+  const saveDisabled = isSaving || isGenerating || !hasUnsavedChanges;
+
+  // Remove the SaveIcon SVG component and update the button icon logic
+  const buttonIcon = isSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : 
+                    hasUnsavedChanges ? <FontAwesomeIcon icon={faSave} /> : 
+                    isNewSession ? <FontAwesomeIcon icon={faSave} /> : 
+                    <FontAwesomeIcon icon={faCheck} />;
 
   return (
     <Card className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" style={{ width }}>
@@ -54,18 +109,27 @@ export function ChatBox({ width }: { width: number }) {
             placeholder="Chat name"
           />
           <button 
-            className="p-1 hover:bg-gray-100 rounded"
-            title="Save chat"
+            className={`p-1 rounded transition-colors ${
+              saveDisabled ? 'text-gray-200 hover:text-gray-200' : 'hover:bg-gray-100 text-gray-700'
+            }`}
+            title={
+              isNewSession ? 'No messages to save' :
+              isGenerating ? 'Cannot save during generation' :
+              isSaving ? 'Saving...' :
+              hasUnsavedChanges ? 'Save changes' :
+              'All changes saved'
+            }
             onClick={handleSaveChat}
+            disabled={saveDisabled}
           >
-            💾
+            {buttonIcon}
           </button>  
           <button 
             className="p-1 hover:bg-gray-100 rounded"
             title="Open chat"
             onClick={handleLoadChat}
           >
-            📂
+            <FontAwesomeIcon icon={faFolderOpen} />
           </button>                  
         </div>
         
