@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import ReactMarkdown from 'react-markdown';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSave, faXmark, faFileAlt, faFileCode } from '@fortawesome/free-solid-svg-icons';
+import { faSave, faFileAlt, faFileCode } from '@fortawesome/free-solid-svg-icons';
 import { Button } from './ui/button';
 
 interface TabbedWindowProps {
@@ -62,6 +62,7 @@ export function TabbedWindow({
             <TabsTrigger
               key={doc.id}
               value={doc.id}
+              onClose={() => onDocumentClose(doc.id)}
             >
               {doc.title}
             </TabsTrigger>
