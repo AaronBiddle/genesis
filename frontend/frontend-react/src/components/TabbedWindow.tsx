@@ -2,45 +2,19 @@ import { motion } from 'framer-motion';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import ReactMarkdown from 'react-markdown';
 
-export function TabbedWindow() {
-  const markdownContent = `# Main Heading
-
-## Getting Started
-Here's a nested bullet list:
-- First level item
-  - Second level item
-    - Third level item with **bold text**
-  - Another second level
-- First level with *italic text*
-  - Second level with \`inline code\`
-    - Third level item
-
-## Numbered Lists
-1. First level item
-   1. Second level item
-      1. Third level item
-   2. Another second level
-2. Back to first level
-   1. More nested items
-      1. Deep nested item
-
-### Code Examples
-Here's a simple TypeScript function:
-
-\`\`\`typescript
-function hello(name: string) {
-  return "Hello, " + name;
+interface TabbedWindowProps {
+  documents: Array<{ id: string; title: string; content: string }>;
+  activeDocument: string | null;
+  onDocumentChange: (id: string) => void;
+  onDocumentClose: (id: string) => void;
 }
-\`\`\`
 
-#### Additional Notes
-You can also use markdown for:
-- Links
-- Tables
-- Block quotes
-- And more!
-`;
-
+export function TabbedWindow({ 
+  documents, 
+  activeDocument, 
+  onDocumentChange, 
+  onDocumentClose 
+}: TabbedWindowProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -48,22 +22,34 @@ You can also use markdown for:
       transition={{ duration: 0.6 }}
       className="rounded-2xl bg-white shadow-md flex flex-col mx-1 my-2 flex-grow"
     >
-      <Tabs defaultValue="tab1">
+      <Tabs value={activeDocument || ''} onValueChange={onDocumentChange}>
         <TabsList className="bg-gray-100">
-          <TabsTrigger value="tab1">Tab One</TabsTrigger>
-          <TabsTrigger value="tab2">Tab Two</TabsTrigger>
-          <TabsTrigger value="tab3">Tab Three</TabsTrigger>
+          {documents.map(doc => (
+            <TabsTrigger key={doc.id} value={doc.id} className="relative group">
+              {doc.title}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDocumentClose(doc.id);
+                }}
+                className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                ×
+              </button>
+            </TabsTrigger>
+          ))}
         </TabsList>
-        <TabsContent value="tab1" className="p-4 markdown-content">
-          <ReactMarkdown>{markdownContent}</ReactMarkdown>
-        </TabsContent>
-        <TabsContent value="tab2" className="p-4">
-          <p>Content of Tab Two</p>
-        </TabsContent>
-        <TabsContent value="tab3" className="p-4">
-          <p>Content of Tab Three</p>
-        </TabsContent>
+        {documents.map(doc => (
+          <TabsContent key={doc.id} value={doc.id} className="p-4 markdown-content">
+            <ReactMarkdown>{doc.content}</ReactMarkdown>
+          </TabsContent>
+        ))}
+        {documents.length === 0 && (
+          <div className="p-4 text-center text-gray-500">
+            No documents open
+          </div>
+        )}
       </Tabs>
     </motion.div>
   );
-} 
+}
