@@ -40,7 +40,7 @@ const TabsTrigger = React.forwardRef<
           e.stopPropagation();
           onClose();
         }}
-        className="ml-2 opacity-0 group-data-[state=active]:opacity-100 hover:bg-gray-200 rounded-full h-4 w-4 inline-flex items-center justify-center transition-opacity"
+        className="ml-2 opacity-0 group-hover:opacity-100 group-data-[state=active]:opacity-100 hover:bg-gray-200 rounded-full h-4 w-4 inline-flex items-center justify-center transition-opacity"
         aria-label="Close tab"
       >
         ×
