@@ -21,7 +21,7 @@ export function ChatBox({ width }: { width: number }) {
         <div className="flex items-center gap-2">
           <select
             value={chatTitle}
-            className="border-none focus:outline-none focus:ring-1 focus:ring-gray-200 rounded px-1 pr-8 bg-transparent appearance-none cursor-pointer"
+            className="w-48 border-none focus:outline-none focus:ring-1 focus:ring-gray-200 rounded px-1 pr-8 bg-transparent appearance-none cursor-pointer"
             onChange={(e) => setChatTitle(e.target.value)}
           >
             <option value="untitled chat">untitled chat</option>
