@@ -2,3 +2,4 @@ git show --name-only HEAD
 git fetch			# make local git match github
 git reset --hard origin/main   # git pull origin main in bulldozer mode
 git log --pretty=format:"%h - %s"   # show commit history
+git ls-tree -r HEAD --name-only
