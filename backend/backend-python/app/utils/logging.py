@@ -9,7 +9,7 @@ class LogLevel(IntEnum):
     VERBOSE = 3
 
 # Set the current log level
-CURRENT_LOG_LEVEL = LogLevel.DEBUGGING
+CURRENT_LOG_LEVEL = LogLevel.MINIMUM
 
 def get_timestamp():
     return datetime.now().strftime('%H:%M:%S.%f')[:-3]

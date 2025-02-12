@@ -8,6 +8,10 @@ router = APIRouter()
 class DocumentRequest(BaseModel):
     filename: str
 
+class SaveDocumentRequest(BaseModel):
+    filename: str
+    content: str
+
 # Create a documents directory next to the chats directory
 DOCUMENTS_DIR = Path("/user-data/documents")
 DOCUMENTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -43,4 +47,30 @@ async def load_document(request: DocumentRequest):
         
     except Exception as e:
         log(LogLevel.DEBUGGING, f"📄 Error loading document: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/save_document")
+async def save_document(request: SaveDocumentRequest):
+    try:
+        log(LogLevel.DEBUGGING, f"📄 Attempting to save document: {request.filename}")
+        
+        # Sanitize filename and ensure it has an extension
+        filename = request.filename.strip()
+        if not any(filename.endswith(ext) for ext in ['.txt', '.md']):
+            filename += '.md'  # Default to markdown
+            
+        # Prevent path traversal
+        if "/" in filename or "\\" in filename:
+            raise ValueError("Invalid filename")
+            
+        file_path = DOCUMENTS_DIR / filename
+        
+        with open(file_path, "w", encoding='utf-8') as f:
+            f.write(request.content)
+            
+        log(LogLevel.DEBUGGING, f"📄 Successfully saved document: {filename}")
+        return {"message": "Document saved successfully"}
+        
+    except Exception as e:
+        log(LogLevel.DEBUGGING, f"📄 Error saving document: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))

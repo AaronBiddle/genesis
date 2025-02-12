@@ -1,19 +1,23 @@
 import { motion } from 'framer-motion';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import ReactMarkdown from 'react-markdown';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSave, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 interface TabbedWindowProps {
   documents: Array<{ id: string; title: string; content: string }>;
   activeDocument: string | null;
   onDocumentChange: (id: string) => void;
   onDocumentClose: (id: string) => void;
+  onDocumentSave?: () => void;
 }
 
 export function TabbedWindow({ 
   documents, 
   activeDocument, 
   onDocumentChange, 
-  onDocumentClose 
+  onDocumentClose,
+  onDocumentSave 
 }: TabbedWindowProps) {
   return (
     <motion.div
@@ -23,22 +27,33 @@ export function TabbedWindow({
       className="rounded-2xl bg-white shadow-md flex flex-col mx-1 my-2 flex-grow"
     >
       <Tabs value={activeDocument || ''} onValueChange={onDocumentChange}>
-        <TabsList className="bg-gray-100">
-          {documents.map(doc => (
-            <TabsTrigger key={doc.id} value={doc.id} className="relative group">
-              {doc.title}
+        <div className="flex items-center justify-between bg-gray-100 rounded-t-2xl pr-2">
+          <TabsList className="bg-transparent flex-grow">
+            {documents.map(doc => (
+              <TabsTrigger key={doc.id} value={doc.id}>
+                {doc.title}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {documents.length > 0 && (
+            <div className="flex gap-2">
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDocumentClose(doc.id);
-                }}
-                className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={onDocumentSave}
+                className="p-2 hover:bg-gray-200 rounded-lg text-gray-600 hover:text-gray-800 transition-colors"
+                title="Save document"
               >
-                ×
+                <FontAwesomeIcon icon={faSave} />
               </button>
-            </TabsTrigger>
-          ))}
-        </TabsList>
+              <button
+                onClick={() => activeDocument && onDocumentClose(activeDocument)}
+                className="p-2 hover:bg-red-100 rounded-lg text-red-500 hover:text-red-700 transition-colors"
+                title="Close document"
+              >
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+            </div>
+          )}
+        </div>
         {documents.map(doc => (
           <TabsContent key={doc.id} value={doc.id} className="p-4 markdown-content">
             <ReactMarkdown>{doc.content}</ReactMarkdown>
