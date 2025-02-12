@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { ChatMessage } from '../types/chat';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCode, faFileAlt } from '@fortawesome/free-solid-svg-icons';
 
 interface MessageContainerProps {
   message: ChatMessage;
@@ -30,7 +32,7 @@ export function MessageContainer({ message, index, onRemove }: MessageContainerP
               className="w-6 h-6 rounded-full bg-gray-500 text-white flex items-center justify-center hover:bg-gray-600 transition-colors"
               title="Toggle raw markdown"
             >
-              📄
+              <FontAwesomeIcon icon={showRaw ? faCode : faFileAlt} className="h-3 w-3" />
             </button>
             <button
               onClick={() => onRemove(index)}

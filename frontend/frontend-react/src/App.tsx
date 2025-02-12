@@ -16,6 +16,7 @@ export default function App() {
   const [rightWidth, setRightWidth] = useState(400);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [activeDocument, setActiveDocument] = useState<string | null>(null);
+  const [markdownEnabled, setMarkdownEnabled] = useState(true);
 
   const MIN_WIDTH = 200;
   const MAX_WIDTH = 1000;
@@ -90,6 +91,8 @@ export default function App() {
         onDocumentChange={setActiveDocument}
         onDocumentClose={handleCloseDocument}
         onDocumentSave={handleSaveDocument}
+        markdownEnabled={markdownEnabled}
+        onMarkdownToggle={() => setMarkdownEnabled(!markdownEnabled)}
       />
       <ResizableDivider onResize={handleRightResize} className="my-4" />
       <ChatBox width={rightWidth} />

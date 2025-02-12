@@ -2,14 +2,17 @@ import { motion } from 'framer-motion';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import ReactMarkdown from 'react-markdown';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSave, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faSave, faXmark, faFileAlt, faFileCode } from '@fortawesome/free-solid-svg-icons';
+import { Button } from './ui/button';
 
 interface TabbedWindowProps {
   documents: Array<{ id: string; title: string; content: string }>;
   activeDocument: string | null;
   onDocumentChange: (id: string) => void;
   onDocumentClose: (id: string) => void;
-  onDocumentSave?: () => void;
+  onDocumentSave: () => void;
+  markdownEnabled: boolean;
+  onMarkdownToggle: () => void;
 }
 
 export function TabbedWindow({ 
@@ -17,7 +20,9 @@ export function TabbedWindow({
   activeDocument, 
   onDocumentChange, 
   onDocumentClose,
-  onDocumentSave 
+  onDocumentSave,
+  markdownEnabled,
+  onMarkdownToggle
 }: TabbedWindowProps) {
   return (
     <motion.div
@@ -26,44 +31,52 @@ export function TabbedWindow({
       transition={{ duration: 0.6 }}
       className="rounded-2xl bg-white shadow-md flex flex-col mx-1 my-2 flex-grow"
     >
-      <Tabs value={activeDocument || ''} onValueChange={onDocumentChange}>
-        <div className="flex items-center justify-between bg-gray-100 rounded-t-2xl pr-2">
-          <TabsList className="bg-transparent flex-grow">
-            {documents.map(doc => (
-              <TabsTrigger key={doc.id} value={doc.id}>
-                {doc.title}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          {documents.length > 0 && (
-            <div className="flex gap-2">
-              <button
-                onClick={onDocumentSave}
-                className="p-2 hover:bg-gray-200 rounded-lg text-gray-600 hover:text-gray-800 transition-colors"
-                title="Save document"
-              >
-                <FontAwesomeIcon icon={faSave} />
-              </button>
-              <button
-                onClick={() => activeDocument && onDocumentClose(activeDocument)}
-                className="p-2 hover:bg-red-100 rounded-lg text-red-500 hover:text-red-700 transition-colors"
-                title="Close document"
-              >
-                <FontAwesomeIcon icon={faXmark} />
-              </button>
-            </div>
-          )}
+      <div className="flex justify-between items-center mb-2">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={onMarkdownToggle}
+            className={`p-2 ${markdownEnabled ? 'bg-primary text-primary-foreground' : ''}`}
+          >
+            <FontAwesomeIcon 
+              icon={markdownEnabled ? faFileCode : faFileAlt} 
+              className="h-4 w-4"
+            />
+          </Button>
+          <Button
+            variant="outline"
+            onClick={onDocumentSave}
+            className="p-2"
+          >
+            <FontAwesomeIcon icon={faSave} className="h-4 w-4" />
+          </Button>
         </div>
+      </div>
+      <Tabs
+        value={activeDocument || ''}
+        onValueChange={onDocumentChange}
+        className="flex-1 flex flex-col"
+      >
+        <TabsList>
+          {documents.map(doc => (
+            <TabsTrigger
+              key={doc.id}
+              value={doc.id}
+            >
+              {doc.title}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        
         {documents.map(doc => (
-          <TabsContent key={doc.id} value={doc.id} className="p-4 markdown-content">
+          <TabsContent
+            key={doc.id}
+            value={doc.id}
+            className="flex-1 relative"
+          >
             <ReactMarkdown>{doc.content}</ReactMarkdown>
           </TabsContent>
         ))}
-        {documents.length === 0 && (
-          <div className="p-4 text-center text-gray-500">
-            No documents open
-          </div>
-        )}
       </Tabs>
     </motion.div>
   );

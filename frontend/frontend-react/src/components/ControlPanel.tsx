@@ -30,6 +30,10 @@ export function ControlPanel({ width, onOpenDocument }: ControlPanelProps) {
     }
   };
 
+  const handleNewDocument = () => {
+    onOpenDocument("Untitled", "");
+  };
+
   return (
     <Card className="shadow-md rounded-2xl mx-1 my-2" style={{ width }}>
       <CardHeader>
@@ -37,6 +41,9 @@ export function ControlPanel({ width, onOpenDocument }: ControlPanelProps) {
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-2">
+          <Button variant="outline" onClick={handleNewDocument}>
+            New Document
+          </Button>
           <Button variant="outline" onClick={handleOpenClick}>
             Open Document
           </Button>
