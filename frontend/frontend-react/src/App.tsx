@@ -34,7 +34,7 @@ export default function App() {
     });
   };
 
-  const handleOpenDocument = (title: string, content: string) => {
+  const handleOpenDocument = async (title: string, content: string) => {
     const newDoc = {
       id: `doc-${Date.now()}`,
       title,
@@ -52,6 +52,34 @@ export default function App() {
     }
   };
 
+  const handleSaveDocument = async () => {
+    if (!activeDocument) return;
+    
+    const currentDoc = documents.find(doc => doc.id === activeDocument);
+    if (!currentDoc) return;
+
+    try {
+      const response = await fetch('http://localhost:8000/save_document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: currentDoc.title,
+          content: currentDoc.content
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save document');
+      }
+
+      // Could add a visual confirmation here
+      console.log('Document saved successfully');
+    } catch (error) {
+      console.error('Error saving document:', error);
+      alert('Failed to save document');
+    }
+  };
+
   return (
     <div className="h-screen flex bg-gray-300 text-gray-900 pt-2 pb-2">
       <ControlPanel width={leftWidth} onOpenDocument={handleOpenDocument} />
@@ -61,9 +89,10 @@ export default function App() {
         activeDocument={activeDocument}
         onDocumentChange={setActiveDocument}
         onDocumentClose={handleCloseDocument}
+        onDocumentSave={handleSaveDocument}
       />
       <ResizableDivider onResize={handleRightResize} className="my-4" />
       <ChatBox width={rightWidth} />
     </div>
-  )
+  );
 }
