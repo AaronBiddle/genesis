@@ -6,7 +6,7 @@ from datetime import datetime
 from utils.logging import LogLevel, log
 
 router = APIRouter()
-CHATS_DIR = Path("user-data/chats")
+CHATS_DIR = Path("/user-data/chats")
 
 class ChatData(BaseModel):
     filename: str
