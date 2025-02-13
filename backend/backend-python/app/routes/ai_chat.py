@@ -1,7 +1,7 @@
 from fastapi import APIRouter, WebSocket
 import json
 from services.openai_client import stream_chat_response
-from utils.logging import LogLevel, log, debug_log
+from utils.logging import LogLevel, log, debug_log, LogPrefix
 
 router = APIRouter()
 
@@ -10,13 +10,13 @@ DEBUG_CHAT = False
 @router.websocket("/ws/chat")
 @debug_log(LogLevel.DEBUGGING)
 async def ai_chat_endpoint(websocket: WebSocket):
-    log(LogLevel.MINIMUM, "🐍 WebSocket connection accepted")
+    log(LogLevel.MINIMUM, "WebSocket connection accepted", LogPrefix.CHAT)
     await websocket.accept()
     try:
         while True:
             data_text = await websocket.receive_text()
-            log(LogLevel.MINIMUM, f"🐍 Received message ({len(data_text)} bytes)")
-            log(LogLevel.DEBUGGING, f"🐍 Received message: {data_text}")
+            log(LogLevel.MINIMUM, f"Received message ({len(data_text)} bytes)", LogPrefix.CHAT)
+            log(LogLevel.DEBUGGING, f"Received message: {data_text}", LogPrefix.DEBUG)
             
             try:
                 data = json.loads(data_text)
@@ -24,7 +24,7 @@ async def ai_chat_endpoint(websocket: WebSocket):
                 history = data.get("history", [])
                 
                 if not prompt:
-                    log(LogLevel.MINIMUM, "🐍 Error: No prompt provided")
+                    log(LogLevel.MINIMUM, "Error: No prompt provided", LogPrefix.ERROR)
                     await websocket.send_text(json.dumps({"error": "No prompt provided."}))
                     continue
                 

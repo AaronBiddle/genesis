@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from pathlib import Path
 import json
 from datetime import datetime
-from utils.logging import LogLevel, log
+from utils.logging import LogLevel, log, LogPrefix
 
 router = APIRouter()
 CHATS_DIR = Path("/user-data/chats")
@@ -49,11 +49,11 @@ async def save_chat(data: ChatData):
         with open(chat_path, "w") as f:
             json.dump(chat_data, f, indent=2)
             
-        log(LogLevel.MINIMUM, f"💾 Chat saved to {chat_path}")
+        log(LogLevel.MINIMUM, f"Chat saved to {chat_path}", LogPrefix.FILE)
         return {"status": "success", "saved_path": str(chat_path)}
         
     except Exception as e:
-        log(LogLevel.MINIMUM, f"💾 Error saving chat: {str(e)}")
+        log(LogLevel.MINIMUM, f"Error saving chat: {str(e)}", LogPrefix.ERROR)
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/load_chat")

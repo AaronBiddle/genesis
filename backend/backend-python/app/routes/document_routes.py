@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Body
 from pydantic import BaseModel
 from pathlib import Path
-from utils.logging import log, LogLevel
+from utils.logging import log, LogLevel, LogPrefix
 
 router = APIRouter()
 
@@ -52,7 +52,7 @@ async def load_document(request: DocumentRequest):
 @router.post("/save_document")
 async def save_document(request: SaveDocumentRequest):
     try:
-        log(LogLevel.DEBUGGING, f"📄 Attempting to save document: {request.filename}")
+        log(LogLevel.DEBUGGING, f"Attempting to save document: {request.filename}", LogPrefix.FILE)
         
         # Sanitize filename and ensure it has an extension
         filename = request.filename.strip()
@@ -68,9 +68,9 @@ async def save_document(request: SaveDocumentRequest):
         with open(file_path, "w", encoding='utf-8') as f:
             f.write(request.content)
             
-        log(LogLevel.DEBUGGING, f"📄 Successfully saved document: {filename}")
+        log(LogLevel.DEBUGGING, f"Successfully saved document: {filename}", LogPrefix.FILE)
         return {"message": "Document saved successfully"}
         
     except Exception as e:
-        log(LogLevel.DEBUGGING, f"📄 Error saving document: {str(e)}")
+        log(LogLevel.DEBUGGING, f"Error saving document: {str(e)}", LogPrefix.ERROR)
         raise HTTPException(status_code=400, detail=str(e))
