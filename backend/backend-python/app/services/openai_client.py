@@ -4,6 +4,7 @@ from typing import AsyncGenerator, Any
 from openai import OpenAI
 from dotenv import load_dotenv
 from utils.logging import LogLevel, log, LogPrefix
+import json
 
 # Load environment variables from .env file.
 load_dotenv()
@@ -58,7 +59,7 @@ def stream_chat_completion_sync(prompt: str):
         stream=True  # Enable streaming
     )
 
-async def stream_chat_response(prompt: str, history: list = None) -> AsyncGenerator[tuple[str, Any], None]:
+async def stream_chat_response(prompt: str, history: list = None, temperature: float = TEMPERATURE) -> AsyncGenerator[tuple[str, Any], None]:
     """
     Asynchronously streams chat completion using the API.
     Returns tuples of (content_chunk, usage_stats).
@@ -67,14 +68,24 @@ async def stream_chat_response(prompt: str, history: list = None) -> AsyncGenera
         messages = []
         if history:
             messages.extend(history)
+        else:
+            messages.append({"role": "system", "content": "You are a helpful assistant."})
+            
         messages.append({"role": "user", "content": prompt})
 
-        log(LogLevel.DEBUGGING, "Starting chat stream", LogPrefix.AI)
+        # Create truncated version of messages for logging
+        debug_messages = [
+            {
+                "role": msg["role"],
+                "content": msg["content"] if msg["role"] == "system" else (msg["content"][:10] + "...")
+            } for msg in messages
+        ]
+        log(LogLevel.DEBUGGING, f"Sending messages (temp={temperature}): {json.dumps(debug_messages)}", LogPrefix.AI)
         
         response = client.chat.completions.create(
             messages=messages,
             model=MODEL,
-            temperature=TEMPERATURE,
+            temperature=temperature,
             stream=True
         )
 
