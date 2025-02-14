@@ -2,10 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { ChatMessage } from '../types/chat';
 import { useWebSocket } from './useWebSocket';
 import { useChatSettings } from '../stores/chatSettingsStore';
-
-const DEBUG_CHAT = false
+import { useLoggingStore, LogLevel } from '../stores/loggingStore';
 
 export function useAIChat() {
+  const log = useLoggingStore(state => state.log);
+  const namespace = '🤖 AI Chat:';
+  
   // Pre-populate the chat history with a test markdown message.
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
@@ -22,13 +24,13 @@ export function useAIChat() {
 
   useEffect(() => {
     subscribeToMessages((data) => {
-      if (DEBUG_CHAT) console.log('🤖 AI Chat: Processing chat data:', data);
+      log(LogLevel.DEBUG, namespace, 'Processing chat data:', data);
       
       if (data.channel === "chatStream") {
         if (data.token) {
           const index = currentMessageIndexRef.current;
           if (index !== null) {
-            if (DEBUG_CHAT) console.log('🤖 AI Chat: Adding token to message:', data.token);
+            log(LogLevel.DEBUG, namespace, 'Adding token to message:', data.token);
             setMessages((prev) => {
               const newMessages = [...prev];
               const currentMsg = newMessages[index];
@@ -41,11 +43,11 @@ export function useAIChat() {
           }
         }
         if (data.done === true) {
-          if (DEBUG_CHAT) console.log('🤖 AI Chat: Chat stream complete');
+          log(LogLevel.DEBUG, namespace, 'Chat stream complete');
           currentMessageIndexRef.current = null;
         }
       } else if (data.error) {
-        if (DEBUG_CHAT) console.error("AI Chat: Error from server:", data.error);
+        log(LogLevel.ERROR, namespace, "Error from server:", data.error);
       }
     });
   }, [subscribeToMessages]);
@@ -53,7 +55,7 @@ export function useAIChat() {
   // Sends the prompt to the AI API and adds a new chat message in state.
   const sendPrompt = (prompt: string) => {
     if (isConnected) {
-      if (DEBUG_CHAT) console.log('🤖 Sending prompt:', prompt);
+      log(LogLevel.DEBUG, namespace, 'Sending prompt:', prompt);
       setMessages((prev) => {
         const newMessages: ChatMessage[] = [
           ...prev,
@@ -119,6 +121,7 @@ export function useAIChat() {
 
   return { 
     messages, 
+    setMessages,
     isConnected, 
     sendPrompt,
     removeMessage,

@@ -7,10 +7,10 @@ import { MessageContainer } from './MessageContainer';
 import { useChatSettings } from '../stores/chatSettingsStore';
 import { ChatMessage } from '../types/chat';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSave, faSpinner, faCheck, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
+import { faSave, faSpinner, faCheck, faFolderOpen, faFileCirclePlus } from '@fortawesome/free-solid-svg-icons';
 
 export function ChatBox({ width }: { width: number }) {
-  const { messages, isConnected, sendPrompt, removeMessage, saveChat, loadChat } = useAIChat();
+  const { messages, setMessages, isConnected, sendPrompt, removeMessage, saveChat, loadChat } = useAIChat();
   const { 
     systemPrompt,
     temperature,
@@ -25,6 +25,7 @@ export function ChatBox({ width }: { width: number }) {
   const isInitialMount = useRef(true);
   const prevMessagesRef = useRef<ChatMessage[]>([]);
   const prevTitleRef = useRef(chatTitle);
+  const [availableChats, setAvailableChats] = useState<string[]>([]);
 
   // Update the isGenerating check to include "waiting for AI response" state
   const isGenerating = messages.length > 0 && (
@@ -62,30 +63,64 @@ export function ChatBox({ width }: { width: number }) {
     prevTitleRef.current = chatTitle;
   }, [messages, chatTitle]);
 
+  // Add useEffect to fetch available chats on mount
+  useEffect(() => {
+    const fetchChats = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/list_chats');
+        if (!response.ok) {
+          throw new Error('Failed to fetch chats');
+        }
+        const data = await response.json();
+        setAvailableChats(data.chats.map((chat: string) => chat.replace(/\.json$/, "")));
+      } catch (error) {
+        console.error('Error fetching chats:', error);
+      }
+    };
+
+    fetchChats();
+  }, []);
+
   const handleSaveChat = async () => {
     try {
       setIsSaving(true);
       const response = await saveChat(chatTitle);
       setHasUnsavedChanges(false);
-      setChatTitle(response.saved_path.split('/').pop()?.replace('.json', '') || chatTitle);
+      const savedTitle = response.saved_path.split('/').pop()?.replace('.json', '') || chatTitle;
+      setChatTitle(savedTitle);
+      
+      // Refresh the available chats list
+      const chatsResponse = await fetch('http://localhost:8000/list_chats');
+      if (chatsResponse.ok) {
+        const data = await chatsResponse.json();
+        setAvailableChats(data.chats.map((chat: string) => chat.replace(/\.json$/, "")));
+      }
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleLoadChat = async () => {
-    const filename = prompt('Enter chat filename to load:');
-    if (filename) {
-      try {
-        const data = await loadChat(filename);
-        setChatTitle(filename);
-        setSystemPrompt(data.system_prompt);
-        setTemperature(data.temperature);
-        setHasUnsavedChanges(false);
-      } catch (error) {
-        console.error('Failed to load chat:', error);
-      }
+    try {
+      const data = await loadChat(chatTitle);
+      setSystemPrompt(data.system_prompt);
+      setTemperature(data.temperature);
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error('Failed to load chat:', error);
     }
+  };
+
+  const handleNewChat = () => {
+    // Clear messages
+    setMessages([]);
+    // Reset title
+    setChatTitle("untitled chat");
+    // Reset to default system prompt and temperature
+    setSystemPrompt("You are a helpful assistant...");
+    setTemperature(0.7);
+    // Reset unsaved changes flag
+    setHasUnsavedChanges(false);
   };
 
   // Save button state conditions
@@ -102,12 +137,26 @@ export function ChatBox({ width }: { width: number }) {
       <CardHeader className="flex items-center justify-between p-2 border-b">
         <div className="flex items-center gap-2">
           <input
-            type="text"
+            list="available-chats"
             value={chatTitle}
-            className="w-48 border-none focus:outline-none focus:ring-1 focus:ring-gray-200 rounded px-1 bg-transparent"
             onChange={(e) => setChatTitle(e.target.value)}
+            className="w-48 border-none focus:outline-none focus:ring-1 focus:ring-gray-200 rounded px-1 bg-transparent"
             placeholder="Chat name"
           />
+          <datalist id="available-chats">
+            <option value="untitled chat" />
+            {availableChats.map((chat) => (
+              <option key={chat} value={chat.replace(/\.json$/, "")} />
+            ))}
+          </datalist>
+          
+          <button 
+            className="p-1 hover:bg-gray-100 rounded text-gray-700"
+            title="New chat"
+            onClick={handleNewChat}
+          >
+            <FontAwesomeIcon icon={faFileCirclePlus} />
+          </button>
           <button 
             className={`p-1 rounded transition-colors ${
               saveDisabled ? 'text-gray-200 hover:text-gray-200' : 'hover:bg-gray-100 text-gray-700'
@@ -123,14 +172,14 @@ export function ChatBox({ width }: { width: number }) {
             disabled={saveDisabled}
           >
             {buttonIcon}
-          </button>  
+          </button>
           <button 
             className="p-1 hover:bg-gray-100 rounded"
             title="Open chat"
             onClick={handleLoadChat}
           >
             <FontAwesomeIcon icon={faFolderOpen} />
-          </button>                  
+          </button>
         </div>
         
         <div className="flex items-center gap-2">

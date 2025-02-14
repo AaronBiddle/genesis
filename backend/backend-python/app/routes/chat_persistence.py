@@ -80,4 +80,15 @@ async def load_chat(data: LoadRequest):
         
     except Exception as e:
         log(LogLevel.MINIMUM, f"💾 Error loading chat: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e)) 
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/list_chats")
+async def list_chats():
+    try:
+        CHATS_DIR.mkdir(parents=True, exist_ok=True)
+        chat_files = [f.name for f in CHATS_DIR.glob("*.json")]
+        log(LogLevel.DEBUGGING, f"📄 Found chat files: {chat_files}", LogPrefix.FILE)
+        return {"chats": chat_files}
+    except Exception as e:
+        log(LogLevel.MINIMUM, f"Error listing chats: {str(e)}", LogPrefix.ERROR)
+        raise HTTPException(status_code=500, detail=str(e)) 

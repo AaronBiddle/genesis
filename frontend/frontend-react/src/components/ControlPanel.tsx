@@ -1,38 +1,8 @@
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
-import { Button } from './ui/button';
+import { useLoggingStore, LogLevel } from '../stores/loggingStore';
 
-interface ControlPanelProps {
-  width: number;
-  onOpenDocument: (title: string, content: string) => void;
-}
-
-export function ControlPanel({ width, onOpenDocument }: ControlPanelProps) {
-  const handleOpenClick = async () => {
-    const title = prompt('Enter document name:');
-    if (title) {
-      try {
-        const response = await fetch('http://localhost:8000/load_document', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: title })
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to load document');
-        }
-        
-        const data = await response.json();
-        onOpenDocument(title, data.content);
-      } catch (error) {
-        console.error('Error loading document:', error);
-        alert('Failed to load document');
-      }
-    }
-  };
-
-  const handleNewDocument = () => {
-    onOpenDocument("Untitled", "");
-  };
+export function ControlPanel({ width }: { width: number }) {
+  const { level, setLevel } = useLoggingStore();
 
   return (
     <Card className="shadow-md rounded-2xl mx-1 my-2" style={{ width }}>
@@ -40,13 +10,23 @@ export function ControlPanel({ width, onOpenDocument }: ControlPanelProps) {
         <CardTitle>Control Panel</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col gap-2">
-          <Button variant="outline" onClick={handleNewDocument}>
-            New Document
-          </Button>
-          <Button variant="outline" onClick={handleOpenClick}>
-            Open Document
-          </Button>
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Log Level</label>
+            <select
+              value={level}
+              onChange={(e) => setLevel(Number(e.target.value))}
+              className="w-full p-2 border rounded-lg bg-white"
+            >
+              {Object.entries(LogLevel)
+                .filter(([key]) => isNaN(Number(key))) // Only show string keys
+                .map(([key, value]) => (
+                  <option key={key} value={value}>
+                    {key}
+                  </option>
+                ))}
+            </select>
+          </div>
         </div>
       </CardContent>
     </Card>
