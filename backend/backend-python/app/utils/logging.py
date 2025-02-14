@@ -1,6 +1,7 @@
 from enum import Enum
 from datetime import datetime
 import functools
+import os
 
 class LogLevel(Enum):
     MINIMUM = 1
@@ -14,8 +15,8 @@ class LogPrefix(str, Enum):
     AI = "🤖"
     DEBUG = "🔍"
 
-# Set the current log level
-CURRENT_LOG_LEVEL = LogLevel.DEBUGGING
+# Always read from environment variable
+CURRENT_LOG_LEVEL = LogLevel(int(os.getenv('LOG_LEVEL', '1')))
 
 def get_timestamp():
     return datetime.now().strftime('%H:%M:%S.%f')[:-3]
