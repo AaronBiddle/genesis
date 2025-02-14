@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "First generate requirements.txt from within the Docker container:"
+echo "Before running this script, you must first generate requirements.txt from within the Docker container."
 
 # Navigate to the 'app' directory
 cd ../app
