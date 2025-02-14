@@ -24,13 +24,10 @@ export function useAIChat() {
 
   useEffect(() => {
     subscribeToMessages((data) => {
-      log(LogLevel.DEBUG, namespace, 'Processing chat data:', data);
-      
       if (data.channel === "chatStream") {
         if (data.token) {
           const index = currentMessageIndexRef.current;
           if (index !== null) {
-            log(LogLevel.DEBUG, namespace, 'Adding token to message:', data.token);
             setMessages((prev) => {
               const newMessages = [...prev];
               const currentMsg = newMessages[index];
@@ -43,7 +40,7 @@ export function useAIChat() {
           }
         }
         if (data.done === true) {
-          log(LogLevel.DEBUG, namespace, 'Chat stream complete');
+          log(LogLevel.DEBUG, namespace, 'Chat stream complete:', data);
           currentMessageIndexRef.current = null;
         }
       } else if (data.error) {

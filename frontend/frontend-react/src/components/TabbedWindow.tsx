@@ -1,3 +1,4 @@
+import { useFileList } from '../hooks/useFileList';
 import { motion } from 'framer-motion';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import ReactMarkdown from 'react-markdown';
@@ -6,8 +7,7 @@ import {
   faFileCode, 
   faFileAlt, 
   faSave, 
-  faFileCirclePlus, 
-  faFolderOpen 
+  faFileCirclePlus
 } from '@fortawesome/free-solid-svg-icons';
 import { Button } from './ui/button';
 
@@ -20,7 +20,7 @@ interface TabbedWindowProps {
   markdownEnabled: boolean;
   onMarkdownToggle: () => void;
   onNewDocument: () => void;
-  onOpenDocument: () => void;
+  onOpenDocument: (filename: string) => void;
 }
 
 export function TabbedWindow({ 
@@ -34,6 +34,13 @@ export function TabbedWindow({
   onNewDocument,
   onOpenDocument
 }: TabbedWindowProps) {
+  const { files, isLoading } = useFileList();
+  
+  // Add a file menu or dropdown
+  const handleFileSelect = (filename: string) => {
+    onOpenDocument(filename);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -51,14 +58,21 @@ export function TabbedWindow({
           >
             <FontAwesomeIcon icon={faFileCirclePlus} className="h-4 w-4" />
           </Button>
-          <Button
-            variant="outline"
-            onClick={onOpenDocument}
-            className="p-2"
-            title="Open Document"
+          <select 
+            onChange={(e) => handleFileSelect(e.target.value)}
+            value=""
+            className="px-3 py-1 border rounded"
+            disabled={isLoading}
           >
-            <FontAwesomeIcon icon={faFolderOpen} className="h-4 w-4" />
-          </Button>
+            <option value="">
+              {isLoading ? 'Loading...' : 'Open File...'}
+            </option>
+            {files?.map(file => (
+              <option key={file} value={file}>
+                {file}
+              </option>
+            ))}
+          </select>
           <Button
             variant="outline"
             onClick={onDocumentSave}

@@ -20,6 +20,7 @@ docker run -it --name python-backend \
     -p 8000:8000 \
     -v $(pwd)/app:/app \
     -v $(pwd)/../user-data:/user-data \
+    -v $(pwd)/../../.env:/app/.env \
     python-backend bash
 
 echo "Container has stopped."

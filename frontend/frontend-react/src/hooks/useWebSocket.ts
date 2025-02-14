@@ -57,42 +57,18 @@ export function useWebSocket() {
     }
   }
 
-  const formatErrorMessage = (error: any): string => {
-    if (typeof error === 'string') {
-      return error.length > 500 ? error.substring(0, 500) + '...' : error
-    }
-    if (error instanceof Error) {
-      return `${error.name}: ${error.message}`
-    }
-    return JSON.stringify(error, null, 2).substring(0, 500) + '...'
-  }
 
   const subscribeToMessages = (callback: (data: any) => void) => {
-    if (socketRef.current) {
-      socketRef.current.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data)
-          
-          if (data.done === true) {
-            const sentTokens = data.tokensSent ? `sent: ${data.tokensSent}, ` : ''
-            const receivedTokens = data.tokensReceived ? `received: ${data.tokensReceived}` : ''
-            log(LogLevel.INFO, namespace, `Response completed (${sentTokens}${receivedTokens} tokens)`)
-          } else if (data.error) {
-            const formattedError = formatErrorMessage(data.error)
-            log(LogLevel.ERROR, namespace, 'Error:', formattedError)
-            if (data.size && data.limit) {
-              log(LogLevel.ERROR, namespace, `Message size ${data.size} exceeds limit of ${data.limit} bytes`)
-            }
-          } else {
-            log(LogLevel.DEBUG, namespace, 'Incoming message:', data)
-          }
-          
-          callback(data)
-        } catch (error) {
-          log(LogLevel.ERROR, namespace, 'Failed to process message:', formatErrorMessage(error))
-        }
+    if (!socketRef.current) return;
+
+    socketRef.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      // Only log if it's the final message or an error
+      if (data.done === true || data.error) {
+        log(LogLevel.DEBUG, namespace, 'Received message:', data);
       }
-    }
+      callback(data);
+    };
   }
 
   return {
