@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLoggingStore, LogLevel } from '../stores/loggingStore';
+import { API_ENDPOINTS } from '../config/constants';
 
 export function useFileList(fileType: 'document' | 'chat' | 'prompt' = 'document') {
   const [files, setFiles] = useState<string[]>([]);
@@ -15,7 +16,11 @@ export function useFileList(fileType: 'document' | 'chat' | 'prompt' = 'document
 
     try {
       setIsLoading(true);
-      const response = await fetch(`http://localhost:8000/list_files/${fileType}`);
+      const endpoint = fileType === 'document' 
+        ? API_ENDPOINTS.LIST_DOCUMENTS 
+        : API_ENDPOINTS.LIST_CHATS;
+      
+      const response = await fetch(endpoint);
       const data = await response.json();
       
       log(LogLevel.DEBUG, namespace, `${fileType} files received from server:`, data);
