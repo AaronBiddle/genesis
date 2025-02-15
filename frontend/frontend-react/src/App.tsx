@@ -4,6 +4,7 @@ import { ControlPanel } from './components/ControlPanel'
 import { TabbedWindow } from './components/TabbedWindow'
 import { ChatBox } from './components/ChatBox'
 import './App.css'
+import { API_ENDPOINTS } from './config/constants'
 
 interface Document {
   id: string;
@@ -49,7 +50,7 @@ export default function App() {
     const title = prompt('Enter document name:');
     if (title) {
       try {
-        const response = await fetch('http://localhost:8000/load_document', {
+        const response = await fetch(API_ENDPOINTS.LOAD_DOCUMENT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ filename: title })
@@ -89,7 +90,7 @@ export default function App() {
     if (!currentDoc) return;
 
     try {
-      const response = await fetch('http://localhost:8000/save_document', {
+      const response = await fetch(API_ENDPOINTS.SAVE_DOCUMENT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

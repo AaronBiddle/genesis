@@ -3,6 +3,7 @@ import { ChatMessage } from '../types/chat';
 import { useWebSocket } from './useWebSocket';
 import { useChatSettings } from '../stores/chatSettingsStore';
 import { useLoggingStore, LogLevel } from '../stores/loggingStore';
+import { API_ENDPOINTS } from '../config/constants';
 
 export function useAIChat() {
   const log = useLoggingStore(state => state.log);
@@ -77,7 +78,7 @@ export function useAIChat() {
 
   const saveChat = async (filename: string) => {
     try {
-      const response = await fetch('http://localhost:8000/save_chat', {
+      const response = await fetch(API_ENDPOINTS.SAVE_CHAT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -98,7 +99,7 @@ export function useAIChat() {
 
   const loadChat = async (filename: string) => {
     try {
-      const response = await fetch('http://localhost:8000/load_chat', {
+      const response = await fetch(API_ENDPOINTS.LOAD_CHAT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filename })

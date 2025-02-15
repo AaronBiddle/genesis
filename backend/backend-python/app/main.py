@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.ai_chat import router as ai_chat_router
-from routes.chat_persistence import router as chat_persistence_router
-from routes.document_routes import router as document_router
+from routes.chats import router as chats_router
+from routes.documents import router as documents_router
 
 app = FastAPI()
 
@@ -16,5 +16,5 @@ app.add_middleware(
 
 # Include the routers
 app.include_router(ai_chat_router)
-app.include_router(chat_persistence_router)
-app.include_router(document_router)
+app.include_router(chats_router)
+app.include_router(documents_router)

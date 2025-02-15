@@ -13,10 +13,18 @@ export const WS_URL = getEnvVar('VITE_WS_URL', 'ws://localhost:8000/ws/chat')
 export const API_BASE_URL = getEnvVar('VITE_API_URL', 'http://localhost:8000')
 
 export const API_ENDPOINTS = {
-  LIST_CHATS: `${API_BASE_URL}/list_chats`,
-  SAVE_CHAT: `${API_BASE_URL}/save_chat`,
-  LOAD_CHAT: `${API_BASE_URL}/load_chat`,
-  LIST_FILES: `${API_BASE_URL}/list_files`,
-  SAVE_DOCUMENT: `${API_BASE_URL}/save_document`,
-  LOAD_DOCUMENT: `${API_BASE_URL}/load_document`,
+  // Chat persistence endpoints
+  LIST_CHATS: `${API_BASE_URL}/chats/list`,
+  SAVE_CHAT: `${API_BASE_URL}/chats/save`,
+  LOAD_CHAT: `${API_BASE_URL}/chats/load`,
+  DELETE_CHAT: `${API_BASE_URL}/chats/delete`,
+
+  // Document endpoints
+  LIST_DOCUMENTS: `${API_BASE_URL}/documents/list`,
+  SAVE_DOCUMENT: `${API_BASE_URL}/documents/save`,
+  LOAD_DOCUMENT: `${API_BASE_URL}/documents/load`,
+  DELETE_DOCUMENT: `${API_BASE_URL}/documents/delete`,
+
+  // AI Chat endpoint (WebSocket)
+  AI_CHAT: `${API_BASE_URL}/ws/chat`,
 } as const 

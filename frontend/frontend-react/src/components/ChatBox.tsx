@@ -9,6 +9,7 @@ import { ChatMessage } from '../types/chat';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSave, faSpinner, faFileCirclePlus } from '@fortawesome/free-solid-svg-icons';
 import { useFileList } from '../hooks/useFileList';
+import { API_ENDPOINTS } from '../config/constants';
 
 export function ChatBox({ width }: { width: number }) {
   const { messages, setMessages, isConnected, sendPrompt, removeMessage, saveChat, loadChat } = useAIChat();
@@ -66,9 +67,12 @@ export function ChatBox({ width }: { width: number }) {
       setIsSaving(true);
       const response = await saveChat(chatTitle);
       setHasUnsavedChanges(false);
-      const savedTitle = response.saved_path.split('/').pop()?.replace('.json', '') || chatTitle;
+      const savedTitle = response.filename || chatTitle;
       setChatTitle(savedTitle);
       await refreshChats();
+    } catch (error) {
+      console.error('Failed to save chat:', error);
+      alert('Failed to save chat');
     } finally {
       setIsSaving(false);
     }
@@ -78,12 +82,16 @@ export function ChatBox({ width }: { width: number }) {
     if (!selectedTitle) return;
     
     try {
-      await loadChat(selectedTitle);
+      const data = await loadChat(selectedTitle);
       setChatTitle(selectedTitle);
       setHasUnsavedChanges(false);
+      
+      // Update chat settings if they were saved
+      if (data.system_prompt) setSystemPrompt(data.system_prompt);
+      if (data.temperature) setTemperature(data.temperature);
     } catch (error) {
       console.error('Failed to load chat:', error);
-      // Optionally add error handling UI here
+      alert('Failed to load chat');
     }
   };
 
@@ -102,20 +110,20 @@ export function ChatBox({ width }: { width: number }) {
   const handleDeleteChat = async () => {
     if (!chatTitle || chatTitle === "untitled chat") return;
     
-    // Show confirmation dialog
     const confirmed = window.confirm(`Are you sure you want to delete "${chatTitle}"?`);
     if (!confirmed) return;
     
     try {
-      const response = await fetch(`http://localhost:8000/delete_file/chat/${chatTitle}.json`, {
-        method: 'DELETE',
+      const response = await fetch(`${API_ENDPOINTS.DELETE_CHAT}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: chatTitle })
       });
       
       if (!response.ok) {
         throw new Error('Failed to delete chat');
       }
       
-      // Reset state
       setMessages([]);
       setChatTitle("untitled chat");
       setHasUnsavedChanges(false);
