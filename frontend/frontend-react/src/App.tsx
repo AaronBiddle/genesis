@@ -111,7 +111,7 @@ export default function App() {
 
   return (
     <div className="h-screen flex bg-gray-300 text-gray-900 pt-2 pb-2">
-      <ControlPanel width={leftWidth} onOpenDocument={handleOpenDocument} />
+      <ControlPanel width={leftWidth} />
       <ResizableDivider onResize={handleLeftResize} className="my-4" />
       <TabbedWindow 
         documents={documents}

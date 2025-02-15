@@ -120,3 +120,29 @@ async def list_files(file_type: FileType) -> dict[str, List[str]]:
     except Exception as e:
         log(LogLevel.MINIMUM, f"Error listing {file_type.value} files: {str(e)}", LogPrefix.ERROR)
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/delete_file/{file_type}/{filename}")
+async def delete_file(file_type: FileType, filename: str):
+    try:
+        base_dir = {
+            FileType.DOCUMENT: DOCUMENTS_DIR,
+            FileType.CHAT: CHATS_DIR,
+            FileType.PROMPT: PROMPTS_DIR
+        }[file_type]
+        
+        # Prevent path traversal
+        if "/" in filename or "\\" in filename:
+            raise ValueError("Invalid filename")
+            
+        file_path = base_dir / filename
+        
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail=f"File not found: {filename}")
+            
+        file_path.unlink()  # Delete the file
+        log(LogLevel.DEBUGGING, f"📄 Deleted {file_type.value} file: {filename}", LogPrefix.FILE)
+        return {"status": "success", "deleted": filename}
+        
+    except Exception as e:
+        log(LogLevel.MINIMUM, f"Error deleting {file_type.value} file: {str(e)}", LogPrefix.ERROR)
+        raise HTTPException(status_code=400, detail=str(e))

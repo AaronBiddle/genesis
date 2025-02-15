@@ -1,7 +1,11 @@
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { useLoggingStore, LogLevel } from '../stores/loggingStore';
 
-export function ControlPanel({ width }: { width: number }) {
+interface ControlPanelProps {
+  width: number;
+}
+
+export function ControlPanel({ width }: ControlPanelProps) {
   const { level, setLevel } = useLoggingStore();
 
   return (

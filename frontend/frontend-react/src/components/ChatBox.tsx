@@ -102,13 +102,40 @@ export function ChatBox({ width }: { width: number }) {
     setHasUnsavedChanges(false);
   };
 
+  const handleDeleteChat = async () => {
+    if (!chatTitle || chatTitle === "untitled chat") return;
+    
+    // Show confirmation dialog
+    const confirmed = window.confirm(`Are you sure you want to delete "${chatTitle}"?`);
+    if (!confirmed) return;
+    
+    try {
+      const response = await fetch(`http://localhost:8000/delete_file/chat/${chatTitle}.json`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete chat');
+      }
+      
+      // Reset state
+      setMessages([]);
+      setChatTitle("untitled chat");
+      setHasUnsavedChanges(false);
+      await refreshChats();
+      
+    } catch (error) {
+      console.error('Failed to delete chat:', error);
+      alert('Failed to delete chat');
+    }
+  };
+
   // Save button state conditions
   const saveDisabled = isSaving || isGenerating || !hasUnsavedChanges;
 
-  // Remove the SaveIcon SVG component and update the button icon logic
+  // Add this condition to determine which icon to show
   const buttonIcon = isSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : 
                     hasUnsavedChanges ? <FontAwesomeIcon icon={faSave} /> : 
-                    isNewSession ? <FontAwesomeIcon icon={faSave} /> : 
                     <FontAwesomeIcon icon={faCheck} />;
 
   return (
@@ -118,7 +145,7 @@ export function ChatBox({ width }: { width: number }) {
           <select 
             value={chatTitle}
             onChange={(e) => handleLoadChat(e.target.value)}
-            className="px-3 py-1 border rounded"
+            className="px-3 py-1 border rounded flex-grow"
           >
             <option value="">Select a chat...</option>
             {availableChats.map(chat => {
@@ -130,29 +157,22 @@ export function ChatBox({ width }: { width: number }) {
               );
             })}
           </select>
-          
-          <button 
-            className="p-1 hover:bg-gray-100 rounded text-gray-700"
-            title="New chat"
-            onClick={handleNewChat}
-          >
-            <FontAwesomeIcon icon={faFileCirclePlus} />
-          </button>
-          <button 
-            className={`p-1 rounded transition-colors ${
-              saveDisabled ? 'text-gray-200 hover:text-gray-200' : 'hover:bg-gray-100 text-gray-700'
-            }`}
-            title={
-              isNewSession ? 'No messages to save' :
-              isGenerating ? 'Cannot save during generation' :
-              isSaving ? 'Saving...' :
-              hasUnsavedChanges ? 'Save changes' :
-              'All changes saved'
-            }
+          {hasUnsavedChanges && <span className="text-sm text-gray-500 mr-2">*</span>}
+          <button
             onClick={handleSaveChat}
-            disabled={saveDisabled}
+            disabled={isSaving}
+            className="w-8 h-8 flex items-center justify-center text-blue-500 hover:text-blue-700 disabled:text-gray-400"
+            title="Save chat"
           >
             {buttonIcon}
+          </button>
+          <button
+            onClick={handleDeleteChat}
+            disabled={chatTitle === "untitled chat" || isSaving}
+            className="w-6 h-6 flex items-center justify-center text-red-500 hover:text-red-700 disabled:text-gray-400"
+            title={chatTitle === "untitled chat" ? "Cannot delete untitled chat" : "Delete chat"}
+          >
+            ✕
           </button>
         </div>
         
