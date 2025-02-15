@@ -115,19 +115,27 @@ export function ChatBox({ width }: { width: number }) {
     <Card className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" style={{ width }}>
       <CardHeader className="flex items-center justify-between p-2 border-b">
         <div className="flex items-center gap-2">
-          <input
-            list="available-chats"
+          <select 
             value={chatTitle}
-            onChange={(e) => setChatTitle(e.target.value)}
-            className="w-48 border-none focus:outline-none focus:ring-1 focus:ring-gray-200 rounded px-1 bg-transparent"
-            placeholder="Chat name"
-          />
-          <datalist id="available-chats">
-            <option value="untitled chat" />
-            {availableChats.map((chat) => (
-              <option key={chat} value={chat.replace(/\.json$/, "")} />
-            ))}
-          </datalist>
+            onChange={(e) => {
+              const selectedTitle = e.target.value;
+              if (selectedTitle) {  // Only load if a chat is selected
+                loadChat(selectedTitle);
+                setChatTitle(selectedTitle);
+              }
+            }}
+            className="px-3 py-1 border rounded"
+          >
+            <option value="">Select a chat...</option>
+            {availableChats.map(chat => {
+              const chatName = chat.replace(/\.json$/, '');
+              return (
+                <option key={chat} value={chatName}>
+                  {chatName}
+                </option>
+              );
+            })}
+          </select>
           
           <button 
             className="p-1 hover:bg-gray-100 rounded text-gray-700"
