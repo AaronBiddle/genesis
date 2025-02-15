@@ -26,6 +26,9 @@ class SaveDocumentRequest(BaseModel):
     filename: str
     content: str
 
+class LoadDocumentRequest(BaseModel):
+    filename: str
+
 @router.post("/load_document")
 async def load_document(request: DocumentRequest):
     try:
@@ -73,6 +76,26 @@ async def list_documents():
         return response
     except Exception as e:
         log(LogLevel.ERROR, f"Error listing documents: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/load")
+async def load_document(request: LoadDocumentRequest):
+    """Load a document from a file"""
+    try:
+        file_path = DOCUMENTS_DIR / request.filename
+        
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail=f"Document {request.filename} not found")
+        
+        with open(file_path, 'r') as f:
+            content = f.read()
+            log(LogLevel.DEBUGGING, f"Loaded document: {len(content)} bytes")
+            return {"content": content}
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        log(LogLevel.ERROR, f"Error loading document: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/delete_document/{filename}")

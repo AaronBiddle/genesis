@@ -46,32 +46,31 @@ export default function App() {
     setActiveDocument(newDoc.id);
   };
 
-  const handleOpenDocument = async () => {
-    const title = prompt('Enter document name:');
-    if (title) {
-      try {
-        const response = await fetch(API_ENDPOINTS.LOAD_DOCUMENT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: title })
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to load document');
-        }
-        
-        const data = await response.json();
-        const newDoc = {
-          id: `doc-${Date.now()}`,
-          title,
-          content: data.content
-        };
-        setDocuments(prev => [...prev, newDoc]);
-        setActiveDocument(newDoc.id);
-      } catch (error) {
-        console.error('Error loading document:', error);
-        alert('Failed to load document');
+  const handleOpenDocument = async (filename: string) => {
+    if (!filename) return;
+    
+    try {
+      const response = await fetch(API_ENDPOINTS.LOAD_DOCUMENT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to load document');
       }
+      
+      const data = await response.json();
+      const newDoc = {
+        id: `doc-${Date.now()}`,
+        title: filename,
+        content: data.content
+      };
+      setDocuments(prev => [...prev, newDoc]);
+      setActiveDocument(newDoc.id);
+    } catch (error) {
+      console.error('Error loading document:', error);
+      alert('Failed to load document');
     }
   };
 

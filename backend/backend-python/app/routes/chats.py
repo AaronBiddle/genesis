@@ -30,6 +30,9 @@ class ChatData(BaseModel):
 class LoadRequest(BaseModel):
     filename: str
 
+class LoadChatRequest(BaseModel):
+    filename: str
+
 @router.post("/save_chat")
 async def save_chat(data: ChatData):
     try:
@@ -95,4 +98,27 @@ async def delete_chat(filename: str):
         
     except Exception as e:
         log(LogLevel.MINIMUM, f"Error deleting chat: {str(e)}", LogPrefix.ERROR)
-        raise HTTPException(status_code=400, detail=str(e)) 
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/load")
+async def load_chat(request: LoadChatRequest):
+    """Load a chat from a file"""
+    try:
+        # Ensure filename has .json extension
+        filename = request.filename if request.filename.endswith('.json') else f"{request.filename}.json"
+        file_path = CHATS_DIR / filename
+        
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail=f"Chat file {filename} not found")
+        
+        with open(file_path, 'r') as f:
+            content = f.read()
+            chat_data = json.loads(content)
+            log(LogLevel.DEBUGGING, f"Loaded chat data: {len(content)} bytes")
+            return chat_data
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        log(LogLevel.ERROR, f"Error loading chat: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e)) 
