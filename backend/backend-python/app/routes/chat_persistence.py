@@ -80,4 +80,8 @@ async def load_chat(data: LoadRequest):
         
     except Exception as e:
         log(LogLevel.MINIMUM, f"💾 Error loading chat: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e)) 
+        raise HTTPException(status_code=400, detail=str(e))
+
+# @router.get("/list_chats")
+# async def list_chats():
+#     ... 

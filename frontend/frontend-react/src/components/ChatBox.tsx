@@ -7,10 +7,12 @@ import { MessageContainer } from './MessageContainer';
 import { useChatSettings } from '../stores/chatSettingsStore';
 import { ChatMessage } from '../types/chat';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSave, faSpinner, faCheck, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
+import { faSave, faSpinner, faFileCirclePlus } from '@fortawesome/free-solid-svg-icons';
+import { useFileList } from '../hooks/useFileList';
 
 export function ChatBox({ width }: { width: number }) {
-  const { messages, isConnected, sendPrompt, removeMessage, saveChat, loadChat } = useAIChat();
+  const { messages, setMessages, isConnected, sendPrompt, removeMessage, saveChat, loadChat } = useAIChat();
+  const { files: availableChats, refreshFiles: refreshChats } = useFileList('chat');
   const { 
     systemPrompt,
     temperature,
@@ -20,10 +22,10 @@ export function ChatBox({ width }: { width: number }) {
   const [showChatSettings, setShowChatSettings] = useState(false);
   const [messageInput, setMessageInput] = useState('');
   const [chatTitle, setChatTitle] = useState("untitled chat");
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const isInitialMount = useRef(true);
-  const prevMessagesRef = useRef<ChatMessage[]>([]);
+  const prevMessagesRef = useRef<ChatMessage[]>(messages);
   const prevTitleRef = useRef(chatTitle);
 
   // Update the isGenerating check to include "waiting for AI response" state
@@ -34,9 +36,6 @@ export function ChatBox({ width }: { width: number }) {
     // OR if last message is user message with no AI response yet
     (messages[messages.length - 1].role === 'user')
   );
-
-  // Add this condition to check for a fresh/empty session
-  const isNewSession = messages.length === 0;
 
   // Track message changes for unsaved state
   useEffect(() => {
@@ -67,70 +66,120 @@ export function ChatBox({ width }: { width: number }) {
       setIsSaving(true);
       const response = await saveChat(chatTitle);
       setHasUnsavedChanges(false);
-      setChatTitle(response.saved_path.split('/').pop()?.replace('.json', '') || chatTitle);
+      const savedTitle = response.saved_path.split('/').pop()?.replace('.json', '') || chatTitle;
+      setChatTitle(savedTitle);
+      await refreshChats();
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleLoadChat = async () => {
-    const filename = prompt('Enter chat filename to load:');
-    if (filename) {
-      try {
-        const data = await loadChat(filename);
-        setChatTitle(filename);
-        setSystemPrompt(data.system_prompt);
-        setTemperature(data.temperature);
-        setHasUnsavedChanges(false);
-      } catch (error) {
-        console.error('Failed to load chat:', error);
-      }
+  const handleLoadChat = async (selectedTitle: string) => {
+    if (!selectedTitle) return;
+    
+    try {
+      await loadChat(selectedTitle);
+      setChatTitle(selectedTitle);
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error('Failed to load chat:', error);
+      // Optionally add error handling UI here
     }
   };
 
-  // Save button state conditions
-  const saveDisabled = isSaving || isGenerating || !hasUnsavedChanges;
+  const handleNewChat = () => {
+    // Clear messages
+    setMessages([]);
+    // Reset title
+    setChatTitle("untitled chat");
+    // Reset to default system prompt and temperature
+    setSystemPrompt("You are a helpful assistant...");
+    setTemperature(0.7);
+    // Reset unsaved changes flag
+    setHasUnsavedChanges(false);
+  };
 
-  // Remove the SaveIcon SVG component and update the button icon logic
+  const handleDeleteChat = async () => {
+    if (!chatTitle || chatTitle === "untitled chat") return;
+    
+    // Show confirmation dialog
+    const confirmed = window.confirm(`Are you sure you want to delete "${chatTitle}"?`);
+    if (!confirmed) return;
+    
+    try {
+      const response = await fetch(`http://localhost:8000/delete_file/chat/${chatTitle}.json`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete chat');
+      }
+      
+      // Reset state
+      setMessages([]);
+      setChatTitle("untitled chat");
+      setHasUnsavedChanges(false);
+      await refreshChats();
+      
+    } catch (error) {
+      console.error('Failed to delete chat:', error);
+      alert('Failed to delete chat');
+    }
+  };
+
+  // Add isGenerating to the saveDisabled condition
+  const saveDisabled = isSaving || !hasUnsavedChanges || isGenerating;
+
+  // Update buttonIcon to only show spinner or save icon
   const buttonIcon = isSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : 
-                    hasUnsavedChanges ? <FontAwesomeIcon icon={faSave} /> : 
-                    isNewSession ? <FontAwesomeIcon icon={faSave} /> : 
-                    <FontAwesomeIcon icon={faCheck} />;
+                    <FontAwesomeIcon icon={faSave} />;
 
   return (
     <Card className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" style={{ width }}>
       <CardHeader className="flex items-center justify-between p-2 border-b">
         <div className="flex items-center gap-2">
-          <input
-            type="text"
+          <select 
             value={chatTitle}
-            className="w-48 border-none focus:outline-none focus:ring-1 focus:ring-gray-200 rounded px-1 bg-transparent"
-            onChange={(e) => setChatTitle(e.target.value)}
-            placeholder="Chat name"
-          />
-          <button 
-            className={`p-1 rounded transition-colors ${
-              saveDisabled ? 'text-gray-200 hover:text-gray-200' : 'hover:bg-gray-100 text-gray-700'
-            }`}
-            title={
-              isNewSession ? 'No messages to save' :
-              isGenerating ? 'Cannot save during generation' :
-              isSaving ? 'Saving...' :
-              hasUnsavedChanges ? 'Save changes' :
-              'All changes saved'
-            }
+            onChange={(e) => handleLoadChat(e.target.value)}
+            className="px-3 py-1 border rounded flex-grow"
+          >
+            <option value="">Select a chat...</option>
+            {availableChats.map(chat => {
+              const chatName = chat.replace(/\.json$/, '');
+              return (
+                <option key={chat} value={chatName}>
+                  {chatName}
+                </option>
+              );
+            })}
+          </select>
+          <button
+            onClick={handleNewChat}
+            className="w-8 h-8 flex items-center justify-center text-green-500 hover:text-green-700"
+            title="New chat"
+          >
+            <FontAwesomeIcon icon={faFileCirclePlus} />
+          </button>
+          <button
             onClick={handleSaveChat}
             disabled={saveDisabled}
+            className="w-8 h-8 flex items-center justify-center text-blue-500 hover:text-blue-700 disabled:text-gray-400"
+            title={saveDisabled ? 
+              (isSaving ? "Saving..." : 
+               isGenerating ? "Cannot save while message is generating" :
+               "No changes to save") 
+              : "Save chat"}
           >
             {buttonIcon}
-          </button>  
-          <button 
-            className="p-1 hover:bg-gray-100 rounded"
-            title="Open chat"
-            onClick={handleLoadChat}
+          </button>
+          <button
+            onClick={handleDeleteChat}
+            disabled={chatTitle === "untitled chat" || isSaving}
+            className="w-6 h-6 flex items-center justify-center text-red-500 hover:text-red-700 disabled:text-gray-400"
+            title={chatTitle === "untitled chat" ? "Cannot delete untitled chat" : "Delete chat"}
           >
-            <FontAwesomeIcon icon={faFolderOpen} />
-          </button>                  
+            ✕
+          </button>
         </div>
         
         <div className="flex items-center gap-2">

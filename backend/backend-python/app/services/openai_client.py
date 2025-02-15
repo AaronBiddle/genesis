@@ -2,12 +2,14 @@ import os
 import asyncio
 from typing import AsyncGenerator, Any
 from openai import OpenAI
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from utils.logging import LogLevel, log, LogPrefix
 import json
 
 # Load environment variables from .env file.
-load_dotenv()
+
+dotenv_path = find_dotenv()
+load_dotenv(dotenv_path)
 
 # Initialize the client with DeepSeek credentials from .env.
 client = OpenAI(

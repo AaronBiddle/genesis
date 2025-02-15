@@ -1,4 +1,4 @@
-from fastapi import APIRouter, WebSocket
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import json
 from services.openai_client import stream_chat_response
 from utils.logging import LogLevel, log, debug_log, LogPrefix
@@ -10,9 +10,10 @@ DEBUG_CHAT = False
 @router.websocket("/ws/chat")
 @debug_log(LogLevel.DEBUGGING)
 async def ai_chat_endpoint(websocket: WebSocket):
-    log(LogLevel.MINIMUM, "WebSocket connection accepted", LogPrefix.CHAT)
-    await websocket.accept()
     try:
+        await websocket.accept()
+        log(LogLevel.MINIMUM, "WebSocket connection accepted", LogPrefix.CHAT)
+        
         while True:
             data_text = await websocket.receive_text()
             log(LogLevel.MINIMUM, f"Received message ({len(data_text)} bytes)", LogPrefix.CHAT)
@@ -114,5 +115,19 @@ async def ai_chat_endpoint(websocket: WebSocket):
                 log(LogLevel.MINIMUM, f"🐍 Error processing message: {e}")
                 await websocket.send_text(json.dumps({"error": f"Internal server error: {str(e)}"}))
                 
+    except WebSocketDisconnect as e:
+        close_codes = {
+            1000: "Normal closure",
+            1001: "Client going away",
+            1002: "Protocol error",
+            1003: "Unsupported data",
+            1007: "Invalid frame payload data",
+            1008: "Policy violation",
+            1009: "Message too big",
+            1010: "Mandatory extension",
+            1011: "Internal server error",
+        }
+        reason = close_codes.get(e.code, "Unknown reason")
+        log(LogLevel.MINIMUM, f"WebSocket closed: {reason} (code: {e.code})", LogPrefix.CHAT)
     except Exception as e:
-        log(LogLevel.MINIMUM, f"🐍 WebSocket error: {e}") 
+        log(LogLevel.MINIMUM, f"🐍 WebSocket error: {str(e)}", LogPrefix.CHAT) 
