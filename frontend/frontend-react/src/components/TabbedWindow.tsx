@@ -34,7 +34,7 @@ export function TabbedWindow({
   onNewDocument,
   onOpenDocument
 }: TabbedWindowProps) {
-  const { files, isLoading } = useFileList();
+  const { files, isLoading } = useFileList('document');
   
   // Add a file menu or dropdown
   const handleFileSelect = (filename: string) => {

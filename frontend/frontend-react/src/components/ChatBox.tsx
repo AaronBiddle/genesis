@@ -8,9 +8,11 @@ import { useChatSettings } from '../stores/chatSettingsStore';
 import { ChatMessage } from '../types/chat';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSave, faSpinner, faCheck, faFolderOpen, faFileCirclePlus } from '@fortawesome/free-solid-svg-icons';
+import { useFileList } from '../hooks/useFileList';
 
 export function ChatBox({ width }: { width: number }) {
   const { messages, setMessages, isConnected, sendPrompt, removeMessage, saveChat, loadChat } = useAIChat();
+  const { files: availableChats, refreshFiles: refreshChats } = useFileList('chat');
   const { 
     systemPrompt,
     temperature,
@@ -25,7 +27,6 @@ export function ChatBox({ width }: { width: number }) {
   const isInitialMount = useRef(true);
   const prevMessagesRef = useRef<ChatMessage[]>([]);
   const prevTitleRef = useRef(chatTitle);
-  const [availableChats, setAvailableChats] = useState<string[]>([]);
 
   // Update the isGenerating check to include "waiting for AI response" state
   const isGenerating = messages.length > 0 && (
@@ -63,24 +64,6 @@ export function ChatBox({ width }: { width: number }) {
     prevTitleRef.current = chatTitle;
   }, [messages, chatTitle]);
 
-  // Add useEffect to fetch available chats on mount
-  useEffect(() => {
-    const fetchChats = async () => {
-      try {
-        const response = await fetch('http://localhost:8000/list_chats');
-        if (!response.ok) {
-          throw new Error('Failed to fetch chats');
-        }
-        const data = await response.json();
-        setAvailableChats(data.chats.map((chat: string) => chat.replace(/\.json$/, "")));
-      } catch (error) {
-        console.error('Error fetching chats:', error);
-      }
-    };
-
-    fetchChats();
-  }, []);
-
   const handleSaveChat = async () => {
     try {
       setIsSaving(true);
@@ -89,12 +72,8 @@ export function ChatBox({ width }: { width: number }) {
       const savedTitle = response.saved_path.split('/').pop()?.replace('.json', '') || chatTitle;
       setChatTitle(savedTitle);
       
-      // Refresh the available chats list
-      const chatsResponse = await fetch('http://localhost:8000/list_chats');
-      if (chatsResponse.ok) {
-        const data = await chatsResponse.json();
-        setAvailableChats(data.chats.map((chat: string) => chat.replace(/\.json$/, "")));
-      }
+      // Use the new refresh function
+      await refreshChats();
     } finally {
       setIsSaving(false);
     }
