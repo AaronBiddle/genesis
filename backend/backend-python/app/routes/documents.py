@@ -98,16 +98,37 @@ async def load_document(request: LoadDocumentRequest):
         log(LogLevel.ERROR, f"Error loading document: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/delete_document/{filename}")
-async def delete_document(filename: str):
+@router.post("/save")
+async def save_document(request: SaveDocumentRequest):
+    """Save a document to a file"""
     try:
-        file_path = doc_manager.validate_filename(filename)
-        doc_manager.ensure_file_exists(file_path)
+        file_path = DOCUMENTS_DIR / request.filename
         
-        file_path.unlink()  # Delete the file
-        log(LogLevel.DEBUGGING, f"📄 Deleted document: {filename}", LogPrefix.FILE)
-        return {"status": "success", "deleted": filename}
-        
+        with open(file_path, 'w') as f:
+            f.write(request.content)
+            
+        log(LogLevel.DEBUGGING, f"Saved document: {request.filename}")
+        return {"filename": request.filename}
+            
     except Exception as e:
-        log(LogLevel.MINIMUM, f"Error deleting document: {str(e)}", LogPrefix.ERROR)
-        raise HTTPException(status_code=400, detail=str(e)) 
+        log(LogLevel.ERROR, f"Error saving document: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/delete/{filename}")
+async def delete_document(filename: str):
+    """Delete a document file"""
+    try:
+        file_path = DOCUMENTS_DIR / filename
+        
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail=f"Document {filename} not found")
+            
+        file_path.unlink()
+        log(LogLevel.DEBUGGING, f"Deleted document: {filename}")
+        return {"deleted": filename}
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        log(LogLevel.ERROR, f"Error deleting document: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e)) 

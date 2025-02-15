@@ -33,6 +33,12 @@ class LoadRequest(BaseModel):
 class LoadChatRequest(BaseModel):
     filename: str
 
+class SaveChatRequest(BaseModel):
+    filename: str
+    messages: list
+    system_prompt: str = "You are a helpful assistant..."
+    temperature: float = 0.7
+
 @router.post("/save_chat")
 async def save_chat(data: ChatData):
     try:
@@ -104,7 +110,6 @@ async def delete_chat(filename: str):
 async def load_chat(request: LoadChatRequest):
     """Load a chat from a file"""
     try:
-        # Ensure filename has .json extension
         filename = request.filename if request.filename.endswith('.json') else f"{request.filename}.json"
         file_path = CHATS_DIR / filename
         
@@ -121,4 +126,47 @@ async def load_chat(request: LoadChatRequest):
         raise
     except Exception as e:
         log(LogLevel.ERROR, f"Error loading chat: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/save")
+async def save_chat(request: SaveChatRequest):
+    """Save a chat to a file"""
+    try:
+        filename = request.filename if request.filename.endswith('.json') else f"{request.filename}.json"
+        file_path = CHATS_DIR / filename
+        
+        chat_data = {
+            "messages": request.messages,
+            "system_prompt": request.system_prompt,
+            "temperature": request.temperature
+        }
+        
+        with open(file_path, 'w') as f:
+            json.dump(chat_data, f, indent=2)
+            
+        log(LogLevel.DEBUGGING, f"Saved chat to {filename}")
+        return {"filename": request.filename}
+            
+    except Exception as e:
+        log(LogLevel.ERROR, f"Error saving chat: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/delete/{filename}")
+async def delete_chat(filename: str):
+    """Delete a chat file"""
+    try:
+        filename = filename if filename.endswith('.json') else f"{filename}.json"
+        file_path = CHATS_DIR / filename
+        
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail=f"Chat file {filename} not found")
+            
+        file_path.unlink()
+        log(LogLevel.DEBUGGING, f"Deleted chat file: {filename}")
+        return {"deleted": filename}
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        log(LogLevel.ERROR, f"Error deleting chat: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e)) 

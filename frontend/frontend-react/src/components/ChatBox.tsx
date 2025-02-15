@@ -146,6 +146,13 @@ export function ChatBox({ width }: { width: number }) {
     <Card className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" style={{ width }}>
       <CardHeader className="flex items-center justify-between p-2 border-b">
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleNewChat}
+            className="w-8 h-8 flex items-center justify-center text-black hover:text-green-600"
+            title="New chat"
+          >
+            <FontAwesomeIcon icon={faFileCirclePlus} />
+          </button>
           <select 
             value={chatTitle}
             onChange={(e) => handleLoadChat(e.target.value)}
@@ -161,13 +168,6 @@ export function ChatBox({ width }: { width: number }) {
               );
             })}
           </select>
-          <button
-            onClick={handleNewChat}
-            className="w-8 h-8 flex items-center justify-center text-green-500 hover:text-green-700"
-            title="New chat"
-          >
-            <FontAwesomeIcon icon={faFileCirclePlus} />
-          </button>
           <button
             onClick={handleSaveChat}
             disabled={saveDisabled}
