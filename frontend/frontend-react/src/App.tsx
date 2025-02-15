@@ -13,7 +13,7 @@ interface Document {
 
 export default function App() {
   const [leftWidth, setLeftWidth] = useState(200);
-  const [rightWidth, setRightWidth] = useState(400);
+  const [rightWidth, setRightWidth] = useState(600);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [activeDocument, setActiveDocument] = useState<string | null>(null);
   const [markdownEnabled, setMarkdownEnabled] = useState(true);
