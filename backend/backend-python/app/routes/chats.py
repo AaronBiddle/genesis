@@ -6,12 +6,16 @@ from datetime import datetime
 from utils.logging import LogLevel, log, LogPrefix
 from .file_management.directory_handler import DirectoryManager
 from os import getenv
+import os
 from typing import List
 
 router = APIRouter(prefix="/chats")
 
+# Use USER_DATA_DIR as base for CHATS_DIR
+USER_DATA_DIR = Path(os.getenv('USER_DATA_DIR', '/user-data'))
+CHATS_DIR = Path(os.getenv('CHATS_DIR', USER_DATA_DIR / 'chats'))
+
 # Initialize directory manager
-CHATS_DIR = Path(getenv('CHATS_DIR', '/user-data/chats'))
 chat_manager = DirectoryManager(
     allowed_extensions=['.json'],
     base_path=CHATS_DIR
@@ -69,12 +73,12 @@ async def load_chat(data: LoadRequest):
 async def list_chats():
     """List all available chat files"""
     try:
-        # Get all .json files from the chats directory
-        chat_files = list(Path("user-data/chats").glob("*.json"))
-        # Return just the filenames without extension
-        return {
+        chat_files = list(CHATS_DIR.glob("*.json"))
+        response = {
             "files": [chat.stem for chat in chat_files]
         }
+        log(LogLevel.DEBUGGING, f"Returning chat files: {response}")
+        return response
     except Exception as e:
         log(LogLevel.ERROR, f"Error listing chats: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

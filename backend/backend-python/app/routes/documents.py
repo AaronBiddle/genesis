@@ -5,11 +5,15 @@ from utils.logging import log, LogLevel, LogPrefix
 from .file_management.directory_handler import DirectoryManager
 from os import getenv
 from typing import List
+import os
 
 router = APIRouter(prefix="/documents")
 
+# Use USER_DATA_DIR as base for DOCUMENTS_DIR
+USER_DATA_DIR = Path(os.getenv('USER_DATA_DIR', '/user-data'))
+DOCUMENTS_DIR = Path(os.getenv('DOCUMENTS_DIR', USER_DATA_DIR / 'documents'))
+
 # Initialize directory manager
-DOCUMENTS_DIR = Path(getenv('DOCUMENTS_DIR', '/user-data/documents'))
 doc_manager = DirectoryManager(
     allowed_extensions=['.md', '.txt'],
     base_path=DOCUMENTS_DIR
@@ -61,12 +65,12 @@ async def save_document(request: SaveDocumentRequest):
 async def list_documents():
     """List all available document files"""
     try:
-        # Get all files from the documents directory
-        doc_files = list(Path("user-data/documents").glob("*"))
-        # Filter out .gitkeep and return filenames
-        return {
+        doc_files = list(DOCUMENTS_DIR.glob("*"))
+        response = {
             "files": [doc.name for doc in doc_files if doc.name != ".gitkeep"]
         }
+        log(LogLevel.DEBUGGING, f"Returning document files: {response}")
+        return response
     except Exception as e:
         log(LogLevel.ERROR, f"Error listing documents: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
