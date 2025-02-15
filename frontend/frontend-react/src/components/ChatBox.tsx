@@ -7,7 +7,7 @@ import { MessageContainer } from './MessageContainer';
 import { useChatSettings } from '../stores/chatSettingsStore';
 import { ChatMessage } from '../types/chat';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSave, faSpinner, faCheck, faFileCirclePlus } from '@fortawesome/free-solid-svg-icons';
+import { faSave, faSpinner, faFileCirclePlus } from '@fortawesome/free-solid-svg-icons';
 import { useFileList } from '../hooks/useFileList';
 
 export function ChatBox({ width }: { width: number }) {
@@ -36,9 +36,6 @@ export function ChatBox({ width }: { width: number }) {
     // OR if last message is user message with no AI response yet
     (messages[messages.length - 1].role === 'user')
   );
-
-  // Add this condition to check for a fresh/empty session
-  const isNewSession = messages.length === 0;
 
   // Track message changes for unsaved state
   useEffect(() => {
@@ -130,13 +127,12 @@ export function ChatBox({ width }: { width: number }) {
     }
   };
 
-  // Save button state conditions
-  const saveDisabled = isSaving || isGenerating || !hasUnsavedChanges;
+  // Add isGenerating to the saveDisabled condition
+  const saveDisabled = isSaving || !hasUnsavedChanges || isGenerating;
 
-  // Add this condition to determine which icon to show
+  // Update buttonIcon to only show spinner or save icon
   const buttonIcon = isSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : 
-                    hasUnsavedChanges ? <FontAwesomeIcon icon={faSave} /> : 
-                    <FontAwesomeIcon icon={faCheck} />;
+                    <FontAwesomeIcon icon={faSave} />;
 
   return (
     <Card className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" style={{ width }}>
@@ -157,12 +153,22 @@ export function ChatBox({ width }: { width: number }) {
               );
             })}
           </select>
-          {hasUnsavedChanges && <span className="text-sm text-gray-500 mr-2">*</span>}
+          <button
+            onClick={handleNewChat}
+            className="w-8 h-8 flex items-center justify-center text-green-500 hover:text-green-700"
+            title="New chat"
+          >
+            <FontAwesomeIcon icon={faFileCirclePlus} />
+          </button>
           <button
             onClick={handleSaveChat}
-            disabled={isSaving}
+            disabled={saveDisabled}
             className="w-8 h-8 flex items-center justify-center text-blue-500 hover:text-blue-700 disabled:text-gray-400"
-            title="Save chat"
+            title={saveDisabled ? 
+              (isSaving ? "Saving..." : 
+               isGenerating ? "Cannot save while message is generating" :
+               "No changes to save") 
+              : "Save chat"}
           >
             {buttonIcon}
           </button>
