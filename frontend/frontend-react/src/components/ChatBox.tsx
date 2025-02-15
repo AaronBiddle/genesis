@@ -22,7 +22,7 @@ export function ChatBox({ width }: { width: number }) {
   } = useChatSettings();
   const [showChatSettings, setShowChatSettings] = useState(false);
   const [messageInput, setMessageInput] = useState('');
-  const [chatTitle, setChatTitle] = useState("untitled chat");
+  const [chatTitle, setChatTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const isInitialMount = useRef(true);
