@@ -7,7 +7,7 @@ import { MessageContainer } from './MessageContainer';
 import { useChatSettings } from '../stores/chatSettingsStore';
 import { ChatMessage } from '../types/chat';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSave, faSpinner, faCheck, faFolderOpen, faFileCirclePlus } from '@fortawesome/free-solid-svg-icons';
+import { faSave, faSpinner, faCheck, faFileCirclePlus } from '@fortawesome/free-solid-svg-icons';
 import { useFileList } from '../hooks/useFileList';
 
 export function ChatBox({ width }: { width: number }) {
@@ -22,10 +22,10 @@ export function ChatBox({ width }: { width: number }) {
   const [showChatSettings, setShowChatSettings] = useState(false);
   const [messageInput, setMessageInput] = useState('');
   const [chatTitle, setChatTitle] = useState("untitled chat");
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const isInitialMount = useRef(true);
-  const prevMessagesRef = useRef<ChatMessage[]>([]);
+  const prevMessagesRef = useRef<ChatMessage[]>(messages);
   const prevTitleRef = useRef(chatTitle);
 
   // Update the isGenerating check to include "waiting for AI response" state
@@ -71,22 +71,22 @@ export function ChatBox({ width }: { width: number }) {
       setHasUnsavedChanges(false);
       const savedTitle = response.saved_path.split('/').pop()?.replace('.json', '') || chatTitle;
       setChatTitle(savedTitle);
-      
-      // Use the new refresh function
       await refreshChats();
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleLoadChat = async () => {
+  const handleLoadChat = async (selectedTitle: string) => {
+    if (!selectedTitle) return;
+    
     try {
-      const data = await loadChat(chatTitle);
-      setSystemPrompt(data.system_prompt);
-      setTemperature(data.temperature);
+      await loadChat(selectedTitle);
+      setChatTitle(selectedTitle);
       setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Failed to load chat:', error);
+      // Optionally add error handling UI here
     }
   };
 
@@ -117,13 +117,7 @@ export function ChatBox({ width }: { width: number }) {
         <div className="flex items-center gap-2">
           <select 
             value={chatTitle}
-            onChange={(e) => {
-              const selectedTitle = e.target.value;
-              if (selectedTitle) {  // Only load if a chat is selected
-                loadChat(selectedTitle);
-                setChatTitle(selectedTitle);
-              }
-            }}
+            onChange={(e) => handleLoadChat(e.target.value)}
             className="px-3 py-1 border rounded"
           >
             <option value="">Select a chat...</option>
@@ -159,13 +153,6 @@ export function ChatBox({ width }: { width: number }) {
             disabled={saveDisabled}
           >
             {buttonIcon}
-          </button>
-          <button 
-            className="p-1 hover:bg-gray-100 rounded"
-            title="Open chat"
-            onClick={handleLoadChat}
-          >
-            <FontAwesomeIcon icon={faFolderOpen} />
           </button>
         </div>
         
