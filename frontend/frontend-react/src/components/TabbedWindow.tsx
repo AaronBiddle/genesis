@@ -145,9 +145,11 @@ export function TabbedWindow({
             onClick={handleDeleteDocument}
             disabled={!activeDocument || documents.find(d => d.id === activeDocument)?.title === "Untitled"}
             className="w-8 h-8 flex items-center justify-center text-black hover:text-red-600 disabled:text-gray-400"
-            title="Delete document"
+            title={!activeDocument || documents.find(d => d.id === activeDocument)?.title === "Untitled" ? 
+              "Cannot delete untitled document" : 
+              "Delete document"}
           >
-            ×
+            ✕
           </button>
           <Button
             variant="outline"
