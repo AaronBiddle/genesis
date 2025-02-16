@@ -121,10 +121,8 @@ export function ChatBox({ width }: { width: number }) {
                 const confirmed = window.confirm(`Are you sure you want to delete "${chatTitle}"?`);
                 if (!confirmed) return;
                 try {
-                  const response = await fetch(`${API_ENDPOINTS.DELETE_CHAT}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ filename: chatTitle })
+                  const response = await fetch(`${API_ENDPOINTS.DELETE_CHAT}/${encodeURIComponent(chatTitle)}`, {
+                    method: 'DELETE'
                   });
                   if (!response.ok) throw new Error('Failed to delete chat');
                   setMessages([]);

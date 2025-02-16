@@ -74,7 +74,7 @@ async def load_chat(request: LoadChatRequest):
 
 @router.delete("/delete/{filename}")
 async def delete_chat(filename: str):
-    """Delete a chat file"""
+    """Delete a chat file using the standard DELETE method."""
     try:
         log(LogLevel.TEMPORARY, f"Deleting chat: {filename}", LogPrefix.CHAT)
         return await chat_manager.delete(filename)
