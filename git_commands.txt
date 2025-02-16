@@ -2,13 +2,13 @@ git show --name-only HEAD           # show changed files
 git log --pretty=format:"%h - %s"   # show commit history
 git ls-tree -r HEAD --name-only     # show all files in the repo
 git branch                          # show all branches
-git checkout -b development origin/development  # create and switch to the development branch
 
 git fetch                           # make local git match github
 git reset --hard origin/main        # git pull origin main in bulldozer mode
 
 git checkout main                   # Make sure you're on main
 git checkout -b development         # Create and switch to the development branch
+git checkout -b development origin/development  # if development branch doesn't exist locally
 git push origin development         # Push the development branch to github
 
 git checkout main
