@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useFileList } from '../hooks/useFileList';
 import { motion } from 'framer-motion';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
-import ReactMarkdown, { Components } from 'react-markdown';
+import ReactMarkdown from 'react-markdown';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faFileCode, 
