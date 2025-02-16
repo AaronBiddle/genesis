@@ -89,14 +89,11 @@ export function TabbedWindow({
     if (!confirmed) return;
 
     try {
-      const response = await fetch(API_ENDPOINTS.DELETE_DOCUMENT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: currentDoc.title })
+      const response = await fetch(`${API_ENDPOINTS.DELETE_DOCUMENT}/${encodeURIComponent(currentDoc.title)}`, {
+        method: 'DELETE'
       });
-
       if (!response.ok) throw new Error('Failed to delete document');
-      
+
       onDocumentClose(currentDoc.id);
       await refreshFiles();
     } catch (error) {

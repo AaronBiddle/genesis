@@ -46,7 +46,7 @@ async def load_document(request: DocumentRequest):
 
 @router.delete("/delete/{filename}")
 async def delete_document(filename: str):
-    """Delete a document file"""
+    """Delete a document file using the standard DELETE method."""
     try:
         log(LogLevel.TEMPORARY, f"Deleting document: {filename}", LogPrefix.FILE)
         return await document_manager.delete(filename)
