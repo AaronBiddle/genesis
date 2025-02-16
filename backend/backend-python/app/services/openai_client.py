@@ -9,6 +9,7 @@ import json
 # Load environment variables from .env file.
 
 dotenv_path = find_dotenv()
+print(f"dotenv_path: {dotenv_path}")
 load_dotenv(dotenv_path)
 
 # Initialize the client with DeepSeek credentials from .env.

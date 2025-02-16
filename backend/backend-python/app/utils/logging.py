@@ -43,19 +43,19 @@ def log(level: LogLevel, message: str, prefix: LogPrefix | str = LogPrefix.SYSTE
         prefix_str = prefix.value if isinstance(prefix, LogPrefix) else prefix
         print(f"[{timestamp}] {prefix_str} ({filename}) {message}")
 
-def debug_log(level: LogLevel = LogLevel.DEBUGGING):
-    """
-    Decorator for logging function entry/exit
-    """
-    def decorator(func):
-        async def wrapper(*args, **kwargs):
-            func_name = func.__name__
-            log(level, f"Entering {func_name}", LogPrefix.DEBUG)
-            # Don't wrap the function execution in try/except
-            # Let the original function handle its own exceptions
-            return await func(*args, **kwargs)
-        # Preserve the original function's attributes
-        from functools import update_wrapper
-        update_wrapper(wrapper, func)
-        return wrapper
-    return decorator 
+# def debug_log(level: LogLevel = LogLevel.DEBUGGING):
+#     """
+#     Decorator for logging function entry/exit
+#     """
+#     def decorator(func):
+#         async def wrapper(*args, **kwargs):
+#             func_name = func.__name__
+#             log(level, f"Entering {func_name}", LogPrefix.DEBUG)
+#             # Don't wrap the function execution in try/except
+#             # Let the original function handle its own exceptions
+#             return await func(*args, **kwargs)
+#         # Preserve the original function's attributes
+#         from functools import update_wrapper
+#         update_wrapper(wrapper, func)
+#         return wrapper
+#     return decorator 

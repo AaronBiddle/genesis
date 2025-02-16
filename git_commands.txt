@@ -1,16 +1,17 @@
-git show --name-only HEAD       # show changed files
+git show --name-only HEAD           # show changed files
 git log --pretty=format:"%h - %s"   # show commit history
-git ls-tree -r HEAD --name-only # show all files in the repo
-git branch                      # show all branches
+git ls-tree -r HEAD --name-only     # show all files in the repo
+git branch                          # show all branches
+git checkout -b development origin/development  # create and switch to the development branch
 
-git fetch			            # make local git match github
-git reset --hard origin/main    # git pull origin main in bulldozer mode
+git fetch                           # make local git match github
+git reset --hard origin/main        # git pull origin main in bulldozer mode
 
-git checkout main               # Make sure you're on main
-git checkout -b development     # Create and switch to the development branch
-git push origin development     # Push the development branch to github
+git checkout main                   # Make sure you're on main
+git checkout -b development         # Create and switch to the development branch
+git push origin development         # Push the development branch to github
 
 git checkout main
-git merge development --no-ff   # Merge the development branch into main
-git push origin main            # Push the main branch to github
+git merge development --no-ff       # Merge the development branch into main
+git push origin main                # Push the main branch to github
 

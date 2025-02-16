@@ -1,14 +1,13 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import json
 from services.openai_client import stream_chat_response
-from utils.logging import LogLevel, log, debug_log, LogPrefix
+from utils.logging import LogLevel, log, LogPrefix
 
 router = APIRouter()
 
 DEBUG_CHAT = False
 
 @router.websocket("/ws/chat")
-@debug_log(LogLevel.DEBUGGING)
 async def ai_chat_endpoint(websocket: WebSocket):
     try:
         await websocket.accept()

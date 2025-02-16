@@ -58,19 +58,15 @@ async def save_chat(chat_data: ChatData):
 async def list_chats():
     """List all available chat files"""
     try:
-        log(LogLevel.TEMPORARY, "Listing chat files", LogPrefix.CHAT)
         files = await chat_manager.list_files()
-        log(LogLevel.TEMPORARY, f"Found {len(files)} chat files", LogPrefix.CHAT)
         return {"files": files}
     except Exception as e:
         log(LogLevel.ERROR, f"Error listing chats: {str(e)}", LogPrefix.ERROR)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/load")
-async def load_chat(request: ChatData):
-    """Load chat history from a file"""
+async def load_chat(request: LoadChatRequest):
     try:
-        log(LogLevel.TEMPORARY, f"Loading chat: {request.filename}", LogPrefix.CHAT)
         return await chat_manager.load(request.filename)
     except Exception as e:
         log(LogLevel.ERROR, f"Error loading chat: {str(e)}", LogPrefix.ERROR)
@@ -138,11 +134,6 @@ async def delete_chat(filename: str):
     except Exception as e:
         log(LogLevel.MINIMUM, f"Error deleting chat: {str(e)}", LogPrefix.ERROR)
         raise HTTPException(status_code=400, detail=str(e))
-
-@router.post("/load")
-async def load_chat(request: DeleteChatRequest):
-    log(LogLevel.MINIMUM, "Route called: POST /chats/load", LogPrefix.SYSTEM)
-    return await chat_manager.load(request.filename)
 
 @router.post("/save")
 async def save_chat(request: SaveChatRequest):

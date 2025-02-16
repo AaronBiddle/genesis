@@ -44,7 +44,7 @@ class FileManager:
                 with open(file_path, 'w', encoding='utf-8') as f:
                     f.write(content)
                     
-            log(LogLevel.DEBUGGING, f"Saved {self.file_type} to {filename}", LogPrefix.FILE)
+            log(LogLevel.DEBUGGING, f"Saved {self.file_type} to {file_path}", LogPrefix.FILE)
             return {"filename": filename}
             
         except Exception as e:
@@ -93,9 +93,7 @@ class FileManager:
 
     async def list_files(self) -> List[str]:
         """List all files with the specified extension"""
-        try:
-            log(LogLevel.TEMPORARY, f"Listing files in directory: {self.base_dir}", LogPrefix.FILE)
-            
+        try:            
             pattern = f"*{self.extension}"
             
             files = [f.name for f in self.base_dir.glob(pattern)]
@@ -104,5 +102,4 @@ class FileManager:
             
         except Exception as e:
             log(LogLevel.ERROR, f"Error in list_files: {str(e)}", LogPrefix.ERROR)
-            log(LogLevel.TEMPORARY, f"Error type: {type(e)}", LogPrefix.ERROR)
             raise 

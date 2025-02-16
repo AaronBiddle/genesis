@@ -27,9 +27,7 @@ async def save_document(request: SaveDocumentRequest):
 async def list_documents():
     """List all available document files"""
     try:
-        log(LogLevel.TEMPORARY, "Listing document files", LogPrefix.FILE)
         files = await document_manager.list_files()
-        log(LogLevel.TEMPORARY, f"Found {len(files)} document files", LogPrefix.FILE)
         return {"files": files}
     except Exception as e:
         log(LogLevel.ERROR, f"Error listing documents: {str(e)}", LogPrefix.ERROR)

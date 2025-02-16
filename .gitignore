@@ -11,6 +11,8 @@ node_modules/
 !/backend/user-data/chats/.gitkeep
 /backend/user-data/documents/*
 !/backend/user-data/documents/.gitkeep
+/backend/user-data/prompts/*
+!/backend/user-data/prompts/.gitkeep
 
 # Production
 /dist
