@@ -2,10 +2,13 @@ from enum import Enum
 from datetime import datetime
 import functools
 import os
+import inspect
 
 class LogLevel(Enum):
-    MINIMUM = 1
-    DEBUGGING = 2
+    ERROR = 0      # Always show errors
+    MINIMUM = 1    # Production logging
+    DEBUGGING = 2  # Development debugging
+    TEMPORARY = 3  # Temporary debugging
 
 class LogPrefix(str, Enum):
     SYSTEM = "⚙️"
@@ -19,6 +22,7 @@ class LogPrefix(str, Enum):
 CURRENT_LOG_LEVEL = LogLevel(int(os.getenv('LOG_LEVEL', '1')))
 
 def get_timestamp():
+    """Get current timestamp in HH:MM:SS.mmm format"""
     return datetime.now().strftime('%H:%M:%S.%f')[:-3]
 
 def log(level: LogLevel, message: str, prefix: LogPrefix | str = LogPrefix.SYSTEM):
@@ -32,9 +36,12 @@ def log(level: LogLevel, message: str, prefix: LogPrefix | str = LogPrefix.SYSTE
     """
     if level.value <= CURRENT_LOG_LEVEL.value:
         timestamp = get_timestamp()
+        # Get the caller's filename
+        frame = inspect.currentframe().f_back
+        filename = os.path.basename(frame.f_code.co_filename)
         # Handle both enum and string prefixes
         prefix_str = prefix.value if isinstance(prefix, LogPrefix) else prefix
-        print(f"[{timestamp}] {prefix_str} {message}")
+        print(f"[{timestamp}] {prefix_str} ({filename}) {message}")
 
 def debug_log(level: LogLevel = LogLevel.DEBUGGING):
     """
