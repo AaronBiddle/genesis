@@ -2,7 +2,7 @@
 echo First generate requirements.txt from within the Docker container:
 
 REM Navigate to the 'app' directory
-cd app
+cd ../app
 
 REM Check if the virtual environment already exists
 IF EXIST venv (
@@ -16,7 +16,7 @@ REM Activating the virtual environment
 call venv\Scripts\activate
 
 REM Confirm activation (will show the environment name in the prompt)
-echo Virtual environment should now be active.
+echo Virtual environment should now be active. Continue?
 
 REM Display Python version and full path for verification
 echo Current Python version:

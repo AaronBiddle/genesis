@@ -1,10 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChatMessage } from '../types/chat';
 import { useWebSocket } from './useWebSocket';
-
-const DEBUG_CHAT = false
+import { useChatSettings } from '../stores/chatSettingsStore';
+import { useLoggingStore, LogLevel } from '../stores/loggingStore';
+import { API_ENDPOINTS } from '../config/constants';
 
 export function useAIChat() {
+  const log = useLoggingStore((state: { log: any; }) => state.log);
+  const namespace = '🤖 AI Chat:';
+  
   // Pre-populate the chat history with a test markdown message.
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
@@ -12,15 +16,22 @@ export function useAIChat() {
   // Holds the index of the chat message currently being streamed
   const currentMessageIndexRef = useRef<number | null>(null);
 
+  const { systemPrompt, temperature } = useChatSettings();
+
+  const [isStreaming, setIsStreaming] = useState(false);
+
+  // Add removeMessage function
+  const removeMessage = (index: number) => {
+    setMessages(prev => prev.filter((_, i) => i !== index));
+  };
+
   useEffect(() => {
     subscribeToMessages((data) => {
-      if (DEBUG_CHAT) console.log('🤖 AI Chat: Processing chat data:', data);
-      
       if (data.channel === "chatStream") {
         if (data.token) {
+          setIsStreaming(true);
           const index = currentMessageIndexRef.current;
           if (index !== null) {
-            if (DEBUG_CHAT) console.log('🤖 AI Chat: Adding token to message:', data.token);
             setMessages((prev) => {
               const newMessages = [...prev];
               const currentMsg = newMessages[index];
@@ -33,11 +44,13 @@ export function useAIChat() {
           }
         }
         if (data.done === true) {
-          if (DEBUG_CHAT) console.log('🤖 AI Chat: Chat stream complete');
+          log(LogLevel.DEBUG, namespace, 'Chat stream complete:', data);
           currentMessageIndexRef.current = null;
+          setIsStreaming(false);
         }
       } else if (data.error) {
-        if (DEBUG_CHAT) console.error("AI Chat: Error from server:", data.error);
+        log(LogLevel.ERROR, namespace, "Error from server:", data.error);
+        setIsStreaming(false);
       }
     });
   }, [subscribeToMessages]);
@@ -45,7 +58,8 @@ export function useAIChat() {
   // Sends the prompt to the AI API and adds a new chat message in state.
   const sendPrompt = (prompt: string) => {
     if (isConnected) {
-      if (DEBUG_CHAT) console.log('🤖 Sending prompt:', prompt);
+      setIsStreaming(true);
+      log(LogLevel.DEBUG, namespace, 'Sending prompt:', prompt);
       setMessages((prev) => {
         const newMessages: ChatMessage[] = [
           ...prev,
@@ -55,12 +69,72 @@ export function useAIChat() {
         currentMessageIndexRef.current = newMessages.length - 1;
         return newMessages;
       });
-      // Format the message to match what the Python backend expects
+      // Format the message to include chat history
       sendMessage({
-        prompt: prompt
+        prompt: prompt,
+        system_prompt: systemPrompt,
+        temperature: temperature,
+        history: messages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }))
       });
     }
   };
 
-  return { messages, isConnected, sendPrompt };
+  const saveChat = async (filename: string) => {
+    try {
+      const response = await fetch(API_ENDPOINTS.SAVE_CHAT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename,
+          messages,
+          system_prompt: systemPrompt,
+          temperature: temperature
+        })
+      });
+      
+      if (!response.ok) throw new Error('Save failed');
+      return await response.json();
+    } catch (error) {
+      console.error('Error saving chat:', error);
+      throw error;
+    }
+  };
+
+  const loadChat = async (filename: string) => {
+    try {
+      const response = await fetch(API_ENDPOINTS.LOAD_CHAT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename })
+      });
+      
+      if (!response.ok) throw new Error('Load failed');
+      const data = await response.json();
+      
+      setMessages(data.messages);
+      
+      return {
+        messages: data.messages,
+        system_prompt: data.system_prompt,
+        temperature: data.temperature
+      };
+    } catch (error) {
+      console.error('Error loading chat:', error);
+      throw error;
+    }
+  };
+
+  return { 
+    messages, 
+    setMessages,
+    isConnected,
+    isStreaming,
+    sendPrompt,
+    removeMessage,
+    saveChat,
+    loadChat
+  };
 } 

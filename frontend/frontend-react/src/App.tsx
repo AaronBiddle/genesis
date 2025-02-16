@@ -1,148 +1,136 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs'
-import { Card, CardHeader, CardTitle, CardContent } from './components/ui/card'
-import { Input } from './components/ui/input'
-import { Button } from './components/ui/button'
-import { useAIChat } from './hooks/useAIChat'
 import { ResizableDivider } from './components/ui/resizable'
+import { ControlPanel } from './components/ControlPanel'
+import { TabbedWindow } from './components/TabbedWindow'
+import { ChatBox } from './components/ChatBox'
 import './App.css'
-import { ChatMessage } from './types/chat'
-import ReactMarkdown from 'react-markdown'
+import { API_ENDPOINTS } from './config/constants'
+
+interface Document {
+  id: string;
+  title: string;
+  content: string;
+}
 
 export default function App() {
-  const { messages, isConnected, sendPrompt } = useAIChat();
-  const [inputMessage, setInputMessage] = useState('')
   const [leftWidth, setLeftWidth] = useState(200);
-  const [rightWidth, setRightWidth] = useState(400);
-  
-  const MIN_WIDTH = 200;
-  const MAX_WIDTH = 800;
+  const [rightWidth, setRightWidth] = useState(600);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [activeDocument, setActiveDocument] = useState<string | null>(null);
+  const [markdownEnabled, setMarkdownEnabled] = useState(true);
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || !isConnected) return
-    sendPrompt(inputMessage.trim())
-    setInputMessage('')
-  }
+  const MIN_WIDTH = 200;
+  const MAX_WIDTH = 1000;
 
   const handleLeftResize = (delta: number) => {
-    setLeftWidth(prevWidth => {
+    setLeftWidth((prevWidth) => {
       const newWidth = prevWidth + delta;
       return Math.min(Math.max(newWidth, MIN_WIDTH), MAX_WIDTH);
     });
   };
 
   const handleRightResize = (delta: number) => {
-    setRightWidth(prevWidth => {
+    setRightWidth((prevWidth) => {
       const newWidth = prevWidth - delta;
       return Math.min(Math.max(newWidth, MIN_WIDTH), MAX_WIDTH);
     });
   };
 
+  const handleNewDocument = () => {
+    const newDoc = {
+      id: `doc-${Date.now()}`,
+      title: "Untitled",
+      content: ""
+    };
+    setDocuments(prev => [...prev, newDoc]);
+    setActiveDocument(newDoc.id);
+  };
+
+  const handleOpenDocument = async (filename: string) => {
+    if (!filename) return;
+    
+    try {
+      const response = await fetch(API_ENDPOINTS.LOAD_DOCUMENT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to load document');
+      }
+      
+      const data = await response.json();
+      const newDoc = {
+        id: `doc-${Date.now()}`,
+        title: filename,
+        content: data.content
+      };
+      setDocuments(prev => [...prev, newDoc]);
+      setActiveDocument(newDoc.id);
+    } catch (error) {
+      console.error('Error loading document:', error);
+      alert('Failed to load document');
+    }
+  };
+
+  const handleCloseDocument = (id: string) => {
+    setDocuments(prev => prev.filter(doc => doc.id !== id));
+    if (activeDocument === id) {
+      const remaining = documents.filter(doc => doc.id !== id);
+      setActiveDocument(remaining.length > 0 ? remaining[0].id : null);
+    }
+  };
+
+  const handleSaveDocument = async () => {
+    if (!activeDocument) return;
+    
+    const currentDoc = documents.find(doc => doc.id === activeDocument);
+    if (!currentDoc) return;
+
+    try {
+      const response = await fetch(API_ENDPOINTS.SAVE_DOCUMENT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: currentDoc.title,
+          content: currentDoc.content
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save document');
+      }
+
+      console.log('Document saved successfully');
+    } catch (error) {
+      console.error('Error saving document:', error);
+      alert('Failed to save document');
+    }
+  };
+
+  const handleDocumentContentChange = (_id: string, updatedDocs: Array<{ id: string; title: string; content: string }>) => {
+    setDocuments(updatedDocs);
+  };
+
   return (
     <div className="h-screen flex bg-gray-300 text-gray-900 pt-2 pb-2">
-      {/* Left Control Panel */}
-      <Card className="shadow-md rounded-2xl mx-1 my-2" style={{ width: leftWidth }}>
-        <CardHeader>
-          <CardTitle>Control Panel</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-2">
-            <Button variant="outline">Command 1</Button>
-            <Button variant="outline">Command 2</Button>
-            <Button variant="outline">Command 3</Button>
-          </div>
-        </CardContent>
-      </Card>
-
+      <ControlPanel width={leftWidth} />
       <ResizableDivider onResize={handleLeftResize} className="my-4" />
-
-      {/* Middle Tabbed Document Window */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="rounded-2xl bg-white shadow-md flex flex-col mx-1 my-2 flex-grow"
-      >
-        <Tabs defaultValue="tab1">
-          <TabsList className="bg-gray-100">
-            <TabsTrigger value="tab1">Tab One</TabsTrigger>
-            <TabsTrigger value="tab2">Tab Two</TabsTrigger>
-            <TabsTrigger value="tab3">Tab Three</TabsTrigger>
-          </TabsList>
-          <TabsContent value="tab1" className="p-4 markdown-content">
-            <ReactMarkdown>{`# Main Heading
-
-## Getting Started
-Here's a sample list:
-- First item with **bold text**
-- Second item with *italic text*
-- Third item with \`inline code\`
-
-### Code Examples
-Here's a simple TypeScript function:
-
-\`\`\`typescript
-function hello(name: string) {
-  return "Hello, " + name;
-}
-\`\`\`
-
-#### Additional Notes
-You can also use markdown for:
-- Links
-- Tables
-- Block quotes
-- And more!
-`}</ReactMarkdown>
-          </TabsContent>
-          <TabsContent value="tab2" className="p-4">
-            <p>Content of Tab Two</p>
-          </TabsContent>
-          <TabsContent value="tab3" className="p-4">
-            <p>Content of Tab Three</p>
-          </TabsContent>
-        </Tabs>
-      </motion.div>
-
+      <TabbedWindow 
+        documents={documents}
+        activeDocument={activeDocument}
+        onDocumentChange={setActiveDocument}
+        onDocumentContentChange={handleDocumentContentChange}
+        onDocumentClose={handleCloseDocument}
+        onDocumentSave={handleSaveDocument}
+        markdownEnabled={markdownEnabled}
+        onMarkdownToggle={() => setMarkdownEnabled(!markdownEnabled)}
+        onNewDocument={handleNewDocument}
+        onOpenDocument={handleOpenDocument}
+      />
       <ResizableDivider onResize={handleRightResize} className="my-4" />
-
-      {/* Right Chat Box */}
-      <Card className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" style={{ width: rightWidth }}>
-        <CardHeader>
-          <CardTitle>Chat</CardTitle>
-        </CardHeader>
-        <div className="flex-grow overflow-auto p-4">
-          {messages.map((message, index) => (
-            <div key={index} className={`mb-4 ${message.role === 'assistant' ? 'pl-4' : 'pr-4'}`}>
-              <div
-                className={`p-2 rounded-lg markdown-content ${
-                  message.role === 'assistant' ? 'bg-gray-100' : 'bg-blue-100 ml-auto'
-                }`}
-              >
-                <ReactMarkdown>{message.content}</ReactMarkdown>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="p-4">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const input = e.currentTarget.elements.namedItem('message') as HTMLInputElement;
-              if (input.value.trim()) {
-                sendPrompt(input.value);
-                input.value = '';
-              }
-            }}
-          >
-            <div className="flex gap-2">
-              <Input name="message" placeholder="Type your message..." className="flex-grow" />
-              <Button type="submit">Send</Button>
-            </div>
-          </form>
-        </div>
-      </Card>
+      <ChatBox width={rightWidth} />
     </div>
-  )
+  );
 }

@@ -1,5 +1,6 @@
 @echo off
 setlocal
+cd ..
 
 REM Build the Docker image
 echo Building Docker image...
@@ -24,6 +25,8 @@ echo Starting new container...
 docker run -it --name python-backend ^
     -p 8000:8000 ^
     -v %cd%/app:/app ^
-    python-backend bash
+    -v %cd%/../user-data:/user-data ^
+    -v %cd%/../../.env:/app/.env ^
+    python-backend bash    
 
 echo If you see this message, the container exited unexpectedly.
