@@ -239,8 +239,13 @@ export function ChatBox({ width }: { width: number }) {
               loadChat(filename).then((result) => {
                 if (result) {
                   setChatTitle(filename);
-                  if (options?.loadPrompt && result.system_prompt) {
-                    setSystemPrompt(result.system_prompt);
+                  if (options?.loadPrompt) {
+                    if (result.system_prompt) {
+                      setSystemPrompt(result.system_prompt);
+                    }
+                    if (result.temperature !== undefined) {
+                      setTemperature(result.temperature);
+                    }
                   }
                 }
               }).catch((err) => {

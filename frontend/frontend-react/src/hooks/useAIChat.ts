@@ -116,7 +116,11 @@ export function useAIChat() {
       
       setMessages(data.messages);
       
-      return data;
+      return {
+        messages: data.messages,
+        system_prompt: data.system_prompt,
+        temperature: data.temperature
+      };
     } catch (error) {
       console.error('Error loading chat:', error);
       throw error;
