@@ -10,6 +10,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSave, faSpinner, faFileCirclePlus, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import { useFileList } from '../hooks/useFileList';
 import { API_ENDPOINTS } from '../config/constants';
+import { FileDialog } from './ui/FileDialog';
 
 export function ChatBox({ width }: { width: number }) {
   const { messages, setMessages, isConnected, sendPrompt, removeMessage, saveChat, loadChat } = useAIChat();
@@ -23,7 +24,7 @@ export function ChatBox({ width }: { width: number }) {
   const [showChatSettings, setShowChatSettings] = useState(false);
   const [messageInput, setMessageInput] = useState('');
   const [chatTitle, setChatTitle] = useState("untitled chat");
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const isInitialMount = useRef(true);
   const prevMessagesRef = useRef<ChatMessage[]>(messages);
@@ -62,31 +63,23 @@ export function ChatBox({ width }: { width: number }) {
     prevTitleRef.current = chatTitle;
   }, [messages, chatTitle]);
 
+  // Update the dialog state to include type
+  const [fileDialog, setFileDialog] = useState<{
+    visible: boolean;
+    mode: 'open' | 'save' | null;
+  }>({
+    visible: false,
+    mode: null
+  });
+
   const handleSaveChat = async () => {
-    try {
-      setIsSaving(true);
-      
-      // If this is an untitled chat, prompt for save location
-      if (chatTitle === "Untitled Chat") {
-        const newTitle = prompt("Enter chat name (e.g., 'work/meeting-notes'):");
-        if (!newTitle) {
-          setIsSaving(false);
-          return; // User cancelled
-        }
-        setChatTitle(newTitle);
-      }
-      
-      const response = await saveChat(chatTitle);
-      setHasUnsavedChanges(false);
-      // Update title with the actual saved path (in case backend normalized it)
-      const savedTitle = response.filename || chatTitle;
-      setChatTitle(savedTitle);
-      await refreshChats();
-    } catch (error) {
-      console.error('Failed to save chat:', error);
-      alert('Failed to save chat');
-    } finally {
-      setIsSaving(false);
+    if (chatTitle === "untitled chat") {
+      setFileDialog({
+        visible: true,
+        mode: 'save'
+      });
+    } else {
+      await saveChat(chatTitle);
     }
   };
 
@@ -128,34 +121,14 @@ export function ChatBox({ width }: { width: number }) {
   };
 
   const handleLoadChat = async () => {
-    // Prompt user to confirm if there are unsaved changes
     if (hasUnsavedChanges) {
       const confirmed = window.confirm('You have unsaved changes. Continue anyway?');
       if (!confirmed) return;
     }
-
-    try {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.json';
-      
-      input.onchange = async (e) => {
-        const file = (e.target as HTMLInputElement).files?.[0];
-        if (!file) return;
-        
-        const filename = file.name.replace('.json', '');
-        const result = await loadChat(filename);
-        if (result) {
-          setChatTitle(filename);
-          setHasUnsavedChanges(false);
-        }
-      };
-      
-      input.click();
-    } catch (error) {
-      console.error('Failed to load chat:', error);
-      alert('Failed to load chat');
-    }
+    setFileDialog({
+      visible: true,
+      mode: 'open'
+    });
   };
 
   // Add isGenerating to the saveDisabled condition
@@ -166,135 +139,169 @@ export function ChatBox({ width }: { width: number }) {
                     <FontAwesomeIcon icon={faSave} />;
 
   return (
-    <Card className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" style={{ width }}>
-      <CardHeader className="flex items-center justify-between p-2 border-b">
-        <div>
-          <span className="text-xl font-semibold">{chatTitle}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleNewChat}
-            className="w-8 h-8 flex items-center justify-center text-black hover:text-green-600"
-            title="New chat"
-          >
-            <FontAwesomeIcon icon={faFileCirclePlus} />
-          </button>
-          <button
-            onClick={handleLoadChat}
-            className="w-8 h-8 flex items-center justify-center text-black hover:text-blue-600"
-            title="Load chat"
-          >
-            <FontAwesomeIcon icon={faFolderOpen} />
-          </button>
-          <button
-            onClick={handleSaveChat}
-            disabled={saveDisabled}
-            className="w-8 h-8 flex items-center justify-center text-blue-500 hover:text-blue-700 disabled:text-gray-400"
-            title={
-              saveDisabled
-                ? isSaving
-                  ? "Saving..."
-                  : isGenerating
-                  ? "Cannot save while message is generating"
-                  : "No changes to save"
-                : "Save chat"
-            }
-          >
-            {buttonIcon}
-          </button>
-          <button
-            onClick={handleDeleteChat}
-            disabled={chatTitle === "untitled chat" || isSaving}
-            className="w-6 h-6 flex items-center justify-center text-red-500 hover:text-red-700 disabled:text-gray-400"
-            title={chatTitle === "untitled chat" ? "Cannot delete untitled chat" : "Delete chat"}
-          >
-            ✕
-          </button>
-          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-          <button onClick={() => setShowChatSettings(!showChatSettings)}>⚙️</button>
-        </div>
-      </CardHeader>
-      <div className="flex-grow overflow-auto p-4">
-        {showChatSettings ? (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">System Prompt</label>
-              <Input
-                value={systemPrompt}
-                onChange={(e) => setSystemPrompt(e.target.value)}
-                minHeight={300}
-                maxHeight={500}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Temperature: {temperature}
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="2"
-                step="0.1"
-                value={temperature}
-                onChange={(e) => setTemperature(Number(e.target.value))}
-                className="w-full"
-              />
-            </div>
+    <>
+      <Card className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" style={{ width }}>
+        <CardHeader className="flex items-center justify-between p-2 border-b">
+          <div>
+            <span className="text-xl font-semibold">{chatTitle}</span>
           </div>
-        ) : (
-          messages.map((message, index) => (
-            <MessageContainer
-              key={index}
-              message={message}
-              index={index}
-              onRemove={removeMessage}
-            />
-          ))
-        )}
-      </div>
-      <div className="p-4">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (messageInput.trim()) {
-              sendPrompt(messageInput);
-              setMessageInput('');
-            }
-          }}
-        >
-          <div className="flex gap-2">
-            <Input
-              name="message"
-              placeholder="Type your message..."
-              className="flex-grow"
-              minHeight={100}
-              maxHeight={200}
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleNewChat}
+              className="w-8 h-8 flex items-center justify-center text-black hover:text-green-600"
+              title="New chat"
+            >
+              <FontAwesomeIcon icon={faFileCirclePlus} />
+            </button>
+            <button
+              onClick={handleLoadChat}
+              className="w-8 h-8 flex items-center justify-center text-black hover:text-blue-600"
+              title="Load chat"
+            >
+              <FontAwesomeIcon icon={faFolderOpen} />
+            </button>
+            <button
+              onClick={handleSaveChat}
+              disabled={saveDisabled}
+              className="w-8 h-8 flex items-center justify-center text-blue-500 hover:text-blue-700 disabled:text-gray-400"
+              title={
+                saveDisabled
+                  ? isSaving
+                    ? "Saving..."
+                    : isGenerating
+                    ? "Cannot save while message is generating"
+                    : "No changes to save"
+                  : "Save chat"
+              }
+            >
+              {buttonIcon}
+            </button>
+            <button
+              onClick={handleDeleteChat}
+              disabled={chatTitle === "untitled chat" || isSaving}
+              className="w-6 h-6 flex items-center justify-center text-red-500 hover:text-red-700 disabled:text-gray-400"
+              title={chatTitle === "untitled chat" ? "Cannot delete untitled chat" : "Delete chat"}
+            >
+              ✕
+            </button>
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+            <button onClick={() => setShowChatSettings(!showChatSettings)}>⚙️</button>
+          </div>
+        </CardHeader>
+        <div className="flex-grow overflow-auto p-4">
+          {showChatSettings ? (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">System Prompt</label>
+                <Input
+                  value={systemPrompt}
+                  onChange={(e) => setSystemPrompt(e.target.value)}
+                  minHeight={300}
+                  maxHeight={500}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Temperature: {temperature}
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                  value={temperature}
+                  onChange={(e) => setTemperature(Number(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          ) : (
+            messages.map((message, index) => (
+              <MessageContainer
+                key={index}
+                message={message}
+                index={index}
+                onRemove={removeMessage}
+              />
+            ))
+          )}
+        </div>
+        <div className="p-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (messageInput.trim()) {
+                sendPrompt(messageInput);
+                setMessageInput('');
+              }
+            }}
+          >
+            <div className="flex gap-2">
+              <Input
+                name="message"
+                placeholder="Type your message..."
+                className="flex-grow"
+                minHeight={100}
+                maxHeight={200}
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (messageInput.trim()) {
+                      sendPrompt(messageInput);
+                      setMessageInput('');
+                    }
+                  }
+                }}
+              />
+              <Button 
+                type="submit"
+                onClick={() => {
                   if (messageInput.trim()) {
                     sendPrompt(messageInput);
                     setMessageInput('');
                   }
+                }}
+              >
+                Send
+              </Button>
+            </div>
+          </form>
+        </div>
+      </Card>
+      
+      {fileDialog.visible && fileDialog.mode && (
+        <FileDialog
+          mode={fileDialog.mode}
+          type="chat"
+          defaultFilename={fileDialog.mode === 'save' ? chatTitle : ''}
+          onSelect={(filename, options) => {
+            setFileDialog({ visible: false, mode: null });
+            if (fileDialog.mode === 'open') {
+              loadChat(filename).then((result) => {
+                if (result) {
+                  setChatTitle(filename);
+                  // Only update the system prompt if the option is enabled
+                  if (options?.loadPrompt && result.system_prompt) {
+                    setSystemPrompt(result.system_prompt);
+                  }
+                  setHasUnsavedChanges(false);
                 }
-              }}
-            />
-            <Button 
-              type="submit"
-              onClick={() => {
-                if (messageInput.trim()) {
-                  sendPrompt(messageInput);
-                  setMessageInput('');
-                }
-              }}
-            >
-              Send
-            </Button>
-          </div>
-        </form>
-      </div>
-    </Card>
+              }).catch((err) => {
+                console.error('Failed to load chat:', err);
+                alert('Failed to load chat');
+              });
+            } else if (fileDialog.mode === 'save') {
+              setChatTitle(filename);
+              saveChat(filename);
+            }
+          }}
+          onCancel={() => {
+            setFileDialog({ visible: false, mode: null });
+          }}
+        />
+      )}
+    </>
   );
 } 
