@@ -18,6 +18,8 @@ export function useAIChat() {
 
   const { systemPrompt, temperature } = useChatSettings();
 
+  const [isStreaming, setIsStreaming] = useState(false);
+
   // Add removeMessage function
   const removeMessage = (index: number) => {
     setMessages(prev => prev.filter((_, i) => i !== index));
@@ -27,6 +29,7 @@ export function useAIChat() {
     subscribeToMessages((data) => {
       if (data.channel === "chatStream") {
         if (data.token) {
+          setIsStreaming(true);
           const index = currentMessageIndexRef.current;
           if (index !== null) {
             setMessages((prev) => {
@@ -43,9 +46,11 @@ export function useAIChat() {
         if (data.done === true) {
           log(LogLevel.DEBUG, namespace, 'Chat stream complete:', data);
           currentMessageIndexRef.current = null;
+          setIsStreaming(false);
         }
       } else if (data.error) {
         log(LogLevel.ERROR, namespace, "Error from server:", data.error);
+        setIsStreaming(false);
       }
     });
   }, [subscribeToMessages]);
@@ -53,6 +58,7 @@ export function useAIChat() {
   // Sends the prompt to the AI API and adds a new chat message in state.
   const sendPrompt = (prompt: string) => {
     if (isConnected) {
+      setIsStreaming(true);
       log(LogLevel.DEBUG, namespace, 'Sending prompt:', prompt);
       setMessages((prev) => {
         const newMessages: ChatMessage[] = [
@@ -120,7 +126,8 @@ export function useAIChat() {
   return { 
     messages, 
     setMessages,
-    isConnected, 
+    isConnected,
+    isStreaming,
     sendPrompt,
     removeMessage,
     saveChat,

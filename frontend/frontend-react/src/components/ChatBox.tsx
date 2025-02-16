@@ -1,11 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardHeader} from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { useAIChat } from '../hooks/useAIChat';
 import { MessageContainer } from './MessageContainer';
 import { useChatSettings } from '../stores/chatSettingsStore';
-import { ChatMessage } from '../types/chat';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSave, faSpinner, faFileCirclePlus, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import { useFileList } from '../hooks/useFileList';
@@ -13,7 +12,16 @@ import { API_ENDPOINTS } from '../config/constants';
 import { FileDialog } from './ui/FileDialog';
 
 export function ChatBox({ width }: { width: number }) {
-  const { messages, setMessages, isConnected, sendPrompt, removeMessage, saveChat, loadChat } = useAIChat();
+  const { 
+    messages, 
+    setMessages, 
+    isConnected, 
+    isStreaming,
+    sendPrompt, 
+    removeMessage, 
+    saveChat, 
+    loadChat 
+  } = useAIChat();
   const { refreshFiles: refreshChats } = useFileList('chat');
   const { 
     systemPrompt,
@@ -24,46 +32,7 @@ export function ChatBox({ width }: { width: number }) {
   const [showChatSettings, setShowChatSettings] = useState(false);
   const [messageInput, setMessageInput] = useState('');
   const [chatTitle, setChatTitle] = useState("untitled chat");
-  const [isSaving] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const isInitialMount = useRef(true);
-  const prevMessagesRef = useRef<ChatMessage[]>(messages);
-  const prevTitleRef = useRef(chatTitle);
-
-  // Update the isGenerating check to include "waiting for AI response" state
-  const isGenerating = messages.length > 0 && (
-    // Check if last message is empty assistant message
-    (messages[messages.length - 1].role === 'assistant' && 
-     messages[messages.length - 1].content === '') ||
-    // OR if last message is user message with no AI response yet
-    (messages[messages.length - 1].role === 'user')
-  );
-
-  // Track message changes for unsaved state
-  useEffect(() => {
-    if (isInitialMount.current) {
-      prevMessagesRef.current = messages;
-      prevTitleRef.current = chatTitle;
-      isInitialMount.current = false;
-      // If starting with empty messages, consider it a new session
-      if (messages.length === 0) {
-        setHasUnsavedChanges(false);
-      }
-      return;
-    }
-    
-    // Mark changes if either messages or title have changed
-    if (
-      JSON.stringify(messages) !== JSON.stringify(prevMessagesRef.current) ||
-      chatTitle !== prevTitleRef.current
-    ) {
-      setHasUnsavedChanges(true);
-    }
-    prevMessagesRef.current = messages;
-    prevTitleRef.current = chatTitle;
-  }, [messages, chatTitle]);
-
-  // Update the dialog state to include type
+  const [isSaving, setIsSaving] = useState(false);
   const [fileDialog, setFileDialog] = useState<{
     visible: boolean;
     mode: 'open' | 'save' | null;
@@ -72,6 +41,21 @@ export function ChatBox({ width }: { width: number }) {
     mode: null
   });
 
+  const doSaveChat = async (filename: string) => {
+    try {
+      setIsSaving(true);
+      const response = await saveChat(filename);
+      const savedTitle = response.filename || filename;
+      setChatTitle(savedTitle);
+      await refreshChats();
+    } catch (error) {
+      console.error('Failed to save chat:', error);
+      alert('Failed to save chat');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleSaveChat = async () => {
     if (chatTitle === "untitled chat") {
       setFileDialog({
@@ -79,64 +63,16 @@ export function ChatBox({ width }: { width: number }) {
         mode: 'save'
       });
     } else {
-      await saveChat(chatTitle);
-    }
-  };
-
-  const handleNewChat = () => {
-    setMessages([]);
-    // Changed to title case for consistency
-    setChatTitle("Untitled Chat");
-    setSystemPrompt("You are a helpful assistant...");
-    setTemperature(0.7);
-    setHasUnsavedChanges(false);
-  };
-
-  const handleDeleteChat = async () => {
-    if (!chatTitle || chatTitle === "untitled chat") return;
-    
-    const confirmed = window.confirm(`Are you sure you want to delete "${chatTitle}"?`);
-    if (!confirmed) return;
-    
-    try {
-      const response = await fetch(`${API_ENDPOINTS.DELETE_CHAT}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: chatTitle })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete chat');
-      }
-      
-      setMessages([]);
-      setChatTitle("untitled chat");
-      setHasUnsavedChanges(false);
-      await refreshChats();
-      
-    } catch (error) {
-      console.error('Failed to delete chat:', error);
-      alert('Failed to delete chat');
+      await doSaveChat(chatTitle);
     }
   };
 
   const handleLoadChat = async () => {
-    if (hasUnsavedChanges) {
-      const confirmed = window.confirm('You have unsaved changes. Continue anyway?');
-      if (!confirmed) return;
-    }
     setFileDialog({
       visible: true,
       mode: 'open'
     });
   };
-
-  // Add isGenerating to the saveDisabled condition
-  const saveDisabled = isSaving || !hasUnsavedChanges || isGenerating;
-
-  // Update buttonIcon to only show spinner or save icon
-  const buttonIcon = isSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : 
-                    <FontAwesomeIcon icon={faSave} />;
 
   return (
     <>
@@ -147,7 +83,12 @@ export function ChatBox({ width }: { width: number }) {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={handleNewChat}
+              onClick={() => {
+                setMessages([]);
+                setChatTitle("untitled chat");
+                setSystemPrompt("You are a helpful assistant...");
+                setTemperature(0.7);
+              }}
               className="w-8 h-8 flex items-center justify-center text-black hover:text-green-600"
               title="New chat"
             >
@@ -162,24 +103,40 @@ export function ChatBox({ width }: { width: number }) {
             </button>
             <button
               onClick={handleSaveChat}
-              disabled={saveDisabled}
-              className="w-8 h-8 flex items-center justify-center text-blue-500 hover:text-blue-700 disabled:text-gray-400"
+              disabled={isSaving || isStreaming}
+              className="w-8 h-8 flex items-center justify-center text-black hover:text-blue-600 disabled:text-gray-400"
               title={
-                saveDisabled
-                  ? isSaving
-                    ? "Saving..."
-                    : isGenerating
+                isSaving
+                  ? "Saving…"
+                  : isStreaming
                     ? "Cannot save while message is generating"
-                    : "No changes to save"
-                  : "Save chat"
+                    : "Save chat"
               }
             >
-              {buttonIcon}
+              {isSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faSave} />}
             </button>
             <button
-              onClick={handleDeleteChat}
+              onClick={async () => {
+                if (!chatTitle || chatTitle === "untitled chat") return;
+                const confirmed = window.confirm(`Are you sure you want to delete "${chatTitle}"?`);
+                if (!confirmed) return;
+                try {
+                  const response = await fetch(`${API_ENDPOINTS.DELETE_CHAT}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename: chatTitle })
+                  });
+                  if (!response.ok) throw new Error('Failed to delete chat');
+                  setMessages([]);
+                  setChatTitle("untitled chat");
+                  await refreshChats();
+                } catch (error) {
+                  console.error('Failed to delete chat:', error);
+                  alert('Failed to delete chat');
+                }
+              }}
               disabled={chatTitle === "untitled chat" || isSaving}
-              className="w-6 h-6 flex items-center justify-center text-red-500 hover:text-red-700 disabled:text-gray-400"
+              className="w-8 h-8 flex items-center justify-center text-black hover:text-red-600 disabled:text-gray-400"
               title={chatTitle === "untitled chat" ? "Cannot delete untitled chat" : "Delete chat"}
             >
               ✕
@@ -239,7 +196,7 @@ export function ChatBox({ width }: { width: number }) {
             <div className="flex gap-2">
               <Input
                 name="message"
-                placeholder="Type your message..."
+                placeholder="Type your message…"
                 className="flex-grow"
                 minHeight={100}
                 maxHeight={200}
@@ -255,7 +212,7 @@ export function ChatBox({ width }: { width: number }) {
                   }
                 }}
               />
-              <Button 
+              <Button
                 type="submit"
                 onClick={() => {
                   if (messageInput.trim()) {
@@ -282,11 +239,9 @@ export function ChatBox({ width }: { width: number }) {
               loadChat(filename).then((result) => {
                 if (result) {
                   setChatTitle(filename);
-                  // Only update the system prompt if the option is enabled
                   if (options?.loadPrompt && result.system_prompt) {
                     setSystemPrompt(result.system_prompt);
                   }
-                  setHasUnsavedChanges(false);
                 }
               }).catch((err) => {
                 console.error('Failed to load chat:', err);
@@ -294,7 +249,7 @@ export function ChatBox({ width }: { width: number }) {
               });
             } else if (fileDialog.mode === 'save') {
               setChatTitle(filename);
-              saveChat(filename);
+              doSaveChat(filename);
             }
           }}
           onCancel={() => {
