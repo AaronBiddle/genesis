@@ -1,20 +1,26 @@
+import { useState } from 'react';
 import { useFileList } from '../hooks/useFileList';
 import { motion } from 'framer-motion';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { Components } from 'react-markdown';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faFileCode, 
   faFileAlt, 
   faSave, 
-  faFileCirclePlus
+  faSpinner,
+  faFileCirclePlus,
+  faFolderOpen
 } from '@fortawesome/free-solid-svg-icons';
 import { Button } from './ui/button';
+import { FileDialog } from './ui/FileDialog';
+import { API_ENDPOINTS } from '../config/constants';
 
 interface TabbedWindowProps {
   documents: Array<{ id: string; title: string; content: string }>;
   activeDocument: string | null;
   onDocumentChange: (id: string) => void;
+  onDocumentContentChange: (id: string, documents: Array<{ id: string; title: string; content: string }>) => void;
   onDocumentClose: (id: string) => void;
   onDocumentSave: () => void;
   markdownEnabled: boolean;
@@ -27,6 +33,7 @@ export function TabbedWindow({
   documents, 
   activeDocument, 
   onDocumentChange, 
+  onDocumentContentChange,
   onDocumentClose,
   onDocumentSave,
   markdownEnabled,
@@ -34,11 +41,76 @@ export function TabbedWindow({
   onNewDocument,
   onOpenDocument
 }: TabbedWindowProps) {
-  const { files, isLoading } = useFileList('document');
-  
-  // Add a file menu or dropdown
-  const handleFileSelect = (filename: string) => {
-    onOpenDocument(filename);
+  const { refreshFiles } = useFileList('document');
+  const [isSaving, setIsSaving] = useState(false);
+  const [fileDialog, setFileDialog] = useState<{
+    visible: boolean;
+    mode: 'open' | 'save' | null;
+  }>({
+    visible: false,
+    mode: null
+  });
+
+  const handleSaveDocument = async () => {
+    const currentDoc = documents.find(doc => doc.id === activeDocument);
+    if (!currentDoc) return;
+
+    if (currentDoc.title === "Untitled") {
+      setFileDialog({
+        visible: true,
+        mode: 'save'
+      });
+    } else {
+      try {
+        setIsSaving(true);
+        await onDocumentSave();
+        await refreshFiles();
+      } catch (error) {
+        console.error('Failed to save document:', error);
+        alert('Failed to save document');
+      } finally {
+        setIsSaving(false);
+      }
+    }
+  };
+
+  const handleLoadDocument = () => {
+    setFileDialog({
+      visible: true,
+      mode: 'open'
+    });
+  };
+
+  const handleDeleteDocument = async () => {
+    const currentDoc = documents.find(doc => doc.id === activeDocument);
+    if (!currentDoc || currentDoc.title === "Untitled") return;
+
+    const confirmed = window.confirm(`Are you sure you want to delete "${currentDoc.title}"?`);
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(API_ENDPOINTS.DELETE_DOCUMENT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: currentDoc.title })
+      });
+
+      if (!response.ok) throw new Error('Failed to delete document');
+      
+      onDocumentClose(currentDoc.id);
+      await refreshFiles();
+    } catch (error) {
+      console.error('Failed to delete document:', error);
+      alert('Failed to delete document');
+    }
+  };
+
+  const handleContentChange = (content: string) => {
+    if (!activeDocument) return;
+    const updatedDocs = documents.map(doc => 
+      doc.id === activeDocument ? { ...doc, content } : doc
+    );
+    onDocumentContentChange(activeDocument, updatedDocs);
   };
 
   return (
@@ -48,43 +120,42 @@ export function TabbedWindow({
       transition={{ duration: 0.6 }}
       className="rounded-2xl bg-white shadow-md flex flex-col mx-1 my-2 flex-grow"
     >
-      <div className="flex justify-between items-center mb-2">
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
+      <div className="flex justify-between items-center p-2 border-b">
+        <div className="flex items-center gap-2">
+          <button
             onClick={onNewDocument}
-            className="p-2"
-            title="New Document"
+            className="w-8 h-8 flex items-center justify-center text-black hover:text-green-600"
+            title="New document"
           >
-            <FontAwesomeIcon icon={faFileCirclePlus} className="h-4 w-4" />
-          </Button>
-          <select 
-            onChange={(e) => handleFileSelect(e.target.value)}
-            value=""
-            className="px-3 py-1 border rounded"
-            disabled={isLoading}
+            <FontAwesomeIcon icon={faFileCirclePlus} />
+          </button>
+          <button
+            onClick={handleLoadDocument}
+            className="w-8 h-8 flex items-center justify-center text-black hover:text-blue-600"
+            title="Load document"
           >
-            <option value="">
-              {isLoading ? 'Loading...' : 'Open File...'}
-            </option>
-            {files?.map(file => (
-              <option key={file} value={file}>
-                {file}
-              </option>
-            ))}
-          </select>
-          <Button
-            variant="outline"
-            onClick={onDocumentSave}
-            className="p-2"
-            title="Save Document"
+            <FontAwesomeIcon icon={faFolderOpen} />
+          </button>
+          <button
+            onClick={handleSaveDocument}
+            disabled={isSaving || !activeDocument}
+            className="w-8 h-8 flex items-center justify-center text-black hover:text-blue-600 disabled:text-gray-400"
+            title={isSaving ? "Saving..." : "Save document"}
           >
-            <FontAwesomeIcon icon={faSave} className="h-4 w-4" />
-          </Button>
+            {isSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faSave} />}
+          </button>
+          <button
+            onClick={handleDeleteDocument}
+            disabled={!activeDocument || documents.find(d => d.id === activeDocument)?.title === "Untitled"}
+            className="w-8 h-8 flex items-center justify-center text-black hover:text-red-600 disabled:text-gray-400"
+            title="Delete document"
+          >
+            ×
+          </button>
           <Button
             variant="outline"
             onClick={onMarkdownToggle}
-            className={`p-2 ${markdownEnabled ? 'bg-primary text-primary-foreground' : ''}`}
+            className={`p-2 ${markdownEnabled ? 'text-green-600' : ''}`}
             title={markdownEnabled ? "Markdown View" : "Plain Text View"}
           >
             <FontAwesomeIcon 
@@ -99,7 +170,7 @@ export function TabbedWindow({
         onValueChange={onDocumentChange}
         className="flex-1 flex flex-col"
       >
-        <TabsList>
+        <TabsList className="border-b px-4">
           {documents.map(doc => (
             <TabsTrigger
               key={doc.id}
@@ -112,23 +183,63 @@ export function TabbedWindow({
         </TabsList>
         
         {documents.map(doc => (
-          <TabsContent
-            key={doc.id}
+          <TabsContent 
+            key={doc.id} 
             value={doc.id}
-            className="flex-1 relative p-4 bg-white rounded-b-lg"
+            className="flex-1 p-4 overflow-auto w-full"
           >
-            {markdownEnabled ? (
-              <div className="markdown-content">
-                <ReactMarkdown>{doc.content}</ReactMarkdown>
-              </div>
-            ) : (
-              <pre className="whitespace-pre-wrap font-mono text-sm">
-                {doc.content}
-              </pre>
-            )}
+            <div className="relative w-full h-full">
+              {markdownEnabled ? (
+                <div className="prose max-w-none markdown-content absolute inset-0 overflow-auto">
+                  <ReactMarkdown
+                    components={{
+                      p: ({ children, ...props }) => (
+                        <p className="whitespace-pre-line" {...props}>
+                          {children}
+                        </p>
+                      )
+                    }}
+                  >
+                    {doc.content}
+                  </ReactMarkdown>
+                </div>
+              ) : (
+                <textarea
+                  value={doc.content}
+                  onChange={(e) => handleContentChange(e.target.value)}
+                  className="w-full h-full min-h-[500px] p-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter your document content here..."
+                />
+              )}
+            </div>
           </TabsContent>
         ))}
       </Tabs>
+
+      {fileDialog.visible && fileDialog.mode && (
+        <FileDialog
+          mode={fileDialog.mode}
+          type="document"
+          defaultFilename={fileDialog.mode === 'save' && activeDocument ? 
+            documents.find(d => d.id === activeDocument)?.title || '' : 
+            ''}
+          onSelect={(filename) => {
+            setFileDialog({ visible: false, mode: null });
+            if (fileDialog.mode === 'open') {
+              onOpenDocument(filename);
+            } else if (fileDialog.mode === 'save') {
+              const currentDoc = documents.find(d => d.id === activeDocument);
+              if (currentDoc) {
+                currentDoc.title = filename;
+                handleSaveDocument();
+              }
+            }
+          }}
+          onCancel={() => {
+            setFileDialog({ visible: false, mode: null });
+          }}
+        />
+      )}
     </motion.div>
   );
 }

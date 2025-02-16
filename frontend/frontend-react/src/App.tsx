@@ -109,6 +109,10 @@ export default function App() {
     }
   };
 
+  const handleDocumentContentChange = (_id: string, updatedDocs: Array<{ id: string; title: string; content: string }>) => {
+    setDocuments(updatedDocs);
+  };
+
   return (
     <div className="h-screen flex bg-gray-300 text-gray-900 pt-2 pb-2">
       <ControlPanel width={leftWidth} />
@@ -117,6 +121,7 @@ export default function App() {
         documents={documents}
         activeDocument={activeDocument}
         onDocumentChange={setActiveDocument}
+        onDocumentContentChange={handleDocumentContentChange}
         onDocumentClose={handleCloseDocument}
         onDocumentSave={handleSaveDocument}
         markdownEnabled={markdownEnabled}
