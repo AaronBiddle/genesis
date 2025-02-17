@@ -51,6 +51,9 @@ class FileManager:
         """Save content to a file"""
         try:
             file_path = self._get_file_path(filename)
+                        
+            # Create parent directories if they don't exist
+            file_path.parent.mkdir(parents=True, exist_ok=True)
             
             if isinstance(content, dict):
                 import json
@@ -108,11 +111,12 @@ class FileManager:
             raise HTTPException(status_code=500, detail=str(e))
 
     async def list_files(self) -> List[str]:
-        """List all files with the specified extension"""
+        """List all files with the specified extension recursively"""
         try:            
-            pattern = f"*{self.extension}"
+            pattern = f"**/*{self.extension}"
             
-            files = [f.name for f in self.base_dir.glob(pattern)]
+            # Use rglob for recursive search and convert paths to relative paths
+            files = [str(f.relative_to(self.base_dir)) for f in self.base_dir.rglob(pattern)]
             
             return sorted(files)
             

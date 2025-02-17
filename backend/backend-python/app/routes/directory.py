@@ -89,4 +89,23 @@ async def list_directory(
         error_class = e.__class__.__name__
         error_msg = str(e)
         log(LogLevel.ERROR, f"Error listing directory - Class: {error_class}, Message: {error_msg}")
-        raise HTTPException(status_code=500, detail=f"Failed to list directory: {error_class} - {error_msg}") 
+        raise HTTPException(status_code=500, detail=f"Failed to list directory: {error_class} - {error_msg}")
+
+@router.post("/create", response_model=dict)
+async def create_directory(
+    path: str = Query(...),
+    file_type: str = Query(..., regex="^(chat|document|prompt)$")
+):
+    """Create a new directory relative to the type-specific base directory."""
+    try:
+        base_dir = TYPE_TO_DIR.get(file_type)
+        if not base_dir:
+            log(LogLevel.ERROR, f"Invalid file type: {file_type}")
+            raise HTTPException(status_code=400, detail="Invalid file type")
+        new_dir = base_dir / path
+        new_dir.mkdir(parents=True, exist_ok=True)
+        log(LogLevel.DEBUGGING, f"Directory created: {new_dir}")
+        return {"message": f"Created directory {str(new_dir)}"}
+    except Exception as e:
+        log(LogLevel.ERROR, f"Failed to create directory: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e)) 

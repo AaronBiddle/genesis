@@ -7,14 +7,15 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faFileCode, 
   faFileAlt, 
-  faSave, 
   faSpinner,
-  faFileCirclePlus,
   faFolderOpen
 } from '@fortawesome/free-solid-svg-icons';
 import { Button } from './ui/button';
 import { FileDialog } from './ui/FileDialog';
 import { API_ENDPOINTS } from '../config/constants';
+import SaveIcon from '@mui/icons-material/Save';
+import SaveAsIcon from '@mui/icons-material/SaveAs';
+import NoteAddIcon from '@mui/icons-material/NoteAdd';
 
 interface TabbedWindowProps {
   documents: Array<{ id: string; title: string; content: string }>;
@@ -121,10 +122,10 @@ export function TabbedWindow({
         <div className="flex items-center gap-2">
           <button
             onClick={onNewDocument}
-            className="w-8 h-8 flex items-center justify-center text-black hover:text-green-600"
+            className="w-8 h-8 flex items-center justify-center text-black hover:text-blue-600"
             title="New document"
           >
-            <FontAwesomeIcon icon={faFileCirclePlus} />
+            <NoteAddIcon style={{ fontSize: '1.25rem' }} />
           </button>
           <button
             onClick={handleLoadDocument}
@@ -139,7 +140,15 @@ export function TabbedWindow({
             className="w-8 h-8 flex items-center justify-center text-black hover:text-blue-600 disabled:text-gray-400"
             title={isSaving ? "Saving..." : "Save document"}
           >
-            {isSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faSave} />}
+            {isSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : <SaveIcon style={{ fontSize: '1.25rem' }} />}
+          </button>
+          <button
+            onClick={() => setFileDialog({ visible: true, mode: 'save' })}
+            disabled={isSaving || !activeDocument}
+            className="w-8 h-8 flex items-center justify-center text-black hover:text-blue-600 disabled:text-gray-400"
+            title={isSaving ? "Saving..." : "Save document as..."}
+          >
+            <SaveAsIcon style={{ fontSize: '1.25rem' }} />
           </button>
           <button
             onClick={handleDeleteDocument}
@@ -175,6 +184,7 @@ export function TabbedWindow({
               key={doc.id}
               value={doc.id}
               onClose={() => onDocumentClose(doc.id)}
+              className="data-[state=active]:bg-blue-100 data-[state=active]:shadow data-[state=active]:shadow-blue-300 data-[state=active]:border-b data-[state=active]:border-b-blue-100 data-[state=active]:-mb-px rounded-t-lg transition-all duration-200"
             >
               {doc.title}
             </TabsTrigger>

@@ -33,19 +33,21 @@ const TabsTrigger = React.forwardRef<
     )}
     {...props}
   >
-    {children}
-    {onClose && (
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onClose();
-        }}
-        className="ml-2 opacity-0 group-hover:opacity-100 group-data-[state=active]:opacity-100 hover:bg-gray-200 rounded-full h-4 w-4 inline-flex items-center justify-center transition-opacity"
-        aria-label="Close tab"
-      >
-        ×
-      </button>
-    )}
+    <span className="flex items-center">
+      {children}
+      {onClose && (
+        <span
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+          className="ml-2 opacity-0 group-hover:opacity-100 group-data-[state=active]:opacity-100 hover:bg-gray-200 rounded-full h-4 w-4 inline-flex items-center justify-center transition-opacity cursor-pointer"
+          aria-label="Close tab"
+        >
+          ×
+        </span>
+      )}
+    </span>
   </TabsPrimitive.Trigger>
 ))
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
