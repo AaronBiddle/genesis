@@ -6,10 +6,13 @@ import { useAIChat } from '../hooks/useAIChat';
 import { MessageContainer } from './MessageContainer';
 import { useChatSettings } from '../stores/chatSettingsStore';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSave, faSpinner, faFileCirclePlus, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
+import { faSpinner, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import { useFileList } from '../hooks/useFileList';
 import { API_ENDPOINTS } from '../config/constants';
 import { FileDialog } from './ui/FileDialog';
+import SaveIcon from '@mui/icons-material/Save';
+import SaveAsIcon from '@mui/icons-material/SaveAs';
+import NoteAddIcon from '@mui/icons-material/NoteAdd';
 
 export function ChatBox({ width }: { width: number }) {
   const { 
@@ -74,6 +77,13 @@ export function ChatBox({ width }: { width: number }) {
     });
   };
 
+  const handleNewChat = () => {
+    setMessages([]);
+    setChatTitle("untitled chat");
+    setSystemPrompt("You are a helpful assistant...");
+    setTemperature(0.7);
+  };
+
   return (
     <>
       <Card className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" style={{ width }}>
@@ -83,16 +93,11 @@ export function ChatBox({ width }: { width: number }) {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => {
-                setMessages([]);
-                setChatTitle("untitled chat");
-                setSystemPrompt("You are a helpful assistant...");
-                setTemperature(0.7);
-              }}
-              className="w-8 h-8 flex items-center justify-center text-black hover:text-green-600"
+              onClick={handleNewChat}
+              className="w-8 h-8 flex items-center justify-center text-black hover:text-blue-600"
               title="New chat"
             >
-              <FontAwesomeIcon icon={faFileCirclePlus} />
+              <NoteAddIcon style={{ fontSize: '1.25rem' }} />
             </button>
             <button
               onClick={handleLoadChat}
@@ -113,7 +118,21 @@ export function ChatBox({ width }: { width: number }) {
                     : "Save chat"
               }
             >
-              {isSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faSave} />}
+              {isSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : <SaveIcon style={{ fontSize: '1.25rem' }} />}
+            </button>
+            <button
+              onClick={() => setFileDialog({ visible: true, mode: 'save' })}
+              disabled={isSaving || isStreaming}
+              className="w-8 h-8 flex items-center justify-center text-black hover:text-blue-600 disabled:text-gray-400"
+              title={
+                isSaving
+                  ? "Saving…"
+                  : isStreaming
+                    ? "Cannot save while message is generating"
+                    : "Save chat as..."
+              }
+            >
+              <SaveAsIcon style={{ fontSize: '1.25rem' }} />
             </button>
             <button
               onClick={async () => {
