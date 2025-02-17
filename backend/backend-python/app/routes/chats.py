@@ -72,7 +72,7 @@ async def load_chat(request: LoadChatRequest):
         log(LogLevel.ERROR, f"Error loading chat: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/delete/{filename}")
+@router.delete("/delete/{filename:path}")
 async def delete_chat(filename: str):
     """Delete a chat file using the standard DELETE method."""
     try:

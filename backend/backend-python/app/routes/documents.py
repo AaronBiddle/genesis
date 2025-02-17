@@ -44,7 +44,7 @@ async def load_document(request: DocumentRequest):
         log(LogLevel.ERROR, f"Error loading document: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/delete/{filename}")
+@router.delete("/delete/{filename:path}")
 async def delete_document(filename: str):
     """Delete a document file using the standard DELETE method."""
     try:
