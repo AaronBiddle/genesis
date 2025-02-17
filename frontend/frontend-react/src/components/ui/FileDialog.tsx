@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useFileList } from '../../hooks/useFileList';
 import { Button } from './button';
 import { DirectoryBrowser } from '../DirectoryBrowser';
+import { API_ENDPOINTS } from '../../config/constants';
 
 export type FileType = 'chat' | 'document' | 'prompt';
 
@@ -26,6 +27,7 @@ export const FileDialog: React.FC<FileDialogProps> = ({
   const [filename, setFilename] = useState(defaultFilename);
   const [currentPath, setCurrentPath] = useState("");
   const [loadPrompt, setLoadPrompt] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Get display information based on file type
   const getTypeInfo = (type: FileType) => {
@@ -77,12 +79,41 @@ export const FileDialog: React.FC<FileDialogProps> = ({
     onSelect(fullPath, options);
   };
 
+  // New function to create a directory
+  const handleNewFolder = async () => {
+    const folderName = prompt("Enter new folder name");
+    if (!folderName) return;
+    const newFolderPath = currentPath ? `${currentPath}/${folderName}` : folderName;
+    try {
+      const response = await fetch(
+        `${API_ENDPOINTS.CREATE_DIRECTORY}?file_type=${type}&path=${encodeURIComponent(newFolderPath)}`,
+        { method: 'POST' }
+      );
+      if (!response.ok) {
+        alert("Failed to create folder");
+        return;
+      }
+      setRefreshKey(prev => prev + 1);
+    } catch (error) {
+      console.error("Error creating folder:", error);
+      alert("Error creating folder");
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-4 rounded-lg shadow-lg w-[500px] max-w-[90vw]">
         <h2 className="text-lg font-semibold mb-4">{dialogTitle}</h2>
         
+        {/* Show New Folder button only in 'save' mode */}
+        {mode === 'save' && (
+          <Button variant="outline" onClick={handleNewFolder} className="mb-2">
+            New Folder
+          </Button>
+        )}
+
         <DirectoryBrowser
+          key={refreshKey}
           onFileSelect={(path) => {
             setFilename(path);
           }}

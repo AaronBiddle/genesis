@@ -25,6 +25,9 @@ export const API_ENDPOINTS = {
   LOAD_DOCUMENT: `${API_BASE_URL}/documents/load`,
   DELETE_DOCUMENT: `${API_BASE_URL}/documents/delete`,
 
+  // Create directory endpoint
+  CREATE_DIRECTORY: `${API_BASE_URL}/directory/create`,
+
   // AI Chat endpoint (WebSocket)
   AI_CHAT: `${API_BASE_URL}/ws/chat`,
 } as const 
