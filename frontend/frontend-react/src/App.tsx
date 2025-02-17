@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ResizableDivider } from './components/ui/resizable'
 import { ControlPanel } from './components/ControlPanel'
+import { SplitViewManager } from "./components/SplitViewManager";
 import { TabbedWindow } from './components/TabbedWindow'
 import { ChatBox } from './components/ChatBox'
 import './App.css'
@@ -117,18 +118,20 @@ export default function App() {
     <div className="h-screen flex bg-gray-300 text-gray-900 pt-2 pb-2">
       <ControlPanel width={leftWidth} />
       <ResizableDivider onResize={handleLeftResize} className="my-4" />
-      <TabbedWindow 
-        documents={documents}
-        activeDocument={activeDocument}
-        onDocumentChange={setActiveDocument}
-        onDocumentContentChange={handleDocumentContentChange}
-        onDocumentClose={handleCloseDocument}
-        onDocumentSave={handleSaveDocument}
-        markdownEnabled={markdownEnabled}
-        onMarkdownToggle={() => setMarkdownEnabled(!markdownEnabled)}
-        onNewDocument={handleNewDocument}
-        onOpenDocument={handleOpenDocument}
-      />
+      <SplitViewManager>
+        <TabbedWindow 
+          documents={documents}
+          activeDocument={activeDocument}
+          onDocumentChange={setActiveDocument}
+          onDocumentContentChange={handleDocumentContentChange}
+          onDocumentClose={handleCloseDocument}
+          onDocumentSave={handleSaveDocument}
+          markdownEnabled={markdownEnabled}
+          onMarkdownToggle={() => setMarkdownEnabled(!markdownEnabled)}
+          onNewDocument={handleNewDocument}
+          onOpenDocument={handleOpenDocument}
+        />
+      </SplitViewManager>
       <ResizableDivider onResize={handleRightResize} className="my-4" />
       <ChatBox width={rightWidth} />
     </div>
