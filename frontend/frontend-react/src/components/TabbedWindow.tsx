@@ -27,6 +27,7 @@ interface TabbedWindowProps {
   onMarkdownToggle: () => void;
   onNewDocument: () => void;
   onOpenDocument: (filename: string) => void;
+  width: string;
 }
 
 export function TabbedWindow({ 
@@ -39,7 +40,8 @@ export function TabbedWindow({
   markdownEnabled,
   onMarkdownToggle,
   onNewDocument,
-  onOpenDocument
+  onOpenDocument,
+  width
 }: TabbedWindowProps) {
   const { refreshFiles } = useFileList('document');
   const [isSaving, setIsSaving] = useState(false);
@@ -115,6 +117,7 @@ export function TabbedWindow({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
+      style={{ width }}
       className="rounded-2xl bg-white shadow-md flex flex-col mx-1 my-2 flex-grow"
     >
       <div className={`flex justify-between items-center border-b ${TOOLBAR_HEIGHT} ${TOOLBAR_PADDING}`}>

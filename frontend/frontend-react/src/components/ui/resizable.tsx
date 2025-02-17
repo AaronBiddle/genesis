@@ -7,9 +7,8 @@ export function ResizableDivider({ onResize, className = '' }: ResizableDividerP
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     
-    const startX = e.clientX;
-    let lastX = startX;  // Track the last X position
-    
+    let lastX = e.clientX;  // Track the last X position
+
     const handleMouseMove = (e: MouseEvent) => {
       const currentX = e.clientX;
       const delta = currentX - lastX;  // Calculate delta from last position

@@ -121,10 +121,11 @@ export default function App() {
 
   return (
     <div className="h-screen flex bg-gray-300 text-gray-900 pt-2 pb-2">
-      <ControlPanel width={leftWidth} />
-      <ResizableDivider onResize={handleLeftResize} className="my-4" />
       <SplitViewManager>
-        <TabbedWindow 
+        <ControlPanel width={leftWidth} />
+        <ResizableDivider onResize={handleLeftResize} />
+        <TabbedWindow
+          width={`calc(100% - ${leftWidth + 10}px - ${rightWidth}px)`}
           documents={documents}
           activeDocument={activeDocument}
           onDocumentChange={setActiveDocument}
@@ -136,9 +137,9 @@ export default function App() {
           onNewDocument={handleNewDocument}
           onOpenDocument={handleOpenDocument}
         />
+        <ResizableDivider onResize={handleRightResize} />
+        <ChatBox width={rightWidth} />
       </SplitViewManager>
-      <ResizableDivider onResize={handleRightResize} className="my-4" />
-      <ChatBox width={rightWidth} />
     </div>
   );
 }

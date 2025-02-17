@@ -7,6 +7,6 @@ export const CONTROL_PANEL_MIN_WIDTH = 200;
 export const CONTROL_PANEL_MAX_WIDTH = 400;
 export const CONTROL_PANEL_DEFAULT_WIDTH = 250;
 
-export const CHAT_PANEL_MIN_WIDTH = 600;
+export const CHAT_PANEL_MIN_WIDTH = 400;
 export const CHAT_PANEL_MAX_WIDTH = 1500;
 export const CHAT_PANEL_DEFAULT_WIDTH = 700; 
