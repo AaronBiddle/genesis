@@ -184,7 +184,7 @@ export function TabbedWindow({
               key={doc.id}
               value={doc.id}
               onClose={() => onDocumentClose(doc.id)}
-              className="data-[state=active]:bg-gray-100 data-[state=active]:shadow-sm rounded-t-lg transition-all duration-200"
+              className="data-[state=active]:bg-blue-100 data-[state=active]:shadow data-[state=active]:shadow-blue-300 data-[state=active]:border-b data-[state=active]:border-b-blue-100 data-[state=active]:-mb-px rounded-t-lg transition-all duration-200"
             >
               {doc.title}
             </TabsTrigger>
