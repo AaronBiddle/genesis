@@ -6,6 +6,14 @@ import { TabbedWindow } from './components/TabbedWindow'
 import { ChatBox } from './components/ChatBox'
 import './App.css'
 import { API_ENDPOINTS } from './config/constants'
+import { 
+  CONTROL_PANEL_MIN_WIDTH,
+  CONTROL_PANEL_MAX_WIDTH,
+  CONTROL_PANEL_DEFAULT_WIDTH,
+  CHAT_PANEL_MIN_WIDTH,
+  CHAT_PANEL_MAX_WIDTH,
+  CHAT_PANEL_DEFAULT_WIDTH
+} from './styles/ui-constants';
 
 interface Document {
   id: string;
@@ -14,26 +22,23 @@ interface Document {
 }
 
 export default function App() {
-  const [leftWidth, setLeftWidth] = useState(200);
-  const [rightWidth, setRightWidth] = useState(600);
+  const [leftWidth, setLeftWidth] = useState<number>(CONTROL_PANEL_DEFAULT_WIDTH);
+  const [rightWidth, setRightWidth] = useState<number>(CHAT_PANEL_DEFAULT_WIDTH);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [activeDocument, setActiveDocument] = useState<string | null>(null);
   const [markdownEnabled, setMarkdownEnabled] = useState(true);
 
-  const MIN_WIDTH = 200;
-  const MAX_WIDTH = 1000;
-
   const handleLeftResize = (delta: number) => {
     setLeftWidth((prevWidth) => {
       const newWidth = prevWidth + delta;
-      return Math.min(Math.max(newWidth, MIN_WIDTH), MAX_WIDTH);
+      return Math.min(Math.max(newWidth, CONTROL_PANEL_MIN_WIDTH), CONTROL_PANEL_MAX_WIDTH);
     });
   };
 
   const handleRightResize = (delta: number) => {
     setRightWidth((prevWidth) => {
       const newWidth = prevWidth - delta;
-      return Math.min(Math.max(newWidth, MIN_WIDTH), MAX_WIDTH);
+      return Math.min(Math.max(newWidth, CHAT_PANEL_MIN_WIDTH), CHAT_PANEL_MAX_WIDTH);
     });
   };
 

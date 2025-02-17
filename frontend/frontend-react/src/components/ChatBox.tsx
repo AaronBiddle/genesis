@@ -13,7 +13,11 @@ import { FileDialog } from './ui/FileDialog';
 import SaveIcon from '@mui/icons-material/Save';
 import SaveAsIcon from '@mui/icons-material/SaveAs';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
-import { TOOLBAR_HEIGHT, TOOLBAR_PADDING } from '../styles/ui-constants';
+import { 
+  TOOLBAR_HEIGHT, 
+  TOOLBAR_PADDING, 
+} from '../styles/ui-constants';
+
 export function ChatBox({ width }: { width: number }) {
   const { 
     messages, 
@@ -86,7 +90,10 @@ export function ChatBox({ width }: { width: number }) {
 
   return (
     <>
-      <Card className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" style={{ width }}>
+      <Card 
+        className="shadow-md rounded-2xl mx-1 my-2 flex flex-col" 
+        style={{ width }}
+      >
         <CardHeader className={`flex items-center justify-between border-b ${TOOLBAR_HEIGHT} ${TOOLBAR_PADDING}`}>
           <div>
             <span className="text-xl font-semibold">{chatTitle}</span>

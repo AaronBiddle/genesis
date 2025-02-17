@@ -10,13 +10,12 @@ import {
   faSpinner,
   faFolderOpen
 } from '@fortawesome/free-solid-svg-icons';
-import { Button } from './ui/button';
 import { FileDialog } from './ui/FileDialog';
 import { API_ENDPOINTS } from '../config/constants';
 import SaveIcon from '@mui/icons-material/Save';
 import SaveAsIcon from '@mui/icons-material/SaveAs';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
-import { TOOLBAR_HEIGHT, TOOLBAR_PADDING } from '../styles/ui-constants';
+import { TOOLBAR_HEIGHT, TOOLBAR_PADDING, TOOLBAR_BUTTON_SIZE } from '../styles/ui-constants';
 interface TabbedWindowProps {
   documents: Array<{ id: string; title: string; content: string }>;
   activeDocument: string | null;
@@ -160,17 +159,16 @@ export function TabbedWindow({
           >
             ✕
           </button>
-          <Button
-            variant="outline"
+          <button
             onClick={onMarkdownToggle}
-            className={`p-2 ${markdownEnabled ? 'text-green-600' : ''}`}
+            className={`${TOOLBAR_BUTTON_SIZE} flex items-center justify-center text-black hover:text-blue-600 ${markdownEnabled ? 'text-green-600' : ''}`}
             title={markdownEnabled ? "Markdown View" : "Plain Text View"}
           >
             <FontAwesomeIcon 
               icon={markdownEnabled ? faFileCode : faFileAlt} 
               className="h-4 w-4"
             />
-          </Button>
+          </button>
         </div>
       </div>
       <Tabs
