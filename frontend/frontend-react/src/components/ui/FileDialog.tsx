@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useFileList } from '../../hooks/useFileList';
 import { Button } from './button';
+import { DirectoryBrowser } from '../DirectoryBrowser';
 
 export type FileType = 'chat' | 'document' | 'prompt';
 
@@ -140,6 +141,14 @@ export const FileDialog: React.FC<FileDialogProps> = ({
             </label>
           </div>
         )}
+
+        <DirectoryBrowser
+          onFileSelect={(path) => {
+            setFilename(path);
+          }}
+          fileFilter={[typeInfo.extension]}
+          fileType={type}
+        />
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onCancel}>

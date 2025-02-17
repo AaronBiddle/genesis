@@ -1,0 +1,4 @@
+G           # go to the end of the file
+o           # open a new line below the cursor
+<esc>       # exit insert mode
+:wq         # save and quit
