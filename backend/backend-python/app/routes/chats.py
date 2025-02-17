@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from pathlib import Path
 import json
 from datetime import datetime
-from utils.logging import LogLevel, log, LogPrefix
+from utils.logging import LogLevel, log
 from services.file_services import chat_manager
 import os
 from typing import List
@@ -39,7 +39,7 @@ class DeleteChatRequest(BaseModel):
 async def save_chat(chat_data: ChatData):
     """Save chat history to a file"""
     try:
-        log(LogLevel.TEMPORARY, f"Attempting to save chat: {chat_data.filename}", LogPrefix.CHAT)
+        log(LogLevel.TEMPORARY, f"Attempting to save chat: {chat_data.filename}")
         
         chat_content = {
             "messages": chat_data.messages,
@@ -51,7 +51,7 @@ async def save_chat(chat_data: ChatData):
         return await chat_manager.save(chat_data.filename, chat_content)
             
     except Exception as e:
-        log(LogLevel.ERROR, f"Error saving chat: {str(e)}", LogPrefix.ERROR)
+        log(LogLevel.ERROR, f"Error saving chat: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/list")
@@ -61,7 +61,7 @@ async def list_chats():
         files = await chat_manager.list_files()
         return {"files": files}
     except Exception as e:
-        log(LogLevel.ERROR, f"Error listing chats: {str(e)}", LogPrefix.ERROR)
+        log(LogLevel.ERROR, f"Error listing chats: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/load")
@@ -69,17 +69,17 @@ async def load_chat(request: LoadChatRequest):
     try:
         return await chat_manager.load(request.filename)
     except Exception as e:
-        log(LogLevel.ERROR, f"Error loading chat: {str(e)}", LogPrefix.ERROR)
+        log(LogLevel.ERROR, f"Error loading chat: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/delete/{filename}")
 async def delete_chat(filename: str):
     """Delete a chat file using the standard DELETE method."""
     try:
-        log(LogLevel.TEMPORARY, f"Deleting chat: {filename}", LogPrefix.CHAT)
+        log(LogLevel.TEMPORARY, f"Deleting chat: {filename}")
         return await chat_manager.delete(filename)
     except Exception as e:
-        log(LogLevel.ERROR, f"Error deleting chat: {str(e)}", LogPrefix.ERROR)
+        log(LogLevel.ERROR, f"Error deleting chat: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/load_chat")
@@ -114,11 +114,11 @@ async def save_chat(data: ChatData):
         with open(file_path, "w") as f:
             json.dump(chat_data, f, indent=2)
             
-        log(LogLevel.MINIMUM, f"Chat saved to {file_path}", LogPrefix.FILE)
+        log(LogLevel.MINIMUM, f"Chat saved to {file_path}")
         return {"status": "success", "saved_path": str(file_path)}
         
     except Exception as e:
-        log(LogLevel.MINIMUM, f"Error saving chat: {str(e)}", LogPrefix.ERROR)
+        log(LogLevel.ERROR, f"Error saving chat: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/delete_chat/{filename}")
@@ -128,16 +128,16 @@ async def delete_chat(filename: str):
         chat_manager.ensure_file_exists(file_path)
         
         file_path.unlink()  # Delete the file
-        log(LogLevel.DEBUGGING, f"Deleted chat: {filename}", LogPrefix.FILE)
+        log(LogLevel.DEBUGGING, f"Deleted chat: {filename}")
         return {"status": "success", "deleted": filename}
         
     except Exception as e:
-        log(LogLevel.MINIMUM, f"Error deleting chat: {str(e)}", LogPrefix.ERROR)
+        log(LogLevel.ERROR, f"Error deleting chat: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/save")
 async def save_chat(request: SaveChatRequest):
-    log(LogLevel.MINIMUM, "Route called: POST /chats/save", LogPrefix.SYSTEM)
+    log(LogLevel.MINIMUM, "Route called: POST /chats/save")
     chat_data = {
         "messages": request.messages,
         "system_prompt": request.system_prompt,
@@ -147,5 +147,5 @@ async def save_chat(request: SaveChatRequest):
 
 @router.post("/delete")
 async def delete_chat(request: DeleteChatRequest):
-    log(LogLevel.MINIMUM, "Route called: POST /chats/delete", LogPrefix.SYSTEM)
+    log(LogLevel.MINIMUM, "Route called: POST /chats/delete")
     return await chat_manager.delete(request.filename) 

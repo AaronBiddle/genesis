@@ -3,7 +3,7 @@ import asyncio
 from typing import AsyncGenerator, Any
 from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
-from utils.logging import LogLevel, log, LogPrefix
+from utils.logging import LogLevel, log
 import json
 
 # Load environment variables from .env file.
@@ -83,7 +83,7 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: f
                 "content": msg["content"] if msg["role"] == "system" else (msg["content"][:10] + "...")
             } for msg in messages
         ]
-        log(LogLevel.DEBUGGING, f"Sending messages (temp={temperature}): {json.dumps(debug_messages)}", LogPrefix.AI)
+        log(LogLevel.DEBUGGING, f"Sending messages (temp={temperature}): {json.dumps(debug_messages)}")
         
         response = client.chat.completions.create(
             messages=messages,
@@ -103,8 +103,8 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: f
             elif is_final:
                 yield "", chunk.usage
 
-        log(LogLevel.DEBUGGING, "Stream complete", LogPrefix.AI)
+        log(LogLevel.DEBUGGING, "Stream complete")
 
     except Exception as e:
-        log(LogLevel.MINIMUM, f"Error in stream_chat_response: {str(e)}", LogPrefix.ERROR)
+        log(LogLevel.ERROR, f"Error in stream_chat_response: {str(e)}")
         raise

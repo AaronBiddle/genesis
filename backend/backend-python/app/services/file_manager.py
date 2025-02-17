@@ -1,7 +1,7 @@
 from pathlib import Path
 from fastapi import HTTPException
 from typing import List
-from utils.logging import log, LogLevel, LogPrefix
+from utils.logging import log, LogLevel
 
 class FileManager:
     def __init__(self, base_dir: Path, extension: str, file_type: str):
@@ -27,9 +27,25 @@ class FileManager:
         return filename if filename.endswith(self.extension) else f"{filename}{self.extension}"
 
     def _get_file_path(self, filename: str) -> Path:
-        """Get full path for a file"""
+        """Get full path for a file and ensure it's safe"""
         filename = self._ensure_extension(filename)
-        return self.base_dir / filename
+        full_path = self.base_dir / filename
+        
+        # Resolve both paths to their absolute form
+        try:
+            resolved_path = full_path.resolve()
+            resolved_base = self.base_dir.resolve()
+            
+            # Check if path is safe
+            if not (resolved_path == resolved_base or resolved_base in resolved_path.parents):
+                log(LogLevel.ERROR, f"Access denied for path: {full_path}")
+                raise ValueError("Access denied: attempted directory traversal")
+            
+            return full_path
+        
+        except (TypeError, ValueError, RuntimeError) as e:
+            log(LogLevel.ERROR, f"Error resolving path: {str(e)}")
+            raise ValueError(f"Invalid path: {str(e)}")
 
     async def save(self, filename: str, content: dict | str) -> dict:
         """Save content to a file"""
@@ -44,11 +60,11 @@ class FileManager:
                 with open(file_path, 'w', encoding='utf-8') as f:
                     f.write(content)
                     
-            log(LogLevel.DEBUGGING, f"Saved {self.file_type} to {file_path}", LogPrefix.FILE)
+            log(LogLevel.DEBUGGING, f"Saved {self.file_type} to {file_path}")
             return {"filename": filename}
             
         except Exception as e:
-            log(LogLevel.ERROR, f"Error saving {self.file_type}: {str(e)}", LogPrefix.ERROR)
+            log(LogLevel.ERROR, f"Error saving {self.file_type}: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
 
     async def load(self, filename: str) -> dict | str:
@@ -70,7 +86,7 @@ class FileManager:
         except HTTPException:
             raise
         except Exception as e:
-            log(LogLevel.ERROR, f"Error loading {self.file_type}: {str(e)}", LogPrefix.ERROR)
+            log(LogLevel.ERROR, f"Error loading {self.file_type}: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
 
     async def delete(self, filename: str) -> dict:
@@ -82,13 +98,13 @@ class FileManager:
                 raise HTTPException(status_code=404, detail=f"File not found: {filename}")
                 
             file_path.unlink()
-            log(LogLevel.DEBUGGING, f"Deleted {self.file_type}: {filename}", LogPrefix.FILE)
+            log(LogLevel.DEBUGGING, f"Deleted {self.file_type}: {filename}")
             return {"message": f"Successfully deleted {filename}"}
             
         except HTTPException:
             raise
         except Exception as e:
-            log(LogLevel.ERROR, f"Error deleting {self.file_type}: {str(e)}", LogPrefix.ERROR)
+            log(LogLevel.ERROR, f"Error deleting {self.file_type}: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
 
     async def list_files(self) -> List[str]:
@@ -101,5 +117,5 @@ class FileManager:
             return sorted(files)
             
         except Exception as e:
-            log(LogLevel.ERROR, f"Error in list_files: {str(e)}", LogPrefix.ERROR)
+            log(LogLevel.ERROR, f"Error in list_files: {str(e)}")
             raise 

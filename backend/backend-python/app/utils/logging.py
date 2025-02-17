@@ -5,57 +5,47 @@ import os
 import inspect
 
 class LogLevel(Enum):
-    ERROR = 0      # Always show errors
-    MINIMUM = 1    # Production logging
-    DEBUGGING = 2  # Development debugging
-    TEMPORARY = 3  # Temporary debugging
-
-class LogPrefix(str, Enum):
-    SYSTEM = "⚙️"
-    CHAT = "💬"
-    FILE = "📄"
-    ERROR = "❌"
-    AI = "🤖"
-    DEBUG = "🔍"
+    ERROR = (0, "❌")      # Always show errors
+    MINIMUM = (1, "⚙️")    # Production logging
+    DEBUGGING = (2, "🔍")  # Development debugging
+    TEMPORARY = (3, "🔧")  # Temporary debugging
+    
+    def __init__(self, value: int, icon: str):
+        self._value_ = value
+        self.icon = icon
+    
+    @classmethod
+    def from_int(cls, value: int) -> 'LogLevel':
+        """Convert an integer to a LogLevel enum value"""
+        for level in cls:
+            if level.value == value:
+                return level
+        raise ValueError(f"{value} is not a valid LogLevel")
 
 # Always read from environment variable
-CURRENT_LOG_LEVEL = LogLevel(int(os.getenv('LOG_LEVEL', '1')))
+CURRENT_LOG_LEVEL = LogLevel.from_int(int(os.getenv('LOG_LEVEL', '1')))
 
 def get_timestamp():
     """Get current timestamp in HH:MM:SS.mmm format"""
     return datetime.now().strftime('%H:%M:%S.%f')[:-3]
 
-def log(level: LogLevel, message: str, prefix: LogPrefix | str = LogPrefix.SYSTEM):
+def log(level: LogLevel, message: str):
     """
-    Log a message with a specific level and prefix.
+    Log a message with a specific level.
     
     Args:
         level: LogLevel enum indicating importance
         message: The message to log
-        prefix: LogPrefix enum or string for custom prefix
+        
+    Raises:
+        ValueError: If level is not a valid LogLevel enum value
     """
+    if not isinstance(level, LogLevel):
+        raise ValueError(f"Invalid log level: {level}. Must be a LogLevel enum value.")
+        
     if level.value <= CURRENT_LOG_LEVEL.value:
         timestamp = get_timestamp()
         # Get the caller's filename
         frame = inspect.currentframe().f_back
         filename = os.path.basename(frame.f_code.co_filename)
-        # Handle both enum and string prefixes
-        prefix_str = prefix.value if isinstance(prefix, LogPrefix) else prefix
-        print(f"[{timestamp}] {prefix_str} ({filename}) {message}")
-
-# def debug_log(level: LogLevel = LogLevel.DEBUGGING):
-#     """
-#     Decorator for logging function entry/exit
-#     """
-#     def decorator(func):
-#         async def wrapper(*args, **kwargs):
-#             func_name = func.__name__
-#             log(level, f"Entering {func_name}", LogPrefix.DEBUG)
-#             # Don't wrap the function execution in try/except
-#             # Let the original function handle its own exceptions
-#             return await func(*args, **kwargs)
-#         # Preserve the original function's attributes
-#         from functools import update_wrapper
-#         update_wrapper(wrapper, func)
-#         return wrapper
-#     return decorator 
+        print(f"[{timestamp}] {level.icon} ({filename}) {message}")

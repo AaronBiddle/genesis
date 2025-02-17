@@ -27,7 +27,7 @@ export function DirectoryBrowser({ onFileSelect, fileFilter, fileType }: Directo
       setError(null);
       
       const response = await fetch(
-        `${API_BASE_URL}/directory/list/${encodeURIComponent(path)}?type=${fileType}`
+        `${API_BASE_URL}/directory/list/${encodeURIComponent(path)}?file_type=${fileType}`
       );
       if (!response.ok) throw new Error('Failed to fetch directory contents');
       

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import json
 from services.openai_client import stream_chat_response
-from utils.logging import LogLevel, log, LogPrefix
+from utils.logging import LogLevel, log
 
 router = APIRouter()
 
@@ -10,12 +10,11 @@ DEBUG_CHAT = False
 @router.websocket("/ws/chat")
 async def ai_chat_endpoint(websocket: WebSocket):
     try:
-        await websocket.accept()
-        log(LogLevel.MINIMUM, "WebSocket connection accepted", LogPrefix.CHAT)
+        await websocket.accept()        
         
         while True:
             data_text = await websocket.receive_text()
-            log(LogLevel.MINIMUM, f"Received message ({len(data_text)} bytes)", LogPrefix.CHAT)
+            log(LogLevel.MINIMUM, f"Received message ({len(data_text)} bytes)")
             
             # Create truncated version of data for logging
             data = json.loads(data_text)
@@ -29,7 +28,7 @@ async def ai_chat_endpoint(websocket: WebSocket):
                         if msg.get("role") == "system":
                             continue
                         msg["content"] = msg["content"][:10] + "..."
-            log(LogLevel.DEBUGGING, f"Received message: {json.dumps(debug_data)}", LogPrefix.DEBUG)
+            log(LogLevel.DEBUGGING, f"Received message: {json.dumps(debug_data)}")
             
             try:
                 prompt = data.get("prompt")
@@ -38,7 +37,7 @@ async def ai_chat_endpoint(websocket: WebSocket):
                 temperature = data.get("temperature", 0.7)  # Default to 0.7 if not provided
                 
                 if not prompt:
-                    log(LogLevel.MINIMUM, "Error: No prompt provided", LogPrefix.ERROR)
+                    log(LogLevel.ERROR, "Error: No prompt provided")
                     await websocket.send_text(json.dumps({"error": "No prompt provided."}))
                     continue
                 
@@ -97,7 +96,7 @@ async def ai_chat_endpoint(websocket: WebSocket):
                     else:
                         # Log if there's a significant discrepancy between our count and OpenAI's count
                         if abs(streaming_token_count - usage_stats.completion_tokens) > 5:
-                            log(LogLevel.MINIMUM, f"🐍 Token count discrepancy - Streamed: {streaming_token_count}, OpenAI: {usage_stats.completion_tokens}")
+                            log(LogLevel.ERROR, f"🐍 Token count discrepancy - Streamed: {streaming_token_count}, OpenAI: {usage_stats.completion_tokens}")
                         
                         log(LogLevel.MINIMUM, f"🐍 Stream complete. Tokens - Input: {usage_stats.prompt_tokens}, Output: {usage_stats.completion_tokens}")
                         await websocket.send_text(json.dumps({
@@ -108,10 +107,10 @@ async def ai_chat_endpoint(websocket: WebSocket):
                         }))
                     
             except json.JSONDecodeError as e:
-                log(LogLevel.MINIMUM, f"🐍 Invalid JSON received: {e}")
+                log(LogLevel.ERROR, f"🐍 Invalid JSON received: {e}")
                 await websocket.send_text(json.dumps({"error": "Invalid JSON format"}))
             except Exception as e:
-                log(LogLevel.MINIMUM, f"🐍 Error processing message: {e}")
+                log(LogLevel.ERROR, f"🐍 Error processing message: {e}")
                 await websocket.send_text(json.dumps({"error": f"Internal server error: {str(e)}"}))
                 
     except WebSocketDisconnect as e:
@@ -127,6 +126,6 @@ async def ai_chat_endpoint(websocket: WebSocket):
             1011: "Internal server error",
         }
         reason = close_codes.get(e.code, "Unknown reason")
-        log(LogLevel.MINIMUM, f"WebSocket closed: {reason} (code: {e.code})", LogPrefix.CHAT)
+        log(LogLevel.MINIMUM, f"WebSocket closed: {reason} (code: {e.code})")
     except Exception as e:
-        log(LogLevel.MINIMUM, f"🐍 WebSocket error: {str(e)}", LogPrefix.CHAT) 
+        log(LogLevel.MINIMUM, f"🐍 WebSocket error: {str(e)}") 
