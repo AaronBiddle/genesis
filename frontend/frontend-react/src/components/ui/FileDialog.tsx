@@ -22,7 +22,7 @@ export const FileDialog: React.FC<FileDialogProps> = ({
   onCancel,
   title
 }) => {
-  const { files, isLoading, refreshFiles } = useFileList(type);
+  const { refreshFiles } = useFileList(type);
   const [filename, setFilename] = useState(defaultFilename);
   const [currentPath, setCurrentPath] = useState("");
   const [loadPrompt, setLoadPrompt] = useState(true);
@@ -55,24 +55,24 @@ export const FileDialog: React.FC<FileDialogProps> = ({
   const dialogTitle = title || `${mode === 'open' ? 'Open' : 'Save'} ${typeInfo.title}`;
 
   useEffect(() => {
-    // Initial fetch of files
     refreshFiles();
-    // Don't include refreshFiles in dependency array
-  }, []); // Empty dependency array
+  }, []);
 
   const handleSelect = () => {
     if (!filename) return;
     
-    // Add extension if not present
+    // Add extension if not present and filename doesn't already have it
     let finalFilename = filename;
     if (!finalFilename.endsWith(typeInfo.extension)) {
       finalFilename += typeInfo.extension;
     }
     
-    // Combine current path with filename
-    const fullPath = currentPath ? `${currentPath}/${finalFilename}` : finalFilename;
+    // For 'save' mode, combine with current path
+    // For 'open' mode, use the filename as-is (it contains the full path from DirectoryBrowser)
+    const fullPath = mode === 'save' && currentPath 
+      ? `${currentPath}/${finalFilename}` 
+      : finalFilename;
     
-    // Pass loadPrompt option only for chat files in open mode
     const options = (type === 'chat' && mode === 'open') ? { loadPrompt } : undefined;
     onSelect(fullPath, options);
   };
@@ -82,39 +82,14 @@ export const FileDialog: React.FC<FileDialogProps> = ({
       <div className="bg-white p-4 rounded-lg shadow-lg w-[500px] max-w-[90vw]">
         <h2 className="text-lg font-semibold mb-4">{dialogTitle}</h2>
         
-        {mode === 'open' && (
-          <div className="mb-4">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-60">
-                <span className="text-gray-500">Loading files...</span>
-              </div>
-            ) : (
-              <div className="border rounded-lg overflow-hidden">
-                <div className="max-h-60 overflow-auto">
-                  {files.length === 0 ? (
-                    <div className="p-4 text-gray-500 text-center">
-                      No files found
-                    </div>
-                  ) : (
-                    <ul className="divide-y">
-                      {files.map(file => (
-                        <li
-                          key={file}
-                          className="p-2 hover:bg-gray-100 cursor-pointer transition-colors"
-                          onClick={() => setFilename(file)}
-                        >
-                          <div className={`p-2 rounded ${filename === file ? 'bg-blue-100' : ''}`}>
-                            {file}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        <DirectoryBrowser
+          onFileSelect={(path) => {
+            setFilename(path);
+          }}
+          fileFilter={[typeInfo.extension]}
+          fileType={type}
+          onPathChange={(path) => setCurrentPath(path)}
+        />
 
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -145,15 +120,6 @@ export const FileDialog: React.FC<FileDialogProps> = ({
             </label>
           </div>
         )}
-
-        <DirectoryBrowser
-          onFileSelect={(path) => {
-            setFilename(path);
-          }}
-          fileFilter={[typeInfo.extension]}
-          fileType={type}
-          onPathChange={(path) => setCurrentPath(path)}
-        />
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onCancel}>

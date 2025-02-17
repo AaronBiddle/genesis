@@ -51,16 +51,7 @@ class FileManager:
         """Save content to a file"""
         try:
             file_path = self._get_file_path(filename)
-            
-            log(LogLevel.TEMPORARY, f"""
-File save attempt:
-  Filename: {filename}
-  Full path: {file_path}
-  Parent dir: {file_path.parent}
-  Base dir: {self.base_dir}
-  Resolved path: {file_path.resolve()}
-""")
-            
+                        
             # Create parent directories if they don't exist
             file_path.parent.mkdir(parents=True, exist_ok=True)
             
