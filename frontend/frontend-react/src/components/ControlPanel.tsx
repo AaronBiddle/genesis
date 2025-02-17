@@ -1,6 +1,6 @@
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { useLoggingStore, LogLevel } from '../stores/loggingStore';
-
+import { TOOLBAR_HEIGHT, TOOLBAR_PADDING } from '../styles/ui-constants';
 interface ControlPanelProps {
   width: number;
 }
@@ -10,9 +10,9 @@ export function ControlPanel({ width }: ControlPanelProps) {
 
   return (
     <Card className="shadow-md rounded-2xl mx-1 my-2" style={{ width }}>
-      <CardHeader>
-        <CardTitle>Control Panel</CardTitle>
-      </CardHeader>
+    <CardHeader className={`flex items-center justify-between ${TOOLBAR_HEIGHT} ${TOOLBAR_PADDING} border-b`}>
+      <CardTitle>Control Panel</CardTitle>
+    </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-4">
           <div>

@@ -16,7 +16,7 @@ import { API_ENDPOINTS } from '../config/constants';
 import SaveIcon from '@mui/icons-material/Save';
 import SaveAsIcon from '@mui/icons-material/SaveAs';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
-
+import { TOOLBAR_HEIGHT, TOOLBAR_PADDING } from '../styles/ui-constants';
 interface TabbedWindowProps {
   documents: Array<{ id: string; title: string; content: string }>;
   activeDocument: string | null;
@@ -118,7 +118,7 @@ export function TabbedWindow({
       transition={{ duration: 0.6 }}
       className="rounded-2xl bg-white shadow-md flex flex-col mx-1 my-2 flex-grow"
     >
-      <div className="flex justify-between items-center p-2 border-b">
+      <div className={`flex justify-between items-center border-b ${TOOLBAR_HEIGHT} ${TOOLBAR_PADDING}`}>
         <div className="flex items-center gap-2">
           <button
             onClick={onNewDocument}
