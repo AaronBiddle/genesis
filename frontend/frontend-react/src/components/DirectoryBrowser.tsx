@@ -11,11 +11,12 @@ interface DirectoryItem {
 
 interface DirectoryBrowserProps {
   onFileSelect?: (path: string) => void;
+  onPathChange?: (path: string) => void;
   fileFilter?: string[];
   fileType: 'chat' | 'document' | 'prompt';
 }
 
-export function DirectoryBrowser({ onFileSelect, fileFilter, fileType }: DirectoryBrowserProps) {
+export function DirectoryBrowser({ onFileSelect, onPathChange, fileFilter, fileType }: DirectoryBrowserProps) {
   const [currentPath, setCurrentPath] = useState("");
   const [items, setItems] = useState<DirectoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,6 +54,11 @@ export function DirectoryBrowser({ onFileSelect, fileFilter, fileType }: Directo
   useEffect(() => {
     fetchDirectory(currentPath);
   }, []);
+
+  useEffect(() => {
+    // Notify parent component when path changes
+    onPathChange?.(currentPath);
+  }, [currentPath, onPathChange]);
 
   const handleItemClick = (item: DirectoryItem) => {
     if (item.type === 'directory') {

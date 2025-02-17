@@ -24,6 +24,7 @@ export const FileDialog: React.FC<FileDialogProps> = ({
 }) => {
   const { files, isLoading, refreshFiles } = useFileList(type);
   const [filename, setFilename] = useState(defaultFilename);
+  const [currentPath, setCurrentPath] = useState("");
   const [loadPrompt, setLoadPrompt] = useState(true);
 
   // Get display information based on file type
@@ -68,9 +69,12 @@ export const FileDialog: React.FC<FileDialogProps> = ({
       finalFilename += typeInfo.extension;
     }
     
+    // Combine current path with filename
+    const fullPath = currentPath ? `${currentPath}/${finalFilename}` : finalFilename;
+    
     // Pass loadPrompt option only for chat files in open mode
     const options = (type === 'chat' && mode === 'open') ? { loadPrompt } : undefined;
-    onSelect(finalFilename, options);
+    onSelect(fullPath, options);
   };
 
   return (
@@ -148,6 +152,7 @@ export const FileDialog: React.FC<FileDialogProps> = ({
           }}
           fileFilter={[typeInfo.extension]}
           fileType={type}
+          onPathChange={(path) => setCurrentPath(path)}
         />
 
         <div className="flex justify-end gap-2">
