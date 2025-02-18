@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ResizableDivider } from './components/ui/resizable'
 import { ControlPanel } from './components/ControlPanel'
-import { SplitViewManager } from "./components/SplitViewManager";
+import { SplitContainer } from "./components/SplitContainer";
 import { TabbedWindow } from './components/TabbedWindow'
 import { ChatBox } from './components/ChatBox'
 import './App.css'
@@ -121,7 +121,7 @@ export default function App() {
 
   return (
     <div className="h-screen flex bg-gray-300 text-gray-900 pt-2 pb-2">
-      <SplitViewManager>
+      <SplitContainer>
         <ControlPanel width={leftWidth} />
         <ResizableDivider onResize={handleLeftResize} />
         <TabbedWindow
@@ -139,7 +139,7 @@ export default function App() {
         />
         <ResizableDivider onResize={handleRightResize} />
         <ChatBox width={rightWidth} />
-      </SplitViewManager>
+      </SplitContainer>
     </div>
   );
 }
