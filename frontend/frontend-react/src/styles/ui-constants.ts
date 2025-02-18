@@ -15,4 +15,8 @@ export const CHAT_PANEL_DEFAULT_WIDTH = 700;
 export const SPLIT_WINDOW_GAP = "gap-2";
 
 // Outer spacing for window container
-export const WINDOW_CONTAINER_PADDING = "p-2"; 
+export const WINDOW_CONTAINER_PADDING = "p-2";
+
+// Divider width/height for resizable splits
+export const SPLIT_DIVIDER_SIZE = "w-1"; // for vertical divider
+export const SPLIT_DIVIDER_SIZE_H = "h-1"; // for horizontal divider 

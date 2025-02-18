@@ -1,6 +1,8 @@
 import { PreviewWindow } from './PreviewWindow';
 import { WindowLayout } from '../types/layout';
 import { SPLIT_WINDOW_GAP } from '../styles/ui-constants';
+import { ResizableDivider } from './ui/resizable';
+import { useState } from 'react';
 
 interface SplitContainerProps {
   layout: WindowLayout;
@@ -19,13 +21,32 @@ export const SplitContainer: React.FC<SplitContainerProps> = ({ layout, onSplit,
       </div>
     );
   } else {
+    const [firstSize, setFirstSize] = useState(50); // percentage
     const flexDirection = layout.direction === "horizontal" ? "flex-row" : "flex-col";
+    
+    const handleResize = (delta: number) => {
+      const containerRect = document.getElementById('split-container')?.getBoundingClientRect();
+      if (!containerRect) return;
+      
+      const totalSize = layout.direction === 'horizontal' ? containerRect.width : containerRect.height;
+      const deltaPercent = (delta / totalSize) * 100;
+      
+      setFirstSize(prev => {
+        const newSize = prev + deltaPercent;
+        return Math.min(Math.max(newSize, 20), 80); // Limit between 20% and 80%
+      });
+    };
+
     return (
-      <div className={`flex ${flexDirection} ${SPLIT_WINDOW_GAP} w-full h-full`}>
-        <div className="flex-1">
+      <div id="split-container" className={`flex ${flexDirection} w-full h-full`}>
+        <div style={{ flex: `${firstSize} 1 0%` }}>
           <SplitContainer layout={layout.first} onSplit={onSplit} isRoot={false} />
         </div>
-        <div className="flex-1">
+        <ResizableDivider 
+          onResize={handleResize}
+          orientation={layout.direction === 'horizontal' ? 'vertical' : 'horizontal'}
+        />
+        <div style={{ flex: `${100 - firstSize} 1 0%` }}>
           <SplitContainer layout={layout.second} onSplit={onSplit} isRoot={false} />
         </div>
       </div>
