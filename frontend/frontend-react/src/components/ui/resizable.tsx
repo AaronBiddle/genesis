@@ -1,4 +1,4 @@
-import { SPLIT_DIVIDER_SIZE, SPLIT_DIVIDER_SIZE_H } from '../../styles/ui-constants';
+import { SPLIT_DIVIDER_SIZE, SPLIT_DIVIDER_SIZE_H, SPLIT_DIVIDER_HIGHLIGHT } from '../../styles/ui-constants';
 
 interface ResizableDividerProps {
   onResize: (delta: number) => void;
@@ -35,12 +35,12 @@ export function ResizableDivider({
   };
 
   const dividerClass = orientation === 'vertical' 
-    ? `${SPLIT_DIVIDER_SIZE} cursor-col-resize hover:bg-blue-500`
-    : `${SPLIT_DIVIDER_SIZE_H} cursor-row-resize hover:bg-blue-500`;
+    ? `${SPLIT_DIVIDER_SIZE} cursor-col-resize`
+    : `${SPLIT_DIVIDER_SIZE_H} cursor-row-resize`;
 
   return (
     <div
-      className={`bg-gray-200 hover:bg-blue-500 transition-colors ${dividerClass} ${className}`}
+      className={`bg-transparent transition-colors ${SPLIT_DIVIDER_HIGHLIGHT} ${dividerClass} ${className}`}
       onMouseDown={handleMouseDown}
     />
   );

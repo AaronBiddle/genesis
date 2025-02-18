@@ -19,4 +19,7 @@ export const WINDOW_CONTAINER_PADDING = "p-2";
 
 // Divider width/height for resizable splits
 export const SPLIT_DIVIDER_SIZE = "w-1"; // for vertical divider
-export const SPLIT_DIVIDER_SIZE_H = "h-1"; // for horizontal divider 
+export const SPLIT_DIVIDER_SIZE_H = "h-1"; // for horizontal divider
+
+// Divider highlight color
+export const SPLIT_DIVIDER_HIGHLIGHT = "hover:bg-blue-500"; 
