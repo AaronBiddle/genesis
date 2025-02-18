@@ -1,7 +1,7 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import ReactMarkdown from 'react-markdown';
 
-interface TabbedWindowProps {
+export interface TabbedWindowProps {
   documents: Array<{ id: string; title: string; content: string }>;
   activeDocument: string | null;
   onDocumentChange: (id: string) => void;
