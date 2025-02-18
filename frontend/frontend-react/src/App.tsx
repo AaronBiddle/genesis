@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { ResizableDivider } from './components/ui/resizable'
 import { ControlPanel } from './components/ControlPanel'
-import { SplitContainer } from "./components/SplitContainer";
-import { TabbedWindow } from './components/TabbedWindow'
+import { TabbedWindow } from './components/DocumentSection'
 import { ChatBox } from './components/ChatBox'
 import './App.css'
 import { API_ENDPOINTS } from './config/constants'
@@ -120,26 +119,24 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen flex bg-gray-300 text-gray-900 pt-2 pb-2">
-      <SplitContainer>
-        <ControlPanel width={leftWidth} />
-        <ResizableDivider onResize={handleLeftResize} />
-        <TabbedWindow
-          width={`calc(100% - ${leftWidth + 10}px - ${rightWidth}px)`}
-          documents={documents}
-          activeDocument={activeDocument}
-          onDocumentChange={setActiveDocument}
-          onDocumentContentChange={handleDocumentContentChange}
-          onDocumentClose={handleCloseDocument}
-          onDocumentSave={handleSaveDocument}
-          markdownEnabled={markdownEnabled}
-          onMarkdownToggle={() => setMarkdownEnabled(!markdownEnabled)}
-          onNewDocument={handleNewDocument}
-          onOpenDocument={handleOpenDocument}
-        />
-        <ResizableDivider onResize={handleRightResize} />
-        <ChatBox width={rightWidth} />
-      </SplitContainer>
+    <div className="h-screen flex bg-gray-300 text-gray-900 pt-2 pb-2">      
+      <ControlPanel width={leftWidth} />
+      <ResizableDivider onResize={handleLeftResize} />
+      <TabbedWindow
+        width={`calc(100% - ${leftWidth + 10}px - ${rightWidth}px)`}
+        documents={documents}
+        activeDocument={activeDocument}
+        onDocumentChange={setActiveDocument}
+        onDocumentContentChange={handleDocumentContentChange}
+        onDocumentClose={handleCloseDocument}
+        onDocumentSave={handleSaveDocument}
+        markdownEnabled={markdownEnabled}
+        onMarkdownToggle={() => setMarkdownEnabled(!markdownEnabled)}
+        onNewDocument={handleNewDocument}
+        onOpenDocument={handleOpenDocument}
+      />
+      <ResizableDivider onResize={handleRightResize} />
+      <ChatBox width={rightWidth} />      
     </div>
   );
 }
