@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ResizableDivider } from './components/ui/resizable'
 import { ControlPanel } from './components/ControlPanel'
-import { TabbedWindow } from './components/DocumentSection'
+import { DocumentSection } from './components/DocumentSection'
 import { ChatBox } from './components/ChatBox'
 import './App.css'
 import { API_ENDPOINTS } from './config/constants'
@@ -122,7 +122,7 @@ export default function App() {
     <div className="h-screen flex bg-gray-300 text-gray-900 pt-2 pb-2">      
       <ControlPanel width={leftWidth} />
       <ResizableDivider onResize={handleLeftResize} />
-      <TabbedWindow
+      <DocumentSection
         width={`calc(100% - ${leftWidth + 10}px - ${rightWidth}px)`}
         documents={documents}
         activeDocument={activeDocument}
