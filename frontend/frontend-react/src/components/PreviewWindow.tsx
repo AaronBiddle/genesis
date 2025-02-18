@@ -16,7 +16,7 @@ export function PreviewWindow({ onSplit, ...props }: PreviewWindowProps) {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full border rounded-lg overflow-hidden">
       <div className="border-b bg-gray-50 flex items-center">
         <div className="flex px-2 gap-1">
           <div className="px-3 py-2 bg-white border-t border-x rounded-t-lg shadow-sm">
@@ -39,11 +39,11 @@ export function PreviewWindow({ onSplit, ...props }: PreviewWindowProps) {
           </button>
         </div>
       </div>
-      <div className="flex-1 p-4">
+      <div className="flex-1">
         <textarea
           value={doc.content}
           onChange={(e) => props.onDocumentContentChange(doc.id, e.target.value)}
-          className="w-full h-full resize-none border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full h-full resize-none border-0 p-2 focus:outline-none focus:ring-0"
           placeholder="Enter your content here..."
         />
       </div>

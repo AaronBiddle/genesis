@@ -1,5 +1,6 @@
 import { PreviewWindow } from './PreviewWindow';
 import { WindowLayout } from '../types/layout';
+import { SPLIT_WINDOW_GAP } from '../styles/ui-constants';
 
 interface SplitContainerProps {
   layout: WindowLayout;
@@ -19,9 +20,8 @@ export const SplitContainer: React.FC<SplitContainerProps> = ({ layout, onSplit,
     );
   } else {
     const flexDirection = layout.direction === "horizontal" ? "flex-row" : "flex-col";
-    const gapClass = layout.direction === "horizontal" ? "gap-x-2" : "gap-y-2";
     return (
-      <div className={`flex ${flexDirection} ${gapClass} w-full h-full`}>
+      <div className={`flex ${flexDirection} ${SPLIT_WINDOW_GAP} w-full h-full`}>
         <div className="flex-1">
           <SplitContainer layout={layout.first} onSplit={onSplit} isRoot={false} />
         </div>

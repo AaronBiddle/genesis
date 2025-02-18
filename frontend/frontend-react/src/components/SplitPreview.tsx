@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { SplitContainer } from './SplitContainer';
 import { WindowLayout } from '../types/layout';
 import { v4 as uuidv4 } from 'uuid';
+import { WINDOW_CONTAINER_PADDING } from '../styles/ui-constants';
 
 const createInitialTabProps = (id: string = "1", title: string = "Initial Window") => ({
   documents: [{
@@ -58,7 +59,7 @@ export function SplitPreview() {
   }, [splitPane]);
 
   return (
-    <div className="flex-1 w-full">
+    <div className={`flex-1 w-full ${WINDOW_CONTAINER_PADDING}`}>
       <SplitContainer 
         layout={layout}
         onSplit={handleSplitContainer}

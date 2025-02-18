@@ -9,4 +9,10 @@ export const CONTROL_PANEL_DEFAULT_WIDTH = 250;
 
 export const CHAT_PANEL_MIN_WIDTH = 400;
 export const CHAT_PANEL_MAX_WIDTH = 1500;
-export const CHAT_PANEL_DEFAULT_WIDTH = 700; 
+export const CHAT_PANEL_DEFAULT_WIDTH = 700;
+
+// Spacing between split windows (in pixels)
+export const SPLIT_WINDOW_GAP = "gap-2";
+
+// Outer spacing for window container
+export const WINDOW_CONTAINER_PADDING = "p-2"; 
