@@ -121,7 +121,7 @@ export default function App() {
   return (
     <div className="h-screen flex bg-gray-300 text-gray-900 pt-2 pb-2">      
       <ControlPanel width={leftWidth} />
-      <ResizableDivider onResize={handleLeftResize} />
+      <ResizableDivider onResize={handleLeftResize} />      
       <DocumentSection
         width={`calc(100% - ${leftWidth + 10}px - ${rightWidth}px)`}
         documents={documents}
