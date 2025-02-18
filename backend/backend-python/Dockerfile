@@ -3,6 +3,7 @@ WORKDIR /app
 
 # Install system utilities
 RUN apt-get update && apt-get install -y procps && rm -rf /var/lib/apt/lists/*
+RUN mkdir /config
 
 COPY app/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
