@@ -17,6 +17,7 @@ import {
   TOOLBAR_HEIGHT, 
   TOOLBAR_PADDING, 
 } from '../styles/ui-constants';
+import { useLoggingStore, LogLevel } from '../stores/loggingStore';
 
 export function ChatBox({ width }: { width: number }) {
   const { 
@@ -47,6 +48,8 @@ export function ChatBox({ width }: { width: number }) {
     visible: false,
     mode: null
   });
+  const log = useLoggingStore(state => state.log);
+  const namespace = '💬 ChatBox:';
 
   const doSaveChat = async (filename: string) => {
     try {
@@ -86,6 +89,51 @@ export function ChatBox({ width }: { width: number }) {
     setChatTitle("untitled chat");
     setSystemPrompt("You are a helpful assistant...");
     setTemperature(0.7);
+  };
+
+  const shouldResubmit = () => {
+    if (messageInput.trim()) return false;
+    if (messages.length === 0) return false;
+    
+    const lastMessage = messages[messages.length - 1];
+    // If last message is an empty assistant response, look at previous message
+    if (lastMessage.role === 'assistant' && !lastMessage.content.trim()) {
+      if (messages.length < 2) return false;
+      // Check if previous message was from user
+      return messages[messages.length - 2].role === 'user';
+    }
+    return lastMessage.role === 'user';
+  };
+
+  const handleSubmit = () => {
+    log(LogLevel.DEBUG, namespace, 'Submit button pressed');
+    if (messageInput.trim()) {
+      log(LogLevel.DEBUG, namespace, 'Submitting new message:', messageInput);
+      sendPrompt(messageInput);
+      setMessageInput('');
+    } else if (shouldResubmit()) {
+      // If last message is empty assistant message, remove it
+      if (messages[messages.length - 1].role === 'assistant' && 
+          !messages[messages.length - 1].content.trim()) {
+        log(LogLevel.DEBUG, namespace, 'Removing empty assistant message');
+        removeMessage(messages.length - 1);
+        log(LogLevel.DEBUG, namespace, `Messages remaining after removal: ${messages.length}`);
+      }
+
+      // Now the last message should be the user message
+      const lastMessage = messages[messages.length - 1];
+      removeMessage(messages.length - 1);
+      log(LogLevel.DEBUG, namespace, `Messages remaining after removal: ${messages.length}`);
+      log(LogLevel.DEBUG, namespace, 'Resubmitting message:', lastMessage.content);
+      sendPrompt(lastMessage.content);
+    } else {
+      log(LogLevel.DEBUG, namespace, 'No action taken - Debug info:', {
+        hasMessageInput: Boolean(messageInput.trim()),
+        messagesLength: messages.length,
+        lastMessageRole: messages.length > 0 ? messages[messages.length - 1].role : 'none',
+        lastMessageContent: messages.length > 0 ? messages[messages.length - 1].content : 'none'
+      });
+    }
   };
 
   return (
@@ -211,10 +259,7 @@ export function ChatBox({ width }: { width: number }) {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (messageInput.trim()) {
-                sendPrompt(messageInput);
-                setMessageInput('');
-              }
+              handleSubmit();
             }}
           >
             <div className="flex gap-2">
@@ -229,23 +274,12 @@ export function ChatBox({ width }: { width: number }) {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    if (messageInput.trim()) {
-                      sendPrompt(messageInput);
-                      setMessageInput('');
-                    }
+                    handleSubmit();
                   }
                 }}
               />
-              <Button
-                type="submit"
-                onClick={() => {
-                  if (messageInput.trim()) {
-                    sendPrompt(messageInput);
-                    setMessageInput('');
-                  }
-                }}
-              >
-                Send
+              <Button type="submit">
+                {shouldResubmit() ? 'Retry' : 'Send'}
               </Button>
             </div>
           </form>
