@@ -2,20 +2,13 @@ import { useState } from 'react';
 import { useFileList } from '../hooks/useFileList';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faFileCode, 
-  faFileAlt, 
-  faSpinner,
-  faFolderOpen
-} from '@fortawesome/free-solid-svg-icons';
 import { FileDialog } from './ui/FileDialog';
 import { API_ENDPOINTS } from '../config/constants';
-import SaveIcon from '@mui/icons-material/Save';
-import SaveAsIcon from '@mui/icons-material/SaveAs';
-import NoteAddIcon from '@mui/icons-material/NoteAdd';
+import { MaterialIcons, FontAwesomeIcons } from './icons';
 import { TOOLBAR_HEIGHT, TOOLBAR_PADDING, TOOLBAR_BUTTON_SIZE } from '../styles/ui-constants';
 import { TabbedWindow } from './TabbedWindow';
 import { SplitPreview } from './DocumentWorkspace';
+
 interface TabbedWindowProps {
   documents: Array<{ id: string; title: string; content: string }>;
   activeDocument: string | null;
@@ -126,14 +119,14 @@ export function DocumentSection({
             className="w-8 h-8 flex items-center justify-center text-black hover:text-blue-600"
             title="New document"
           >
-            <NoteAddIcon style={{ fontSize: '1.25rem' }} />
+            <MaterialIcons.NoteAdd style={{ fontSize: '1.25rem' }} />
           </button>
           <button
             onClick={handleLoadDocument}
             className="w-8 h-8 flex items-center justify-center text-black hover:text-blue-600"
             title="Load document"
           >
-            <FontAwesomeIcon icon={faFolderOpen} />
+            <FontAwesomeIcon icon={FontAwesomeIcons.folderOpen} />
           </button>
           <button
             onClick={handleSaveDocument}
@@ -141,7 +134,10 @@ export function DocumentSection({
             className="w-8 h-8 flex items-center justify-center text-black hover:text-blue-600 disabled:text-gray-400"
             title={isSaving ? "Saving..." : "Save document"}
           >
-            {isSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : <SaveIcon style={{ fontSize: '1.25rem' }} />}
+            {isSaving ? 
+              <FontAwesomeIcon icon={FontAwesomeIcons.spinner} spin /> : 
+              <MaterialIcons.Save style={{ fontSize: '1.25rem' }} />
+            }
           </button>
           <button
             onClick={() => setFileDialog({ visible: true, mode: 'save' })}
@@ -149,7 +145,7 @@ export function DocumentSection({
             className="w-8 h-8 flex items-center justify-center text-black hover:text-blue-600 disabled:text-gray-400"
             title={isSaving ? "Saving..." : "Save document as..."}
           >
-            <SaveAsIcon style={{ fontSize: '1.25rem' }} />
+            <MaterialIcons.SaveAs style={{ fontSize: '1.25rem' }} />
           </button>
           <button
             onClick={handleDeleteDocument}
@@ -167,7 +163,7 @@ export function DocumentSection({
             title={markdownEnabled ? "Markdown View" : "Plain Text View"}
           >
             <FontAwesomeIcon 
-              icon={markdownEnabled ? faFileCode : faFileAlt} 
+              icon={markdownEnabled ? FontAwesomeIcons.fileCode : FontAwesomeIcons.fileAlt} 
               className="h-4 w-4"
             />
           </button>

@@ -6,13 +6,10 @@ import { useAIChat } from '../hooks/useAIChat';
 import { MessageContainer } from './MessageContainer';
 import { useChatSettings } from '../stores/chatSettingsStore';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSpinner, faFolderOpen } from '@fortawesome/free-solid-svg-icons';
 import { useFileList } from '../hooks/useFileList';
 import { API_ENDPOINTS } from '../config/constants';
 import { FileDialog } from './ui/FileDialog';
-import SaveIcon from '@mui/icons-material/Save';
-import SaveAsIcon from '@mui/icons-material/SaveAs';
-import NoteAddIcon from '@mui/icons-material/NoteAdd';
+import { MaterialIcons, FontAwesomeIcons } from './icons';
 import { 
   TOOLBAR_HEIGHT, 
   TOOLBAR_PADDING, 
@@ -152,14 +149,14 @@ export function ChatBox({ width }: { width: number }) {
               className="w-8 h-8 flex items-center justify-center text-black hover:text-blue-600"
               title="New chat"
             >
-              <NoteAddIcon style={{ fontSize: '1.25rem' }} />
+              <MaterialIcons.NoteAdd style={{ fontSize: '1.25rem' }} />
             </button>
             <button
               onClick={handleLoadChat}
               className="w-8 h-8 flex items-center justify-center text-black hover:text-blue-600"
               title="Load chat"
             >
-              <FontAwesomeIcon icon={faFolderOpen} />
+              <FontAwesomeIcon icon={FontAwesomeIcons.folderOpen} />
             </button>
             <button
               onClick={handleSaveChat}
@@ -173,7 +170,10 @@ export function ChatBox({ width }: { width: number }) {
                     : "Save chat"
               }
             >
-              {isSaving ? <FontAwesomeIcon icon={faSpinner} spin /> : <SaveIcon style={{ fontSize: '1.25rem' }} />}
+              {isSaving ? 
+                <FontAwesomeIcon icon={FontAwesomeIcons.spinner} spin /> : 
+                <MaterialIcons.Save style={{ fontSize: '1.25rem' }} />
+              }
             </button>
             <button
               onClick={() => setFileDialog({ visible: true, mode: 'save' })}
@@ -187,7 +187,7 @@ export function ChatBox({ width }: { width: number }) {
                     : "Save chat as..."
               }
             >
-              <SaveAsIcon style={{ fontSize: '1.25rem' }} />
+              <MaterialIcons.SaveAs style={{ fontSize: '1.25rem' }} />
             </button>
             <button
               onClick={async () => {
