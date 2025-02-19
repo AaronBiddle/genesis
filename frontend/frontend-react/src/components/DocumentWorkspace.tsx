@@ -93,14 +93,32 @@ export function SplitPreview() {
     });
   }, []);
 
+  const createNewSplit = useCallback(() => {
+    if (!layout) {
+      setLayout({
+        type: "leaf",
+        tabProps: createInitialTabProps()
+      });
+    }
+  }, [layout]);
+
   return (
     <div className={`flex-1 w-full ${WINDOW_CONTAINER_PADDING}`}>
-      {layout && (
+      {layout ? (
         <SplitContainer 
           layout={layout}
           onSplit={handleSplitContainer}
           onClose={handleCloseContainer}
         />
+      ) : (
+        <div className="h-full flex items-center justify-center">
+          <button 
+            onClick={createNewSplit}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Create New Split
+          </button>
+        </div>
       )}
     </div>
   );
