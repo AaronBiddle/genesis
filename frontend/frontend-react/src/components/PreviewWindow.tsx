@@ -1,12 +1,14 @@
 import React from 'react';
 import { TabbedWindowProps } from './TabbedWindow';
 import { SplitIcon } from './icons/SplitIcon';
+import { CloseIcon } from './icons/CloseIcon';
 
 interface PreviewWindowProps extends TabbedWindowProps {
   onSplit?: (direction: 'vertical' | 'horizontal') => void;
+  onClose?: () => void;
 }
 
-export function PreviewWindow({ onSplit, ...props }: PreviewWindowProps) {
+export function PreviewWindow({ onSplit, onClose, ...props }: PreviewWindowProps) {
   const doc = props.documents[0];
 
   const handleSplitClick = (e: React.MouseEvent) => {
@@ -26,16 +28,25 @@ export function PreviewWindow({ onSplit, ...props }: PreviewWindowProps) {
             README.md
           </div>
         </div>
-        <div className="flex-grow flex justify-end px-2">
-          <button
-            onClick={handleSplitClick}
-            className="p-1 hover:bg-gray-200 rounded group relative"
-            title="Split Editor Down"
-          >
-            <SplitIcon className="w-4 h-4" />
-            <span className="absolute hidden group-hover:block bg-gray-800 text-white text-xs py-1 px-2 rounded bottom-full mb-2 whitespace-nowrap">
+        <div className="flex-grow flex justify-end px-2 gap-1">
+          <div className="relative">
+            <button
+              onClick={handleSplitClick}
+              className="p-1 hover:bg-gray-200 rounded"
+              title="Split Editor Down"
+            >
+              <SplitIcon className="w-4 h-4" />
+            </button>
+            <div className="absolute hidden group-hover:block bg-gray-800 text-white text-xs py-1 px-2 rounded bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap z-10">
               [Alt] Split Editor Down
-            </span>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-gray-200 rounded"
+            title="Close Editor"
+          >
+            <CloseIcon className="w-4 h-4" />
           </button>
         </div>
       </div>

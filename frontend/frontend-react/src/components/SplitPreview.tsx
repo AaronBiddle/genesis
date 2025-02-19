@@ -58,11 +58,49 @@ export function SplitPreview() {
     });
   }, [splitPane]);
 
+  const handleCloseContainer = useCallback((targetLayout: WindowLayout) => {
+    setLayout(currentLayout => {
+      const findAndReplace = (layout: WindowLayout): WindowLayout | null => {
+        if (layout.type === 'leaf') {
+          return layout === targetLayout ? null : layout;
+        }
+        
+        if (layout.type === 'split') {
+          const first = findAndReplace(layout.first);
+          const second = findAndReplace(layout.second);
+          
+          // If we found and removed the target
+          if (first === null || second === null) {
+            // Return the remaining pane
+            return first || second;
+          }
+          
+          // If neither pane was the target, return the split unchanged
+          return {
+            ...layout,
+            first,
+            second,
+          };
+        }
+        
+        return layout;
+      };
+      
+      const result = findAndReplace(currentLayout);
+      // If we somehow removed the last pane, create a new empty one
+      return result || {
+        type: "leaf",
+        tabProps: createInitialTabProps()
+      };
+    });
+  }, []);
+
   return (
     <div className={`flex-1 w-full ${WINDOW_CONTAINER_PADDING}`}>
       <SplitContainer 
         layout={layout}
         onSplit={handleSplitContainer}
+        onClose={handleCloseContainer}
       />
     </div>
   );

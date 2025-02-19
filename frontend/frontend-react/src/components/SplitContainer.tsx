@@ -7,16 +7,18 @@ import { useState } from 'react';
 interface SplitContainerProps {
   layout: WindowLayout;
   onSplit?: (layout: WindowLayout, direction: 'vertical' | 'horizontal') => void;
+  onClose?: (layout: WindowLayout) => void;
   isRoot?: boolean;
 }
 
-export const SplitContainer: React.FC<SplitContainerProps> = ({ layout, onSplit, isRoot = true }) => {
+export const SplitContainer: React.FC<SplitContainerProps> = ({ layout, onSplit, onClose, isRoot = true }) => {
   if (layout.type === "leaf") {
     return (
       <div className="flex-1 w-full h-full">
         <PreviewWindow 
           {...layout.tabProps} 
           onSplit={(direction) => onSplit?.(layout, direction)}
+          onClose={() => onClose?.(layout)}
         />
       </div>
     );
@@ -40,14 +42,24 @@ export const SplitContainer: React.FC<SplitContainerProps> = ({ layout, onSplit,
     return (
       <div id="split-container" className={`flex ${flexDirection} w-full h-full`}>
         <div style={{ flex: `${firstSize} 1 0%` }}>
-          <SplitContainer layout={layout.first} onSplit={onSplit} isRoot={false} />
+          <SplitContainer 
+            layout={layout.first} 
+            onSplit={onSplit} 
+            onClose={onClose}
+            isRoot={false} 
+          />
         </div>
         <ResizableDivider 
           onResize={handleResize}
           orientation={layout.direction === 'horizontal' ? 'vertical' : 'horizontal'}
         />
         <div style={{ flex: `${100 - firstSize} 1 0%` }}>
-          <SplitContainer layout={layout.second} onSplit={onSplit} isRoot={false} />
+          <SplitContainer 
+            layout={layout.second} 
+            onSplit={onSplit} 
+            onClose={onClose}
+            isRoot={false} 
+          />
         </div>
       </div>
     );
