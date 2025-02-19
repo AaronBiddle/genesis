@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { TabbedWindowProps } from './TabbedWindow';
 import { SplitIcon } from './icons/SplitIcon';
 import { CloseIcon } from './icons/CloseIcon';
@@ -21,6 +21,7 @@ export function PreviewWindow({ onSplit, onClose, ...props }: PreviewWindowProps
   };
 
   if (!props.documents || props.documents.length === 0) {
+    console.log('PreviewWindow - No documents available');
     return (
       <div className="flex flex-col h-full border rounded-lg overflow-hidden">
         <div className="border-b bg-gray-50 flex items-center">
@@ -89,7 +90,14 @@ export function PreviewWindow({ onSplit, onClose, ...props }: PreviewWindowProps
       <div className="flex-1">
         <textarea
           value={activeDoc.content}
-          onChange={(e) => props.onDocumentContentChange(activeDoc.id, e.target.value)}
+          onChange={(e) => {
+            console.log('PreviewWindow - TextArea onChange:', {
+              docId: activeDoc.id,
+              newContent: e.target.value,
+              currentDocContent: activeDoc.content
+            });
+            props.onDocumentContentChange(activeDoc.id, e.target.value);
+          }}
           className="w-full h-full resize-none border-0 p-2 focus:outline-none focus:ring-0"
           placeholder="Enter your content here..."
         />

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { SplitContainer } from './SplitContainer';
 import { WindowLayout } from '../types/WindowLayout';
 import { v4 as uuidv4 } from 'uuid';
@@ -40,6 +40,40 @@ export function DocumentWorkspace({
   onDocumentClose,
   markdownEnabled
 }: DocumentWorkspaceProps) {
+  
+  useEffect(() => {
+    console.log('DocumentWorkspace - Documents changed:', documents);
+  }, [documents]);
+
+  const updateLayoutWithCurrentDocs = useCallback((layout: WindowLayout): WindowLayout => {
+    if (!layout) return null;
+    
+    if (layout.type === 'leaf') {
+      return {
+        ...layout,
+        tabProps: {
+          ...layout.tabProps,
+          documents,
+          activeDocument,
+          onDocumentChange,
+          onDocumentContentChange,
+          onDocumentClose,
+          markdownEnabled
+        }
+      };
+    }
+    
+    if (layout.type === 'split') {
+      return {
+        ...layout,
+        first: updateLayoutWithCurrentDocs(layout.first),
+        second: updateLayoutWithCurrentDocs(layout.second)
+      };
+    }
+    
+    return layout;
+  }, [documents, activeDocument, onDocumentChange, onDocumentContentChange, onDocumentClose, markdownEnabled]);
+
   const handleSplitContainer = useCallback((targetLayout: NonNullable<WindowLayout>, direction: 'horizontal' | 'vertical') => {
     setWindowLayout((currentLayout: WindowLayout): WindowLayout => {
       if (!currentLayout) return null;
@@ -116,7 +150,7 @@ export function DocumentWorkspace({
     <div className={`flex-1 w-full ${WINDOW_CONTAINER_PADDING}`}>
       {windowLayout ? (
         <SplitContainer 
-          layout={windowLayout}
+          layout={updateLayoutWithCurrentDocs(windowLayout)}
           onSplit={handleSplitContainer}
           onClose={handleCloseContainer}
         />

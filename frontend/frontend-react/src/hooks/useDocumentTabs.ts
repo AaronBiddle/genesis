@@ -13,6 +13,21 @@ export function useDocumentTabs() {
     }
   }, [activeDocument, documents]);
 
+  const handleDocumentContentChange = useCallback((id: string, content: string) => {
+    console.log('useDocumentTabs - Before content update:', {
+      id,
+      content,
+      currentDocs: documents
+    });
+    
+    setDocuments(prev => {
+      const updated = prev.map(doc => 
+        doc.id === id ? { ...doc, content } : doc
+      );
+      return updated;
+    });
+  }, [documents]);
+
   const createNewDocument = useCallback(() => {
     const newDoc = {
       id: crypto.randomUUID(),
@@ -20,10 +35,18 @@ export function useDocumentTabs() {
       content: ""
     };
     
-    setDocuments(prev => [...prev, newDoc]);
+    setDocuments(prev => {
+      const updatedDocs = [...prev, newDoc];
+      console.log('useDocumentTabs - Documents being updated to:', updatedDocs);
+      return updatedDocs;
+    });
+    
     setActiveDocument(newDoc.id);
     
-    return newDoc;
+    return {
+      newDoc,
+      currentDocuments: [newDoc]
+    };
   }, []);
 
   return { 
@@ -34,6 +57,7 @@ export function useDocumentTabs() {
     createNewDocument,
     handleCloseDocument,
     setActiveDocument,
-    setDocuments
+    setDocuments,
+    handleDocumentContentChange
   };
 } 

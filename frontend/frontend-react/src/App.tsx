@@ -38,7 +38,8 @@ export default function App() {
     createNewDocument,
     handleCloseDocument,
     setActiveDocument,
-    setDocuments
+    setDocuments,
+    handleDocumentContentChange
   } = useDocumentTabs();
 
   const handleLeftResize = (delta: number) => {
@@ -110,29 +111,28 @@ export default function App() {
     }
   };
 
-  const handleDocumentContentChange = (id: string, content: string) => {
-    setDocuments(prev => prev.map(doc => 
-      doc.id === id ? { ...doc, content } : doc
-    ));
-  };
-
   const handleNewSplitDocument = useCallback(() => {
-    const newDoc = createNewDocument();  // Create new document first
-    createNewSplit({
-      documents: [newDoc],  // Use the new document
-      activeDocument: newDoc.id,
-      onDocumentChange: setActiveDocument,
-      onDocumentContentChange: handleDocumentContentChange,
-      onDocumentClose: handleCloseDocument,
-      markdownEnabled
+    const { newDoc } = createNewDocument();
+    
+    // Get the current documents state
+    setWindowLayout({
+      type: "leaf",
+      tabProps: {
+        documents,  // Use the documents from state
+        activeDocument: newDoc.id,
+        onDocumentChange: setActiveDocument,
+        onDocumentContentChange: handleDocumentContentChange,
+        onDocumentClose: handleCloseDocument,
+        markdownEnabled
+      }
     });
   }, [
     createNewDocument,
+    documents,  // Add documents dependency
     setActiveDocument, 
     handleDocumentContentChange, 
     handleCloseDocument, 
-    markdownEnabled, 
-    createNewSplit
+    markdownEnabled
   ]);
 
   return (
