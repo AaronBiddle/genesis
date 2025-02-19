@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { ResizableDivider } from './components/ui/resizable'
 import { ControlPanel } from './components/ControlPanel'
 import { DocumentSection } from './components/DocumentSection'
@@ -41,6 +41,51 @@ export default function App() {
     setDocuments,
     handleDocumentContentChange
   } = useDocumentTabs();
+
+  // Update window layout when documents change
+  useEffect(() => {
+    console.log('App - Updating window layout with new documents:', documents);
+    setWindowLayout(current => {
+      if (!current) {
+        // Create initial layout if none exists
+        return {
+          type: 'leaf',
+          id: crypto.randomUUID(),
+          tabProps: {
+            documents,
+            activeDocument,
+            onDocumentChange: setActiveDocument,
+            onDocumentContentChange: handleDocumentContentChange,
+            onDocumentClose: handleCloseDocument,
+            markdownEnabled
+          }
+        };
+      }
+      
+      // Update existing layout with new documents
+      const updateLayoutDocs = (layout: WindowLayout): WindowLayout => {
+        if (!layout) return layout;
+        
+        if (layout.type === 'leaf') {
+          return {
+            ...layout,
+            tabProps: {
+              ...layout.tabProps,
+              documents: documents
+            }
+          };
+        }
+        
+        return {
+          ...layout,
+          first: updateLayoutDocs(layout.first),
+          second: updateLayoutDocs(layout.second)
+        };
+      };
+      
+      return updateLayoutDocs(current);
+    });
+  }, [documents, activeDocument, handleDocumentContentChange, handleCloseDocument, markdownEnabled, setWindowLayout]);
 
   const handleLeftResize = (delta: number) => {
     setLeftWidth((prevWidth) => {
@@ -117,6 +162,7 @@ export default function App() {
     // Get the current documents state
     setWindowLayout({
       type: "leaf",
+      id: crypto.randomUUID(),
       tabProps: {
         documents,  // Use the documents from state
         activeDocument: newDoc.id,

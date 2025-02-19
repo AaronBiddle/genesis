@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { WindowLayout } from '../types/WindowLayout';
+import { WindowLayout, TabProps } from '../types/WindowLayout';
 
 interface DocumentHandlers {
   onDocumentChange: (id: string) => void;
@@ -17,6 +17,7 @@ export function useWindowLayout() {
     if (!windowLayout) {
       setWindowLayout({
         type: "leaf",
+        id: crypto.randomUUID(),
         tabProps: {
           documents: handlers.documents,
           activeDocument: handlers.activeDocument,
@@ -29,9 +30,19 @@ export function useWindowLayout() {
     }
   }, [windowLayout]);
 
+  const handleSplitContainer = useCallback((targetLayout: NonNullable<WindowLayout>, direction: 'horizontal' | 'vertical', windowId: string) => {
+    // ... existing split handler code ...
+  }, []);
+
+  const handleCloseContainer = useCallback((targetLayout: NonNullable<WindowLayout>) => {
+    // ... existing close handler code ...
+  }, []);
+
   return {
     windowLayout,
     setWindowLayout,
-    createNewSplit
+    createNewSplit,
+    handleSplitContainer,
+    handleCloseContainer
   };
 } 

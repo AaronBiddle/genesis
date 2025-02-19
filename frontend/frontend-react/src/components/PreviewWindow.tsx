@@ -4,7 +4,8 @@ import { SplitIcon } from './icons/SplitIcon';
 import { CloseIcon } from './icons/CloseIcon';
 
 interface PreviewWindowProps extends TabbedWindowProps {
-  onSplit?: (direction: 'vertical' | 'horizontal') => void;
+  windowId: string;
+  onSplit?: (direction: 'horizontal' | 'vertical', windowId: string) => void;
   onClose?: () => void;
 }
 
@@ -13,12 +14,12 @@ const TAB_STYLES = {
   INACTIVE: "px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-t-lg"
 } as const;
 
-export function PreviewWindow({ onSplit, onClose, ...props }: PreviewWindowProps) {
+export function PreviewWindow({ windowId, onSplit, onClose, ...props }: PreviewWindowProps) {
   const handleSplitClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!onSplit) return;
     const direction = e.altKey ? 'vertical' : 'horizontal';
-    console.log('PreviewWindow - Split requested:', { direction });
-    onSplit(direction);
+    console.log('PreviewWindow - Split requested:', { direction, windowId });
+    onSplit(direction, windowId);
   };
 
   if (!props.documents || props.documents.length === 0) {

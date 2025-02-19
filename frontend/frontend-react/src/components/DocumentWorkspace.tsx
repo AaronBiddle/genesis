@@ -97,20 +97,17 @@ export function DocumentWorkspace({
     }
   };
 
-  const handleSplitContainer = useCallback((targetLayout: NonNullable<WindowLayout>, direction: 'horizontal' | 'vertical') => {
-    const splitId = crypto.randomUUID();
-    
+  const handleSplitContainer = useCallback((targetLayout: NonNullable<WindowLayout>, direction: 'horizontal' | 'vertical', windowId: string) => {
     console.log('Starting split operation:', { 
-      splitId, 
       direction,
+      windowId,
+      documents,
       targetActiveDoc: targetLayout.type === 'leaf' ? targetLayout.tabProps.activeDocument : null
     });
     
     setWindowLayout((currentLayout: WindowLayout): WindowLayout => {
       if (!currentLayout) return null;
       
-      // Store some values from the target layout
-      const targetActiveDoc = targetLayout.type === 'leaf' ? targetLayout.tabProps.activeDocument : null;
       let splitApplied = false;
       
       const findAndReplace = (layout: WindowLayout): WindowLayout => {
@@ -118,10 +115,14 @@ export function DocumentWorkspace({
         
         // For leaf nodes, check if this is the one we want to split
         if (layout.type === 'leaf' && !splitApplied) {
-          const isTarget = layout.tabProps.activeDocument === targetActiveDoc;
+          const isTarget = layout.id === windowId;
           
           if (isTarget) {
-            console.log('Splitting layout with active doc:', layout.tabProps.activeDocument);
+            console.log('Splitting layout:', { 
+              windowId: layout.id,
+              documents,
+              currentDocs: layout.tabProps.documents
+            });
             splitApplied = true;
             
             return {
@@ -129,11 +130,19 @@ export function DocumentWorkspace({
               direction,
               first: {
                 type: 'leaf' as const,
-                tabProps: { ...layout.tabProps }
+                id: layout.id,
+                tabProps: {
+                  ...layout.tabProps,
+                  documents
+                }
               },
               second: {
                 type: 'leaf' as const,
-                tabProps: { ...layout.tabProps }
+                id: crypto.randomUUID(),
+                tabProps: {
+                  ...layout.tabProps,
+                  documents
+                }
               }
             };
           }
@@ -141,9 +150,7 @@ export function DocumentWorkspace({
         
         // For split nodes, try to split their children
         if (layout.type === 'split') {
-          // Only process second branch if we haven't applied split yet
           const updatedSecond = !splitApplied ? findAndReplace(layout.second) : layout.second;
-          // Only process first branch if we haven't applied split yet
           const updatedFirst = !splitApplied ? findAndReplace(layout.first) : layout.first;
           
           if (updatedFirst !== layout.first || updatedSecond !== layout.second) {
@@ -159,7 +166,10 @@ export function DocumentWorkspace({
       };
       
       const result = findAndReplace(currentLayout);
-      console.log('Split applied:', splitApplied);
+      console.log('Split result:', {
+        splitApplied,
+        resultDocs: result?.type === 'leaf' ? result.tabProps.documents : 'split'
+      });
       return result;
     });
   }, [documents, activeDocument, onDocumentChange, onDocumentContentChange, onDocumentClose, markdownEnabled]);
@@ -196,19 +206,13 @@ export function DocumentWorkspace({
     });
   }, []);
 
-  return (
-    <div className={`flex-1 w-full ${WINDOW_CONTAINER_PADDING}`}>
-      {windowLayout ? (
-        <SplitContainer 
-          layout={updateLayoutWithCurrentDocs(windowLayout)}
-          onSplit={handleSplitContainer}
-          onClose={handleCloseContainer}
-        />
-      ) : (
-        <div className="h-full flex items-center justify-center">
-          {/* Empty state - could add a message or leave blank */}
-        </div>
-      )}
+  return windowLayout ? (
+    <div className="h-full">
+      <SplitContainer 
+        layout={windowLayout}
+        onSplit={handleSplitContainer}
+        onClose={handleCloseContainer}
+      />
     </div>
-  );
+  ) : null;
 } 

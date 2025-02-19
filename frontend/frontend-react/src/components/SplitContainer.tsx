@@ -5,8 +5,8 @@ import { useState } from 'react';
 
 interface SplitContainerProps {
   layout: WindowLayout;
-  onSplit?: (layout: NonNullable<WindowLayout>, direction: 'vertical' | 'horizontal') => void;
-  onClose?: (layout: NonNullable<WindowLayout>) => void;
+  onSplit: (layout: NonNullable<WindowLayout>, direction: 'horizontal' | 'vertical', windowId: string) => void;
+  onClose: (layout: NonNullable<WindowLayout>) => void;
   isRoot?: boolean;
 }
 
@@ -19,9 +19,10 @@ export const SplitContainer: React.FC<SplitContainerProps> = ({ layout, onSplit,
     return (
       <div className="flex-1 w-full h-full">
         <PreviewWindow 
-          {...layout.tabProps} 
-          onSplit={(direction) => onSplit?.(layout, direction)}
-          onClose={() => onClose?.(layout)}
+          windowId={layout.id}
+          onSplit={(direction) => onSplit(layout, direction, layout.id)}
+          onClose={() => onClose(layout)}
+          {...layout.tabProps}
         />
       </div>
     );
