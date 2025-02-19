@@ -44,10 +44,11 @@ export default function App() {
 
   // Update window layout when documents change
   useEffect(() => {
-    console.log('App - Updating window layout with new documents:', documents);
+    console.log('App - Documents changed:', documents);
     setWindowLayout(current => {
-      if (!current) {
-        // Create initial layout if none exists
+      // Only create initial layout if we have documents
+      if (!current && documents.length > 0) {
+        console.log('Creating initial layout with documents:', documents);
         return {
           type: 'leaf',
           id: crypto.randomUUID(),
@@ -63,27 +64,31 @@ export default function App() {
       }
       
       // Update existing layout with new documents
-      const updateLayoutDocs = (layout: WindowLayout): WindowLayout => {
-        if (!layout) return layout;
-        
-        if (layout.type === 'leaf') {
+      if (current) {
+        const updateLayoutDocs = (layout: WindowLayout): WindowLayout => {
+          if (!layout) return layout;
+          
+          if (layout.type === 'leaf') {
+            return {
+              ...layout,
+              tabProps: {
+                ...layout.tabProps,
+                documents: documents
+              }
+            };
+          }
+          
           return {
             ...layout,
-            tabProps: {
-              ...layout.tabProps,
-              documents: documents
-            }
+            first: updateLayoutDocs(layout.first),
+            second: updateLayoutDocs(layout.second)
           };
-        }
-        
-        return {
-          ...layout,
-          first: updateLayoutDocs(layout.first),
-          second: updateLayoutDocs(layout.second)
         };
-      };
+        
+        return updateLayoutDocs(current);
+      }
       
-      return updateLayoutDocs(current);
+      return current;
     });
   }, [documents, activeDocument, handleDocumentContentChange, handleCloseDocument, markdownEnabled, setWindowLayout]);
 
