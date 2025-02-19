@@ -13,7 +13,7 @@ import { MaterialIcons, FontAwesomeIcons } from './icons';
 import { 
   TOOLBAR_HEIGHT, 
   TOOLBAR_PADDING, 
-} from '../styles/ui-constants';
+} from './ui/ui-constants';
 import { useLoggingStore, LogLevel } from '../stores/loggingStore';
 
 export function ChatBox({ width }: { width: number }) {

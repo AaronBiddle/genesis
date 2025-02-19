@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { FileDialog } from './ui/FileDialog';
 import { API_ENDPOINTS } from '../config/constants';
 import { MaterialIcons, FontAwesomeIcons } from './icons';
-import { TOOLBAR_HEIGHT, TOOLBAR_PADDING, TOOLBAR_BUTTON_SIZE } from '../styles/ui-constants';
+import { TOOLBAR_HEIGHT, TOOLBAR_PADDING, TOOLBAR_BUTTON_SIZE } from './ui/ui-constants';
 import { TabbedWindow } from './TabbedWindow';
 import { DocumentWorkspace } from './DocumentWorkspace';
 import { WindowLayout } from '../types/WindowLayout';

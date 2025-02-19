@@ -13,7 +13,7 @@ import {
   CHAT_PANEL_MIN_WIDTH,
   CHAT_PANEL_MAX_WIDTH,
   CHAT_PANEL_DEFAULT_WIDTH
-} from './styles/ui-constants';
+} from './components/ui/ui-constants';
 import { WindowLayout } from './types/WindowLayout';
 import { TabbedWindowProps } from './components/TabbedWindow';
 import { useWindowLayout } from './hooks/useWindowLayout';

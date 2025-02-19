@@ -1,6 +1,6 @@
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { useLoggingStore, LogLevel } from '../stores/loggingStore';
-import { TOOLBAR_HEIGHT, TOOLBAR_PADDING } from '../styles/ui-constants';
+import { TOOLBAR_HEIGHT, TOOLBAR_PADDING } from './ui/ui-constants';
 interface ControlPanelProps {
   width: number;
 }

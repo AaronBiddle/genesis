@@ -1,4 +1,4 @@
-import { SPLIT_DIVIDER_SIZE, SPLIT_DIVIDER_SIZE_H, SPLIT_DIVIDER_HIGHLIGHT } from '../../styles/ui-constants';
+import { SPLIT_DIVIDER_SIZE, SPLIT_DIVIDER_SIZE_H, SPLIT_DIVIDER_HIGHLIGHT } from './ui-constants';
 
 interface ResizableDividerProps {
   onResize: (delta: number) => void;

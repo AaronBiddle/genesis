@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { SplitContainer } from './SplitContainer';
 import { WindowLayout } from '../types/WindowLayout';
 import { v4 as uuidv4 } from 'uuid';
-import { WINDOW_CONTAINER_PADDING } from '../styles/ui-constants';
+import { WINDOW_CONTAINER_PADDING } from './ui/ui-constants';
 
 const createInitialTabProps = (id: string = "1", title: string = "Initial Window") => ({
   documents: [{
