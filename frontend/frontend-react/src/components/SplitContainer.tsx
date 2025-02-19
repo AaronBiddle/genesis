@@ -1,17 +1,20 @@
 import { PreviewWindow } from './PreviewWindow';
 import { WindowLayout } from '../types/layout';
-import { SPLIT_WINDOW_GAP } from '../styles/ui-constants';
 import { ResizableDivider } from './ui/resizable';
 import { useState } from 'react';
 
 interface SplitContainerProps {
   layout: WindowLayout;
-  onSplit?: (layout: WindowLayout, direction: 'vertical' | 'horizontal') => void;
-  onClose?: (layout: WindowLayout) => void;
+  onSplit?: (layout: NonNullable<WindowLayout>, direction: 'vertical' | 'horizontal') => void;
+  onClose?: (layout: NonNullable<WindowLayout>) => void;
   isRoot?: boolean;
 }
 
 export const SplitContainer: React.FC<SplitContainerProps> = ({ layout, onSplit, onClose, isRoot = true }) => {
+  if (!layout) {
+    return null;
+  }
+
   if (layout.type === "leaf") {
     return (
       <div className="flex-1 w-full h-full">

@@ -10,4 +10,5 @@ export type WindowLayout =
       direction: "horizontal" | "vertical";
       first: WindowLayout;
       second: WindowLayout;
-    };
+    }
+  | null;

@@ -25,7 +25,7 @@ export function SplitPreview() {
     tabProps: createInitialTabProps()
   });
 
-  const splitPane = useCallback((currentLayout: WindowLayout, direction: 'horizontal' | 'vertical'): WindowLayout => {
+  const splitPane = useCallback((currentLayout: NonNullable<WindowLayout>, direction: 'horizontal' | 'vertical'): WindowLayout => {
     const newId = uuidv4();
     return {
       type: 'split',
@@ -38,9 +38,12 @@ export function SplitPreview() {
     };
   }, []);
 
-  const handleSplitContainer = useCallback((targetLayout: WindowLayout, direction: 'horizontal' | 'vertical') => {
+  const handleSplitContainer = useCallback((targetLayout: NonNullable<WindowLayout>, direction: 'horizontal' | 'vertical') => {
     setLayout(currentLayout => {
+      if (!currentLayout) return currentLayout;
+
       const replaceLayout = (layout: WindowLayout): WindowLayout => {
+        if (!layout) return layout;
         if (layout === targetLayout) {
           return splitPane(layout, direction);
         }
@@ -58,9 +61,12 @@ export function SplitPreview() {
     });
   }, [splitPane]);
 
-  const handleCloseContainer = useCallback((targetLayout: WindowLayout) => {
+  const handleCloseContainer = useCallback((targetLayout: NonNullable<WindowLayout>) => {
     setLayout(currentLayout => {
-      const findAndReplace = (layout: WindowLayout): WindowLayout | null => {
+      if (!currentLayout) return null;
+      
+      const findAndReplace = (layout: WindowLayout): WindowLayout => {
+        if (!layout) return null;
         if (layout.type === 'leaf') {
           return layout === targetLayout ? null : layout;
         }
@@ -69,13 +75,10 @@ export function SplitPreview() {
           const first = findAndReplace(layout.first);
           const second = findAndReplace(layout.second);
           
-          // If we found and removed the target
-          if (first === null || second === null) {
-            // Return the remaining pane
+          if (!first || !second) {
             return first || second;
           }
           
-          // If neither pane was the target, return the split unchanged
           return {
             ...layout,
             first,
@@ -86,22 +89,19 @@ export function SplitPreview() {
         return layout;
       };
       
-      const result = findAndReplace(currentLayout);
-      // If we somehow removed the last pane, create a new empty one
-      return result || {
-        type: "leaf",
-        tabProps: createInitialTabProps()
-      };
+      return findAndReplace(currentLayout);
     });
   }, []);
 
   return (
     <div className={`flex-1 w-full ${WINDOW_CONTAINER_PADDING}`}>
-      <SplitContainer 
-        layout={layout}
-        onSplit={handleSplitContainer}
-        onClose={handleCloseContainer}
-      />
+      {layout && (
+        <SplitContainer 
+          layout={layout}
+          onSplit={handleSplitContainer}
+          onClose={handleCloseContainer}
+        />
+      )}
     </div>
   );
 } 
