@@ -10,7 +10,7 @@ interface SplitContainerProps {
   isRoot?: boolean;
 }
 
-export const SplitContainer: React.FC<SplitContainerProps> = ({ layout, onSplit, onClose, isRoot = true }) => {
+export const SplitContainer: React.FC<SplitContainerProps> = ({ layout, onSplit, onClose }) => {
   if (!layout) {
     return null;
   }

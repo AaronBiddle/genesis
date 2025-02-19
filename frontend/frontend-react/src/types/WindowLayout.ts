@@ -1,5 +1,3 @@
-import { TabbedWindowProps } from "../components/TabbedWindow";
-
 export interface TabProps {
   documents: Array<{ id: string; title: string; content: string }>;
   activeDocument: string | null;
@@ -23,6 +21,4 @@ export type WindowLayout = null | {
 export interface UseWindowLayoutsResult {
   windowLayout: WindowLayout;
   setWindowLayout: (layout: WindowLayout | ((prev: WindowLayout) => WindowLayout)) => void;
-  handleSplitContainer: (targetLayout: NonNullable<WindowLayout>, direction: 'horizontal' | 'vertical', windowId: string) => void;
-  handleCloseContainer: (targetLayout: NonNullable<WindowLayout>) => void;
 }

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { TabbedWindowProps } from './TabbedWindow';
 import { SplitIcon } from './icons/SplitIcon';
 import { CloseIcon } from './icons/CloseIcon';

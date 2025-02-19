@@ -6,7 +6,6 @@ import { FileDialog } from './ui/FileDialog';
 import { API_ENDPOINTS } from '../config/constants';
 import { MaterialIcons, FontAwesomeIcons } from './icons';
 import { TOOLBAR_HEIGHT, TOOLBAR_PADDING, TOOLBAR_BUTTON_SIZE } from './ui/ui-constants';
-import { TabbedWindow } from './TabbedWindow';
 import { DocumentWorkspace } from './DocumentWorkspace';
 import { WindowLayout } from '../types/WindowLayout';
 
@@ -104,13 +103,6 @@ export function DocumentSection({
       console.error('Failed to delete document:', error);
       alert('Failed to delete document');
     }
-  };
-
-  const handleContentChange = (id: string, content: string) => {
-    const updatedDocs = documents.map(doc => 
-      doc.id === id ? { ...doc, content } : doc
-    );
-    onDocumentContentChange(id, content);
   };
 
   return (

@@ -1,23 +1,6 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { SplitContainer } from './SplitContainer';
 import { WindowLayout } from '../types/WindowLayout';
-import { v4 as uuidv4 } from 'uuid';
-import { WINDOW_CONTAINER_PADDING } from './ui/ui-constants';
-
-const createInitialTabProps = (id: string = "1", title: string = "Initial Window") => ({
-  documents: [{
-    id,
-    title,
-    content: "Try splitting this window!"
-  }],
-  activeDocument: id,
-  onDocumentChange: () => {},
-  onDocumentContentChange: (id: string, content: string) => {
-    console.log('Content changed:', content);
-  },
-  onDocumentClose: () => {},
-  markdownEnabled: false
-});
 
 interface DocumentWorkspaceProps {
   windowLayout: WindowLayout;
@@ -35,7 +18,6 @@ export function DocumentWorkspace({
   windowLayout, 
   setWindowLayout,
   documents,
-  setDocuments,
   activeDocument,
   onDocumentChange,
   onDocumentContentChange,

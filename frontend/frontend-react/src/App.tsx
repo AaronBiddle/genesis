@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ResizableDivider } from './components/ui/resizable'
 import { ControlPanel } from './components/ControlPanel'
 import { DocumentSection } from './components/DocumentSection'
@@ -15,20 +15,13 @@ import {
   CHAT_PANEL_DEFAULT_WIDTH
 } from './components/ui/ui-constants';
 import { WindowLayout } from './types/WindowLayout';
-import { TabbedWindowProps } from './components/TabbedWindow';
 import { useWindowLayout } from './hooks/useWindowLayout';
-
-interface Document {
-  id: string;
-  title: string;
-  content: string;
-}
 
 export default function App() {
   const [leftWidth, setLeftWidth] = useState<number>(CONTROL_PANEL_DEFAULT_WIDTH);
   const [rightWidth, setRightWidth] = useState<number>(CHAT_PANEL_DEFAULT_WIDTH);
   
-  const { windowLayout, setWindowLayout, createNewSplit } = useWindowLayout();
+  const { windowLayout, setWindowLayout } = useWindowLayout();
   
   const { 
     documents, 
