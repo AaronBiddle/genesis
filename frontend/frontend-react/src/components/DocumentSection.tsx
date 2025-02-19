@@ -9,7 +9,7 @@ import { TOOLBAR_HEIGHT, TOOLBAR_PADDING, TOOLBAR_BUTTON_SIZE } from '../styles/
 import { TabbedWindow } from './TabbedWindow';
 import { SplitPreview } from './DocumentWorkspace';
 
-interface TabbedWindowProps {
+interface DocumentSectionProps {
   documents: Array<{ id: string; title: string; content: string }>;
   activeDocument: string | null;
   onDocumentChange: (id: string) => void;
@@ -35,7 +35,7 @@ export function DocumentSection({
   onNewDocument,
   onOpenDocument,
   width
-}: TabbedWindowProps) {
+}: DocumentSectionProps) {
   const { refreshFiles } = useFileList('document');
   const [isSaving, setIsSaving] = useState(false);
   const [fileDialog, setFileDialog] = useState<{
