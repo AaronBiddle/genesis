@@ -16,6 +16,7 @@ import {
 } from './styles/ui-constants';
 import { WindowLayout } from './types/WindowLayout';
 import { TabbedWindowProps } from './components/TabbedWindow';
+import { useWindowLayout } from './hooks/useWindowLayout';
 
 interface Document {
   id: string;
@@ -26,7 +27,8 @@ interface Document {
 export default function App() {
   const [leftWidth, setLeftWidth] = useState<number>(CONTROL_PANEL_DEFAULT_WIDTH);
   const [rightWidth, setRightWidth] = useState<number>(CHAT_PANEL_DEFAULT_WIDTH);
-  const [windowLayout, setWindowLayout] = useState<WindowLayout>(null);
+  
+  const { windowLayout, setWindowLayout, createNewSplit } = useWindowLayout();
   
   const { 
     documents, 
@@ -115,19 +117,23 @@ export default function App() {
   };
 
   const handleNewSplitDocument = useCallback(() => {
-    const newDoc = createNewDocument();
-    setWindowLayout({
-      type: "leaf",
-      tabProps: {
-        documents: [newDoc],
-        activeDocument: newDoc.id,
-        onDocumentChange: setActiveDocument,
-        onDocumentContentChange: handleDocumentContentChange,
-        onDocumentClose: handleCloseDocument,
-        markdownEnabled
-      }
+    createNewSplit({
+      documents,
+      activeDocument,
+      onDocumentChange: setActiveDocument,
+      onDocumentContentChange: handleDocumentContentChange,
+      onDocumentClose: handleCloseDocument,
+      markdownEnabled
     });
-  }, [createNewDocument, handleDocumentContentChange, handleCloseDocument, markdownEnabled]);
+  }, [
+    documents, 
+    activeDocument, 
+    setActiveDocument, 
+    handleDocumentContentChange, 
+    handleCloseDocument, 
+    markdownEnabled, 
+    createNewSplit
+  ]);
 
   return (
     <div className="h-screen flex bg-gray-300 text-gray-900 pt-2 pb-2">      
@@ -147,6 +153,7 @@ export default function App() {
         onNewSplitDocument={handleNewSplitDocument}
         onOpenDocument={handleOpenDocument}
         windowLayout={windowLayout}
+        setWindowLayout={setWindowLayout}
       />
       <ResizableDivider onResize={handleRightResize} />
       <ChatBox width={rightWidth} />      

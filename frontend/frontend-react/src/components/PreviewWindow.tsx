@@ -9,23 +9,50 @@ interface PreviewWindowProps extends TabbedWindowProps {
 }
 
 export function PreviewWindow({ onSplit, onClose, ...props }: PreviewWindowProps) {
-  const doc = props.documents[0];
-
-  const handleSplitClick = (e: React.MouseEvent) => {
+  const handleSplitClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!onSplit) return;
     const direction = e.altKey ? 'vertical' : 'horizontal';
     onSplit(direction);
   };
+
+  if (!props.documents || props.documents.length === 0) {
+    return (
+      <div className="flex flex-col h-full border rounded-lg overflow-hidden">
+        <div className="border-b bg-gray-50 flex items-center">
+          <div className="flex-grow flex justify-end px-2 gap-1">
+            <div className="relative">
+              <button
+                onClick={handleSplitClick}
+                className="p-1 hover:bg-gray-200 rounded"
+                title="Split Editor Down"
+              >
+                <SplitIcon className="w-4 h-4" />
+              </button>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-1 hover:bg-gray-200 rounded"
+              title="Close Editor"
+            >
+              <CloseIcon className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center text-gray-500">
+          No document open
+        </div>
+      </div>
+    );
+  }
+
+  const doc = props.documents[0];
 
   return (
     <div className="flex flex-col h-full border rounded-lg overflow-hidden">
       <div className="border-b bg-gray-50 flex items-center">
         <div className="flex px-2 gap-1">
           <div className="px-3 py-2 bg-white border-t border-x rounded-t-lg shadow-sm">
-            index.ts
-          </div>
-          <div className="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-t-lg">
-            README.md
+            {doc.title}
           </div>
         </div>
         <div className="flex-grow flex justify-end px-2 gap-1">
@@ -37,9 +64,6 @@ export function PreviewWindow({ onSplit, onClose, ...props }: PreviewWindowProps
             >
               <SplitIcon className="w-4 h-4" />
             </button>
-            <div className="absolute hidden group-hover:block bg-gray-800 text-white text-xs py-1 px-2 rounded bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap z-10">
-              [Alt] Split Editor Down
-            </div>
           </div>
           <button
             onClick={onClose}

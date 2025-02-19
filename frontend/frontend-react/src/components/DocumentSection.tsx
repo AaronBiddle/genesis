@@ -7,7 +7,7 @@ import { API_ENDPOINTS } from '../config/constants';
 import { MaterialIcons, FontAwesomeIcons } from './icons';
 import { TOOLBAR_HEIGHT, TOOLBAR_PADDING, TOOLBAR_BUTTON_SIZE } from '../styles/ui-constants';
 import { TabbedWindow } from './TabbedWindow';
-import { SplitPreview } from './DocumentWorkspace';
+import { DocumentWorkspace } from './DocumentWorkspace';
 import { WindowLayout } from '../types/WindowLayout';
 
 interface DocumentSectionProps {
@@ -24,6 +24,7 @@ interface DocumentSectionProps {
   onOpenDocument: (filename: string) => void;
   width: string;
   windowLayout: WindowLayout;
+  setWindowLayout: (layout: WindowLayout | ((prev: WindowLayout) => WindowLayout)) => void;
 }
 
 export function DocumentSection({ 
@@ -39,7 +40,8 @@ export function DocumentSection({
   onNewSplitDocument,
   onOpenDocument,
   width,
-  windowLayout
+  windowLayout,
+  setWindowLayout
 }: DocumentSectionProps) {
   const { refreshFiles } = useFileList('document');
   const [isSaving, setIsSaving] = useState(false);
@@ -182,7 +184,16 @@ export function DocumentSection({
         </div>
       </div>
 
-      <SplitPreview />
+      <DocumentWorkspace 
+        windowLayout={windowLayout}
+        setWindowLayout={setWindowLayout}
+        documents={documents}
+        activeDocument={activeDocument}
+        onDocumentChange={onDocumentChange}
+        onDocumentContentChange={onDocumentContentChange}
+        onDocumentClose={onDocumentClose}
+        markdownEnabled={markdownEnabled}
+      />
 
       {/* <TabbedWindow
         documents={documents}

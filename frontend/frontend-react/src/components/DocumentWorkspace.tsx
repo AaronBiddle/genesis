@@ -19,50 +19,69 @@ const createInitialTabProps = (id: string = "1", title: string = "Initial Window
   markdownEnabled: false
 });
 
-export function SplitPreview() {
-  const [layout, setLayout] = useState<WindowLayout>({
-    type: "leaf",
-    tabProps: createInitialTabProps()
-  });
+interface DocumentWorkspaceProps {
+  windowLayout: WindowLayout;
+  setWindowLayout: (layout: WindowLayout | ((prev: WindowLayout) => WindowLayout)) => void;
+  documents: Array<{ id: string; title: string; content: string }>;
+  activeDocument: string | null;
+  onDocumentChange: (id: string) => void;
+  onDocumentContentChange: (id: string, content: string) => void;
+  onDocumentClose: (id: string) => void;
+  markdownEnabled: boolean;
+}
 
-  const splitPane = useCallback((currentLayout: NonNullable<WindowLayout>, direction: 'horizontal' | 'vertical'): WindowLayout => {
-    const newId = uuidv4();
-    return {
-      type: 'split',
-      direction,
-      first: currentLayout,
-      second: {
-        type: 'leaf',
-        tabProps: createInitialTabProps(newId, "New Window")
-      }
-    };
-  }, []);
-
+export function DocumentWorkspace({ 
+  windowLayout, 
+  setWindowLayout,
+  documents,
+  activeDocument,
+  onDocumentChange,
+  onDocumentContentChange,
+  onDocumentClose,
+  markdownEnabled
+}: DocumentWorkspaceProps) {
   const handleSplitContainer = useCallback((targetLayout: NonNullable<WindowLayout>, direction: 'horizontal' | 'vertical') => {
-    setLayout(currentLayout => {
-      if (!currentLayout) return currentLayout;
-
-      const replaceLayout = (layout: WindowLayout): WindowLayout => {
-        if (!layout) return layout;
+    setWindowLayout((currentLayout: WindowLayout): WindowLayout => {
+      if (!currentLayout) return null;
+      
+      const findAndReplace = (layout: WindowLayout): WindowLayout => {
+        if (!layout) return null;
         if (layout === targetLayout) {
-          return splitPane(layout, direction);
+          return {
+            type: 'split',
+            direction,
+            first: layout,
+            second: {
+              type: 'leaf',
+              tabProps: {
+                documents: [],
+                activeDocument: null,
+                onDocumentChange: () => {},
+                onDocumentContentChange: () => {},
+                onDocumentClose: () => {},
+                markdownEnabled: false
+              }
+            }
+          };
         }
+        
         if (layout.type === 'split') {
           return {
             ...layout,
-            first: replaceLayout(layout.first),
-            second: replaceLayout(layout.second),
+            first: findAndReplace(layout.first),
+            second: findAndReplace(layout.second),
           };
         }
+        
         return layout;
       };
       
-      return replaceLayout(currentLayout);
+      return findAndReplace(currentLayout);
     });
-  }, [splitPane]);
+  }, []);
 
   const handleCloseContainer = useCallback((targetLayout: NonNullable<WindowLayout>) => {
-    setLayout(currentLayout => {
+    setWindowLayout(currentLayout => {
       if (!currentLayout) return null;
       
       const findAndReplace = (layout: WindowLayout): WindowLayout => {
@@ -93,27 +112,28 @@ export function SplitPreview() {
     });
   }, []);
 
-  const createNewSplit = useCallback(() => {
-    if (!layout) {
-      setLayout({
-        type: "leaf",
-        tabProps: createInitialTabProps()
-      });
-    }
-  }, [layout]);
-
   return (
     <div className={`flex-1 w-full ${WINDOW_CONTAINER_PADDING}`}>
-      {layout ? (
+      {windowLayout ? (
         <SplitContainer 
-          layout={layout}
+          layout={windowLayout}
           onSplit={handleSplitContainer}
           onClose={handleCloseContainer}
         />
       ) : (
         <div className="h-full flex items-center justify-center">
           <button 
-            onClick={createNewSplit}
+            onClick={() => setWindowLayout({
+              type: "leaf",
+              tabProps: {
+                documents,
+                activeDocument,
+                onDocumentChange,
+                onDocumentContentChange,
+                onDocumentClose,
+                markdownEnabled
+              }
+            })}
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             Create New Split
