@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { ResizableDivider } from './components/ui/resizable'
 import { ControlPanel } from './components/ControlPanel'
 import { DocumentSection } from './components/DocumentSection'
@@ -13,6 +13,8 @@ import {
   CHAT_PANEL_MAX_WIDTH,
   CHAT_PANEL_DEFAULT_WIDTH
 } from './styles/ui-constants';
+import { WindowLayout } from './types/WindowLayout';
+import { TabbedWindowProps } from './components/TabbedWindow';
 
 interface Document {
   id: string;
@@ -26,6 +28,7 @@ export default function App() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [activeDocument, setActiveDocument] = useState<string | null>(null);
   const [markdownEnabled, setMarkdownEnabled] = useState(true);
+  const [windowLayout, setWindowLayout] = useState<WindowLayout>(null);
 
   const handleLeftResize = (delta: number) => {
     setLeftWidth((prevWidth) => {
@@ -118,6 +121,37 @@ export default function App() {
     setDocuments(updatedDocs);
   };
 
+  const createInitialTabProps = useCallback((): TabbedWindowProps => {
+    const newDoc = {
+      id: crypto.randomUUID(),
+      title: "Untitled",
+      content: ""
+    };
+    
+    setDocuments(prev => [...prev, newDoc]);
+    setActiveDocument(newDoc.id);
+    
+    return {
+      documents: documents,
+      activeDocument: newDoc.id,
+      onDocumentChange: setActiveDocument,
+      onDocumentContentChange: (id: string, content: string) => {
+        setDocuments(prev => prev.map(doc => 
+          doc.id === id ? { ...doc, content } : doc
+        ));
+      },
+      onDocumentClose: handleCloseDocument,
+      markdownEnabled: markdownEnabled
+    };
+  }, [documents, markdownEnabled]);
+
+  const handleNewSplitDocument = useCallback(() => {
+    setWindowLayout({
+      type: "leaf",
+      tabProps: createInitialTabProps()
+    });
+  }, [createInitialTabProps]);
+
   return (
     <div className="h-screen flex bg-gray-300 text-gray-900 pt-2 pb-2">      
       <ControlPanel width={leftWidth} />
@@ -133,7 +167,9 @@ export default function App() {
         markdownEnabled={markdownEnabled}
         onMarkdownToggle={() => setMarkdownEnabled(!markdownEnabled)}
         onNewDocument={handleNewDocument}
+        onNewSplitDocument={handleNewSplitDocument}
         onOpenDocument={handleOpenDocument}
+        windowLayout={windowLayout}
       />
       <ResizableDivider onResize={handleRightResize} />
       <ChatBox width={rightWidth} />      

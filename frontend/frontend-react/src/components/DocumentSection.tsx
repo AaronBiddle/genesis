@@ -8,6 +8,7 @@ import { MaterialIcons, FontAwesomeIcons } from './icons';
 import { TOOLBAR_HEIGHT, TOOLBAR_PADDING, TOOLBAR_BUTTON_SIZE } from '../styles/ui-constants';
 import { TabbedWindow } from './TabbedWindow';
 import { SplitPreview } from './DocumentWorkspace';
+import { WindowLayout } from '../types/WindowLayout';
 
 interface DocumentSectionProps {
   documents: Array<{ id: string; title: string; content: string }>;
@@ -21,6 +22,8 @@ interface DocumentSectionProps {
   onNewDocument: () => void;
   onOpenDocument: (filename: string) => void;
   width: string;
+  onNewSplitDocument: () => void;
+  windowLayout: WindowLayout;
 }
 
 export function DocumentSection({ 
@@ -34,7 +37,9 @@ export function DocumentSection({
   onMarkdownToggle,
   onNewDocument,
   onOpenDocument,
-  width
+  width,
+  onNewSplitDocument,
+  windowLayout
 }: DocumentSectionProps) {
   const { refreshFiles } = useFileList('document');
   const [isSaving, setIsSaving] = useState(false);

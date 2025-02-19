@@ -1,5 +1,5 @@
 import { PreviewWindow } from './PreviewWindow';
-import { WindowLayout } from '../types/layout';
+import { WindowLayout } from '../types/WindowLayout';
 import { ResizableDivider } from './ui/resizable';
 import { useState } from 'react';
 
