@@ -54,12 +54,12 @@ export function DocumentWorkspace({
             second: {
               type: 'leaf',
               tabProps: {
-                documents: [],
-                activeDocument: null,
-                onDocumentChange: () => {},
-                onDocumentContentChange: () => {},
-                onDocumentClose: () => {},
-                markdownEnabled: false
+                documents,
+                activeDocument,
+                onDocumentChange,
+                onDocumentContentChange,
+                onDocumentClose,
+                markdownEnabled
               }
             }
           };
@@ -78,10 +78,10 @@ export function DocumentWorkspace({
       
       return findAndReplace(currentLayout);
     });
-  }, []);
+  }, [documents, activeDocument, onDocumentChange, onDocumentContentChange, onDocumentClose, markdownEnabled]);
 
   const handleCloseContainer = useCallback((targetLayout: NonNullable<WindowLayout>) => {
-    setWindowLayout(currentLayout => {
+    setWindowLayout((currentLayout: WindowLayout): WindowLayout => {
       if (!currentLayout) return null;
       
       const findAndReplace = (layout: WindowLayout): WindowLayout => {
@@ -122,22 +122,7 @@ export function DocumentWorkspace({
         />
       ) : (
         <div className="h-full flex items-center justify-center">
-          <button 
-            onClick={() => setWindowLayout({
-              type: "leaf",
-              tabProps: {
-                documents,
-                activeDocument,
-                onDocumentChange,
-                onDocumentContentChange,
-                onDocumentClose,
-                markdownEnabled
-              }
-            })}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Create New Split
-          </button>
+          {/* Empty state - could add a message or leave blank */}
         </div>
       )}
     </div>
