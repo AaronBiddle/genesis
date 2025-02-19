@@ -98,67 +98,68 @@ export function DocumentWorkspace({
   };
 
   const handleSplitContainer = useCallback((targetLayout: NonNullable<WindowLayout>, direction: 'horizontal' | 'vertical') => {
-    console.log('DocumentWorkspace - Split container:', { direction, documents });
+    const splitId = crypto.randomUUID();
+    
+    console.log('Starting split operation:', { 
+      splitId, 
+      direction,
+      targetActiveDoc: targetLayout.type === 'leaf' ? targetLayout.tabProps.activeDocument : null
+    });
     
     setWindowLayout((currentLayout: WindowLayout): WindowLayout => {
       if (!currentLayout) return null;
       
-      console.log('Current Layout Structure:');
-      logLayout(currentLayout);
+      // Store some values from the target layout
+      const targetActiveDoc = targetLayout.type === 'leaf' ? targetLayout.tabProps.activeDocument : null;
+      let splitApplied = false;
       
       const findAndReplace = (layout: WindowLayout): WindowLayout => {
         if (!layout) return null;
         
-        // Type guard to check if layouts are leaf nodes
-        const isLeafLayout = (l: WindowLayout): l is { type: 'leaf'; tabProps: any } => 
-          l?.type === 'leaf';
-        
-        // Compare layout properties with type checking
-        const isTargetLayout = 
-          isLeafLayout(layout) && 
-          isLeafLayout(targetLayout) &&
-          layout.tabProps.activeDocument === targetLayout.tabProps.activeDocument;
-        
-        if (isTargetLayout) {
-          console.log('Found target layout to split');
-          const newLayout = {
-            type: 'split' as const,
-            direction,
-            first: {
-              type: 'leaf' as const,
-              tabProps: { ...layout.tabProps }
-            },
-            second: {
-              type: 'leaf' as const,
-              tabProps: {
-                documents,
-                activeDocument,
-                onDocumentChange,
-                onDocumentContentChange,
-                onDocumentClose,
-                markdownEnabled
+        // For leaf nodes, check if this is the one we want to split
+        if (layout.type === 'leaf' && !splitApplied) {
+          const isTarget = layout.tabProps.activeDocument === targetActiveDoc;
+          
+          if (isTarget) {
+            console.log('Splitting layout with active doc:', layout.tabProps.activeDocument);
+            splitApplied = true;
+            
+            return {
+              type: 'split' as const,
+              direction,
+              first: {
+                type: 'leaf' as const,
+                tabProps: { ...layout.tabProps }
+              },
+              second: {
+                type: 'leaf' as const,
+                tabProps: { ...layout.tabProps }
               }
-            }
-          };
-          console.log('New Layout Structure:');
-          logLayout(newLayout);
-          return newLayout;
+            };
+          }
         }
         
+        // For split nodes, try to split their children
         if (layout.type === 'split') {
-          return {
-            ...layout,
-            first: findAndReplace(layout.first),
-            second: findAndReplace(layout.second),
-          };
+          // Only process second branch if we haven't applied split yet
+          const updatedSecond = !splitApplied ? findAndReplace(layout.second) : layout.second;
+          // Only process first branch if we haven't applied split yet
+          const updatedFirst = !splitApplied ? findAndReplace(layout.first) : layout.first;
+          
+          if (updatedFirst !== layout.first || updatedSecond !== layout.second) {
+            return {
+              ...layout,
+              first: updatedFirst,
+              second: updatedSecond
+            };
+          }
         }
         
         return layout;
       };
       
       const result = findAndReplace(currentLayout);
-      console.log('Final Layout Structure:');
-      logLayout(result);
+      console.log('Split applied:', splitApplied);
       return result;
     });
   }, [documents, activeDocument, onDocumentChange, onDocumentContentChange, onDocumentClose, markdownEnabled]);
