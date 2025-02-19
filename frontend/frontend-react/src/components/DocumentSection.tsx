@@ -15,7 +15,7 @@ import SaveAsIcon from '@mui/icons-material/SaveAs';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import { TOOLBAR_HEIGHT, TOOLBAR_PADDING, TOOLBAR_BUTTON_SIZE } from '../styles/ui-constants';
 import { TabbedWindow } from './TabbedWindow';
-import { SplitPreview } from './SplitPreview';
+import { SplitPreview } from './DocumentWorkspace';
 interface TabbedWindowProps {
   documents: Array<{ id: string; title: string; content: string }>;
   activeDocument: string | null;
