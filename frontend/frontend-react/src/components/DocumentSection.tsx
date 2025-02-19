@@ -127,6 +127,13 @@ export function DocumentSection({
             <MaterialIcons.NoteAdd style={{ fontSize: '1.25rem' }} />
           </button>
           <button
+            onClick={onNewSplitDocument}
+            className="w-8 h-8 flex items-center justify-center text-black hover:text-red-600"
+            title="New split document (experimental)"
+          >
+            <MaterialIcons.NoteAdd style={{ fontSize: '1.25rem', color: '#ef4444' }} />
+          </button>
+          <button
             onClick={handleLoadDocument}
             className="w-8 h-8 flex items-center justify-center text-black hover:text-blue-600"
             title="Load document"
