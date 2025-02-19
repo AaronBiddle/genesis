@@ -76,61 +76,90 @@ export function DocumentWorkspace({
     return layout;
   }, [documents, activeDocument, onDocumentChange, onDocumentContentChange, onDocumentClose, markdownEnabled]);
 
+  // Add this logging helper
+  const logLayout = (layout: WindowLayout, prefix = '') => {
+    if (!layout) {
+      console.log(prefix + 'null layout');
+      return;
+    }
+    
+    if (layout.type === 'leaf') {
+      console.log(prefix + 'LEAF:', {
+        documents: layout.tabProps.documents.map(d => d.id),
+        activeDocument: layout.tabProps.activeDocument
+      });
+    } else if (layout.type === 'split') {
+      console.log(prefix + 'SPLIT:', { direction: layout.direction });
+      console.log(prefix + 'First:');
+      logLayout(layout.first, prefix + '  ');
+      console.log(prefix + 'Second:');
+      logLayout(layout.second, prefix + '  ');
+    }
+  };
+
   const handleSplitContainer = useCallback((targetLayout: NonNullable<WindowLayout>, direction: 'horizontal' | 'vertical') => {
     console.log('DocumentWorkspace - Split container:', { direction, documents });
     
-    // Create a new document for the split
-    const newDoc = {
-      id: crypto.randomUUID(),
-      title: "Untitled",
-      content: ""
-    };
-    
-    // Add the new document to our documents array and get the updated array
-    setDocuments((prev: Array<{ id: string; title: string; content: string }>) => {
-      const updatedDocs = [...prev, newDoc];
+    setWindowLayout((currentLayout: WindowLayout): WindowLayout => {
+      if (!currentLayout) return null;
       
-      // Update the layout with the new documents array
-      setWindowLayout((currentLayout: WindowLayout): WindowLayout => {
-        if (!currentLayout) return null;
+      console.log('Current Layout Structure:');
+      logLayout(currentLayout);
+      
+      const findAndReplace = (layout: WindowLayout): WindowLayout => {
+        if (!layout) return null;
         
-        const findAndReplace = (layout: WindowLayout): WindowLayout => {
-          if (!layout) return null;
-          if (layout === targetLayout) {
-            console.log('DocumentWorkspace - Creating new split with docs:', updatedDocs);
-            return {
-              type: 'split',
-              direction,
-              first: layout,
-              second: {
-                type: 'leaf',
-                tabProps: {
-                  documents: updatedDocs,  // Use the updated documents array
-                  activeDocument: newDoc.id,
-                  onDocumentChange,
-                  onDocumentContentChange,
-                  onDocumentClose,
-                  markdownEnabled
-                }
+        // Type guard to check if layouts are leaf nodes
+        const isLeafLayout = (l: WindowLayout): l is { type: 'leaf'; tabProps: any } => 
+          l?.type === 'leaf';
+        
+        // Compare layout properties with type checking
+        const isTargetLayout = 
+          isLeafLayout(layout) && 
+          isLeafLayout(targetLayout) &&
+          layout.tabProps.activeDocument === targetLayout.tabProps.activeDocument;
+        
+        if (isTargetLayout) {
+          console.log('Found target layout to split');
+          const newLayout = {
+            type: 'split' as const,
+            direction,
+            first: {
+              type: 'leaf' as const,
+              tabProps: { ...layout.tabProps }
+            },
+            second: {
+              type: 'leaf' as const,
+              tabProps: {
+                documents,
+                activeDocument,
+                onDocumentChange,
+                onDocumentContentChange,
+                onDocumentClose,
+                markdownEnabled
               }
-            };
-          }
-          
-          if (layout.type === 'split') {
-            return {
-              ...layout,
-              first: findAndReplace(layout.first),
-              second: findAndReplace(layout.second),
-            };
-          }
-          
-          return layout;
-        };
+            }
+          };
+          console.log('New Layout Structure:');
+          logLayout(newLayout);
+          return newLayout;
+        }
         
-        return findAndReplace(currentLayout);
-      });
+        if (layout.type === 'split') {
+          return {
+            ...layout,
+            first: findAndReplace(layout.first),
+            second: findAndReplace(layout.second),
+          };
+        }
+        
+        return layout;
+      };
       
-      return updatedDocs;
+      const result = findAndReplace(currentLayout);
+      console.log('Final Layout Structure:');
+      logLayout(result);
+      return result;
     });
   }, [documents, activeDocument, onDocumentChange, onDocumentContentChange, onDocumentClose, markdownEnabled]);
 
