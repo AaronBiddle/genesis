@@ -3,6 +3,7 @@ import { ResizableDivider } from './components/ui/resizable'
 import { ControlPanel } from './components/ControlPanel'
 import { DocumentSection } from './components/DocumentSection'
 import { ChatBox } from './components/ChatBox'
+import { useDocumentTabs } from './hooks/useDocumentTabs'
 import './App.css'
 import { API_ENDPOINTS } from './config/constants'
 import { 
@@ -25,10 +26,18 @@ interface Document {
 export default function App() {
   const [leftWidth, setLeftWidth] = useState<number>(CONTROL_PANEL_DEFAULT_WIDTH);
   const [rightWidth, setRightWidth] = useState<number>(CHAT_PANEL_DEFAULT_WIDTH);
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [activeDocument, setActiveDocument] = useState<string | null>(null);
-  const [markdownEnabled, setMarkdownEnabled] = useState(true);
   const [windowLayout, setWindowLayout] = useState<WindowLayout>(null);
+  
+  const { 
+    documents, 
+    activeDocument, 
+    markdownEnabled, 
+    setMarkdownEnabled,
+    createNewDocument,
+    handleCloseDocument,
+    setActiveDocument,
+    setDocuments
+  } = useDocumentTabs();
 
   const handleLeftResize = (delta: number) => {
     setLeftWidth((prevWidth) => {
@@ -42,16 +51,6 @@ export default function App() {
       const newWidth = prevWidth - delta;
       return Math.min(Math.max(newWidth, CHAT_PANEL_MIN_WIDTH), CHAT_PANEL_MAX_WIDTH);
     });
-  };
-
-  const handleNewDocument = () => {
-    const newDoc = {
-      id: `doc-${Date.now()}`,
-      title: "Untitled",
-      content: ""
-    };
-    setDocuments(prev => [...prev, newDoc]);
-    setActiveDocument(newDoc.id);
   };
 
   const handleOpenDocument = async (filename: string) => {
@@ -70,7 +69,7 @@ export default function App() {
       
       const data = await response.json();
       const newDoc = {
-        id: `doc-${Date.now()}`,
+        id: crypto.randomUUID(),
         title: filename,
         content: data.content
       };
@@ -79,14 +78,6 @@ export default function App() {
     } catch (error) {
       console.error('Error loading document:', error);
       alert('Failed to load document');
-    }
-  };
-
-  const handleCloseDocument = (id: string) => {
-    setDocuments(prev => prev.filter(doc => doc.id !== id));
-    if (activeDocument === id) {
-      const remaining = documents.filter(doc => doc.id !== id);
-      setActiveDocument(remaining.length > 0 ? remaining[0].id : null);
     }
   };
 
@@ -117,40 +108,26 @@ export default function App() {
     }
   };
 
-  const handleDocumentContentChange = (_id: string, updatedDocs: Array<{ id: string; title: string; content: string }>) => {
-    setDocuments(updatedDocs);
+  const handleDocumentContentChange = (id: string, content: string) => {
+    setDocuments(prev => prev.map(doc => 
+      doc.id === id ? { ...doc, content } : doc
+    ));
   };
 
-  const createInitialTabProps = useCallback((): TabbedWindowProps => {
-    const newDoc = {
-      id: crypto.randomUUID(),
-      title: "Untitled",
-      content: ""
-    };
-    
-    setDocuments(prev => [...prev, newDoc]);
-    setActiveDocument(newDoc.id);
-    
-    return {
-      documents: documents,
-      activeDocument: newDoc.id,
-      onDocumentChange: setActiveDocument,
-      onDocumentContentChange: (id: string, content: string) => {
-        setDocuments(prev => prev.map(doc => 
-          doc.id === id ? { ...doc, content } : doc
-        ));
-      },
-      onDocumentClose: handleCloseDocument,
-      markdownEnabled: markdownEnabled
-    };
-  }, [documents, markdownEnabled]);
-
   const handleNewSplitDocument = useCallback(() => {
+    const newDoc = createNewDocument();
     setWindowLayout({
       type: "leaf",
-      tabProps: createInitialTabProps()
+      tabProps: {
+        documents: [newDoc],
+        activeDocument: newDoc.id,
+        onDocumentChange: setActiveDocument,
+        onDocumentContentChange: handleDocumentContentChange,
+        onDocumentClose: handleCloseDocument,
+        markdownEnabled
+      }
     });
-  }, [createInitialTabProps]);
+  }, [createNewDocument, handleDocumentContentChange, handleCloseDocument, markdownEnabled]);
 
   return (
     <div className="h-screen flex bg-gray-300 text-gray-900 pt-2 pb-2">      
@@ -166,7 +143,7 @@ export default function App() {
         onDocumentSave={handleSaveDocument}
         markdownEnabled={markdownEnabled}
         onMarkdownToggle={() => setMarkdownEnabled(!markdownEnabled)}
-        onNewDocument={handleNewDocument}
+        onNewDocument={createNewDocument}
         onNewSplitDocument={handleNewSplitDocument}
         onOpenDocument={handleOpenDocument}
         windowLayout={windowLayout}

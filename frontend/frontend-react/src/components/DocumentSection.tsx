@@ -14,15 +14,15 @@ interface DocumentSectionProps {
   documents: Array<{ id: string; title: string; content: string }>;
   activeDocument: string | null;
   onDocumentChange: (id: string) => void;
-  onDocumentContentChange: (id: string, documents: Array<{ id: string; title: string; content: string }>) => void;
+  onDocumentContentChange: (id: string, content: string) => void;
   onDocumentClose: (id: string) => void;
   onDocumentSave: () => void;
   markdownEnabled: boolean;
   onMarkdownToggle: () => void;
   onNewDocument: () => void;
+  onNewSplitDocument: () => void;
   onOpenDocument: (filename: string) => void;
   width: string;
-  onNewSplitDocument: () => void;
   windowLayout: WindowLayout;
 }
 
@@ -36,9 +36,9 @@ export function DocumentSection({
   markdownEnabled,
   onMarkdownToggle,
   onNewDocument,
+  onNewSplitDocument,
   onOpenDocument,
   width,
-  onNewSplitDocument,
   windowLayout
 }: DocumentSectionProps) {
   const { refreshFiles } = useFileList('document');
@@ -106,7 +106,7 @@ export function DocumentSection({
     const updatedDocs = documents.map(doc => 
       doc.id === id ? { ...doc, content } : doc
     );
-    onDocumentContentChange(id, updatedDocs);
+    onDocumentContentChange(id, content);
   };
 
   return (
