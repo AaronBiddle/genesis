@@ -12,13 +12,14 @@ import { WindowLayout } from '../types/WindowLayout';
 
 interface DocumentSectionProps {
   documents: Array<{ id: string; title: string; content: string }>;
+  setDocuments: (docs: Array<{ id: string; title: string; content: string }> | ((prev: Array<{ id: string; title: string; content: string }>) => Array<{ id: string; title: string; content: string }>)) => void;
   activeDocument: string | null;
   onDocumentChange: (id: string) => void;
   onDocumentContentChange: (id: string, content: string) => void;
   onDocumentClose: (id: string) => void;
   onDocumentSave: () => void;
   markdownEnabled: boolean;
-  onMarkdownToggle: () => void;
+  setMarkdownEnabled: (enabled: boolean) => void;
   onNewDocument: () => void;
   onNewSplitDocument: () => void;
   onOpenDocument: (filename: string) => void;
@@ -29,13 +30,14 @@ interface DocumentSectionProps {
 
 export function DocumentSection({ 
   documents, 
+  setDocuments, 
   activeDocument, 
   onDocumentChange, 
   onDocumentContentChange,
   onDocumentClose,
   onDocumentSave,
   markdownEnabled,
-  onMarkdownToggle,
+  setMarkdownEnabled,
   onNewDocument,
   onNewSplitDocument,
   onOpenDocument,
@@ -172,12 +174,12 @@ export function DocumentSection({
             ✕
           </button>
           <button
-            onClick={onMarkdownToggle}
+            onClick={() => setMarkdownEnabled(true)}
             className={`${TOOLBAR_BUTTON_SIZE} flex items-center justify-center text-black hover:text-blue-600 ${markdownEnabled ? 'text-green-600' : ''}`}
             title={markdownEnabled ? "Markdown View" : "Plain Text View"}
           >
             <FontAwesomeIcon 
-              icon={markdownEnabled ? FontAwesomeIcons.fileCode : FontAwesomeIcons.fileAlt} 
+              icon={FontAwesomeIcons.fileCode} 
               className="h-4 w-4"
             />
           </button>
@@ -188,6 +190,7 @@ export function DocumentSection({
         windowLayout={windowLayout}
         setWindowLayout={setWindowLayout}
         documents={documents}
+        setDocuments={setDocuments}
         activeDocument={activeDocument}
         onDocumentChange={onDocumentChange}
         onDocumentContentChange={onDocumentContentChange}

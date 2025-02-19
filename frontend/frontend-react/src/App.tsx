@@ -142,13 +142,14 @@ export default function App() {
       <DocumentSection
         width={`calc(100% - ${leftWidth + 10}px - ${rightWidth}px)`}
         documents={documents}
+        setDocuments={setDocuments}
         activeDocument={activeDocument}
         onDocumentChange={setActiveDocument}
         onDocumentContentChange={handleDocumentContentChange}
         onDocumentClose={handleCloseDocument}
         onDocumentSave={handleSaveDocument}
         markdownEnabled={markdownEnabled}
-        onMarkdownToggle={() => setMarkdownEnabled(!markdownEnabled)}
+        setMarkdownEnabled={setMarkdownEnabled}
         onNewDocument={createNewDocument}
         onNewSplitDocument={handleNewSplitDocument}
         onOpenDocument={handleOpenDocument}

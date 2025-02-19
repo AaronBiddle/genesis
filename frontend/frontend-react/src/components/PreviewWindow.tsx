@@ -17,6 +17,7 @@ export function PreviewWindow({ onSplit, onClose, ...props }: PreviewWindowProps
   const handleSplitClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!onSplit) return;
     const direction = e.altKey ? 'vertical' : 'horizontal';
+    console.log('PreviewWindow - Split requested:', { direction });
     onSplit(direction);
   };
 

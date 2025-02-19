@@ -23,6 +23,7 @@ interface DocumentWorkspaceProps {
   windowLayout: WindowLayout;
   setWindowLayout: (layout: WindowLayout | ((prev: WindowLayout) => WindowLayout)) => void;
   documents: Array<{ id: string; title: string; content: string }>;
+  setDocuments: (docs: Array<{ id: string; title: string; content: string }> | ((prev: Array<{ id: string; title: string; content: string }>) => Array<{ id: string; title: string; content: string }>)) => void;
   activeDocument: string | null;
   onDocumentChange: (id: string) => void;
   onDocumentContentChange: (id: string, content: string) => void;
@@ -34,6 +35,7 @@ export function DocumentWorkspace({
   windowLayout, 
   setWindowLayout,
   documents,
+  setDocuments,
   activeDocument,
   onDocumentChange,
   onDocumentContentChange,
@@ -75,42 +77,60 @@ export function DocumentWorkspace({
   }, [documents, activeDocument, onDocumentChange, onDocumentContentChange, onDocumentClose, markdownEnabled]);
 
   const handleSplitContainer = useCallback((targetLayout: NonNullable<WindowLayout>, direction: 'horizontal' | 'vertical') => {
-    setWindowLayout((currentLayout: WindowLayout): WindowLayout => {
-      if (!currentLayout) return null;
+    console.log('DocumentWorkspace - Split container:', { direction, documents });
+    
+    // Create a new document for the split
+    const newDoc = {
+      id: crypto.randomUUID(),
+      title: "Untitled",
+      content: ""
+    };
+    
+    // Add the new document to our documents array and get the updated array
+    setDocuments((prev: Array<{ id: string; title: string; content: string }>) => {
+      const updatedDocs = [...prev, newDoc];
       
-      const findAndReplace = (layout: WindowLayout): WindowLayout => {
-        if (!layout) return null;
-        if (layout === targetLayout) {
-          return {
-            type: 'split',
-            direction,
-            first: layout,
-            second: {
-              type: 'leaf',
-              tabProps: {
-                documents,
-                activeDocument,
-                onDocumentChange,
-                onDocumentContentChange,
-                onDocumentClose,
-                markdownEnabled
+      // Update the layout with the new documents array
+      setWindowLayout((currentLayout: WindowLayout): WindowLayout => {
+        if (!currentLayout) return null;
+        
+        const findAndReplace = (layout: WindowLayout): WindowLayout => {
+          if (!layout) return null;
+          if (layout === targetLayout) {
+            console.log('DocumentWorkspace - Creating new split with docs:', updatedDocs);
+            return {
+              type: 'split',
+              direction,
+              first: layout,
+              second: {
+                type: 'leaf',
+                tabProps: {
+                  documents: updatedDocs,  // Use the updated documents array
+                  activeDocument: newDoc.id,
+                  onDocumentChange,
+                  onDocumentContentChange,
+                  onDocumentClose,
+                  markdownEnabled
+                }
               }
-            }
-          };
-        }
+            };
+          }
+          
+          if (layout.type === 'split') {
+            return {
+              ...layout,
+              first: findAndReplace(layout.first),
+              second: findAndReplace(layout.second),
+            };
+          }
+          
+          return layout;
+        };
         
-        if (layout.type === 'split') {
-          return {
-            ...layout,
-            first: findAndReplace(layout.first),
-            second: findAndReplace(layout.second),
-          };
-        }
-        
-        return layout;
-      };
+        return findAndReplace(currentLayout);
+      });
       
-      return findAndReplace(currentLayout);
+      return updatedDocs;
     });
   }, [documents, activeDocument, onDocumentChange, onDocumentContentChange, onDocumentClose, markdownEnabled]);
 
