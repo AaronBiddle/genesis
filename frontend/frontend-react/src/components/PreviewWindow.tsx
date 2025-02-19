@@ -8,6 +8,11 @@ interface PreviewWindowProps extends TabbedWindowProps {
   onClose?: () => void;
 }
 
+const TAB_STYLES = {
+  ACTIVE: "px-3 py-2 bg-white border-t border-x rounded-t-lg shadow-sm",
+  INACTIVE: "px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-t-lg"
+} as const;
+
 export function PreviewWindow({ onSplit, onClose, ...props }: PreviewWindowProps) {
   const handleSplitClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!onSplit) return;
@@ -45,15 +50,22 @@ export function PreviewWindow({ onSplit, onClose, ...props }: PreviewWindowProps
     );
   }
 
-  const doc = props.documents[0];
+  const activeDoc = props.documents.find(doc => doc.id === props.activeDocument) || props.documents[0];
 
   return (
     <div className="flex flex-col h-full border rounded-lg overflow-hidden">
       <div className="border-b bg-gray-50 flex items-center">
         <div className="flex px-2 gap-1">
-          <div className="px-3 py-2 bg-white border-t border-x rounded-t-lg shadow-sm">
-            {doc.title}
-          </div>
+          {props.documents.map(doc => (
+            <div 
+              key={doc.id}
+              className={doc.id === props.activeDocument ? TAB_STYLES.ACTIVE : TAB_STYLES.INACTIVE}
+              onClick={() => props.onDocumentChange(doc.id)}
+              role="button"
+            >
+              {doc.title || 'Untitled'}
+            </div>
+          ))}
         </div>
         <div className="flex-grow flex justify-end px-2 gap-1">
           <div className="relative">
@@ -76,8 +88,8 @@ export function PreviewWindow({ onSplit, onClose, ...props }: PreviewWindowProps
       </div>
       <div className="flex-1">
         <textarea
-          value={doc.content}
-          onChange={(e) => props.onDocumentContentChange(doc.id, e.target.value)}
+          value={activeDoc.content}
+          onChange={(e) => props.onDocumentContentChange(activeDoc.id, e.target.value)}
           className="w-full h-full resize-none border-0 p-2 focus:outline-none focus:ring-0"
           placeholder="Enter your content here..."
         />

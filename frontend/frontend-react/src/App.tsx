@@ -117,17 +117,17 @@ export default function App() {
   };
 
   const handleNewSplitDocument = useCallback(() => {
+    const newDoc = createNewDocument();  // Create new document first
     createNewSplit({
-      documents,
-      activeDocument,
+      documents: [newDoc],  // Use the new document
+      activeDocument: newDoc.id,
       onDocumentChange: setActiveDocument,
       onDocumentContentChange: handleDocumentContentChange,
       onDocumentClose: handleCloseDocument,
       markdownEnabled
     });
   }, [
-    documents, 
-    activeDocument, 
+    createNewDocument,
     setActiveDocument, 
     handleDocumentContentChange, 
     handleCloseDocument, 
