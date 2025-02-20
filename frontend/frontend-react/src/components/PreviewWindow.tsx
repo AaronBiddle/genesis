@@ -1,7 +1,6 @@
 import React from 'react';
 import { TabbedWindowProps } from './TabbedWindow';
 import { SplitIcon } from './icons/SplitIcon';
-import { CloseIcon } from './icons/CloseIcon';
 import { useLoggingStore, LogLevel } from '../stores/loggingStore';
 
 interface PreviewWindowProps extends TabbedWindowProps {
@@ -9,11 +8,6 @@ interface PreviewWindowProps extends TabbedWindowProps {
   onSplit?: (direction: 'horizontal' | 'vertical', windowId: string) => void;
   onClose?: () => void;
 }
-
-const TAB_STYLES = {
-  ACTIVE: "px-3 py-2 bg-white border-t border-x rounded-t-lg shadow-sm",
-  INACTIVE: "px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-t-lg"
-} as const;
 
 export function PreviewWindow({ windowId, onSplit, onClose, ...props }: PreviewWindowProps) {
   const log = useLoggingStore(state => state.log);
@@ -41,13 +35,6 @@ export function PreviewWindow({ windowId, onSplit, onClose, ...props }: PreviewW
                 <SplitIcon className="w-4 h-4" />
               </button>
             </div>
-            <button
-              onClick={onClose}
-              className="p-1 hover:bg-gray-200 rounded"
-              title="Close Editor"
-            >
-              <CloseIcon className="w-4 h-4" />
-            </button>
           </div>
         </div>
         <div className="flex-1 flex items-center justify-center text-gray-500">
@@ -64,13 +51,31 @@ export function PreviewWindow({ windowId, onSplit, onClose, ...props }: PreviewW
       <div className="border-b bg-gray-50 flex items-center">
         <div className="flex px-2 gap-1">
           {props.documents.map(doc => (
-            <div 
+            <div
               key={doc.id}
-              className={doc.id === props.activeDocument ? TAB_STYLES.ACTIVE : TAB_STYLES.INACTIVE}
+              className={`px-3 py-1.5 text-sm font-medium rounded-t-lg relative group
+                ${doc.id === props.activeDocument
+                  ? 'bg-white shadow-sm font-bold border-b-2 border-primary -mb-px'
+                  : 'text-gray-600 hover:bg-gray-100'}`}
               onClick={() => props.onDocumentChange(doc.id)}
               role="button"
             >
-              {doc.title || 'Untitled'}
+              <span className="flex items-center">
+                {doc.title || 'Untitled'}
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    props.onDocumentClose(doc.id);
+                    if (props.documents.length === 1) {
+                      onClose && onClose();
+                    }
+                  }}
+                  className="ml-2 opacity-0 group-hover:opacity-100 group-data-[state=active]:opacity-100 hover:bg-gray-200 rounded-full h-4 w-4 inline-flex items-center justify-center transition-opacity cursor-pointer"
+                  aria-label="Close tab"
+                >
+                  ×
+                </span>
+              </span>
             </div>
           ))}
         </div>
@@ -84,13 +89,6 @@ export function PreviewWindow({ windowId, onSplit, onClose, ...props }: PreviewW
               <SplitIcon className="w-4 h-4" />
             </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-200 rounded"
-            title="Close Editor"
-          >
-            <CloseIcon className="w-4 h-4" />
-          </button>
         </div>
       </div>
       <div className="flex-1">
