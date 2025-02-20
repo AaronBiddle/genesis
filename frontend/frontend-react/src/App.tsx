@@ -16,6 +16,7 @@ import {
 } from './components/ui/ui-constants';
 import { WindowLayout } from './types/WindowLayout';
 import { useWindowLayout } from './hooks/useWindowLayout';
+import { useLoggingStore, LogLevel } from './stores/loggingStore';
 
 export default function App() {
   const [leftWidth, setLeftWidth] = useState<number>(CONTROL_PANEL_DEFAULT_WIDTH);
@@ -35,13 +36,22 @@ export default function App() {
     handleDocumentContentChange
   } = useDocumentTabs();
 
+  const log = useLoggingStore(state => state.log);
+  const namespace = 'App:';
+
+  // DEBUG - useful to track document changes at app level
+  log(LogLevel.DEBUG, namespace, 'Documents changed:', documents);
+
+  // DEBUG - useful to track initial layout creation
+  log(LogLevel.DEBUG, namespace, 'Creating initial layout with documents:', documents);
+
   // Update window layout when documents change
   useEffect(() => {
-    console.log('App - Documents changed:', documents);
+    log(LogLevel.DEBUG, namespace, 'Documents changed:', documents);
     setWindowLayout(current => {
       // Only create initial layout if we have documents
       if (!current && documents.length > 0) {
-        console.log('Creating initial layout with documents:', documents);
+        log(LogLevel.DEBUG, namespace, 'Creating initial layout with documents:', documents);
         return {
           type: 'leaf',
           id: crypto.randomUUID(),
@@ -122,7 +132,7 @@ export default function App() {
       setDocuments(prev => [...prev, newDoc]);
       setActiveDocument(newDoc.id);
     } catch (error) {
-      console.error('Error loading document:', error);
+      log(LogLevel.ERROR, namespace, 'Error loading document:', error);
       alert('Failed to load document');
     }
   };
@@ -147,9 +157,9 @@ export default function App() {
         throw new Error('Failed to save document');
       }
 
-      console.log('Document saved successfully');
+      log(LogLevel.INFO, namespace, 'Document saved successfully');
     } catch (error) {
-      console.error('Error saving document:', error);
+      log(LogLevel.ERROR, namespace, 'Error saving document:', error);
       alert('Failed to save document');
     }
   };

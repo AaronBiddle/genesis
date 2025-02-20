@@ -1,6 +1,10 @@
 import { useCallback, useState } from 'react';
+import { useLoggingStore, LogLevel } from '../stores/loggingStore';
 
 export function useDocumentTabs() {
+  const log = useLoggingStore(state => state.log);
+  const namespace = 'useDocumentTabs:';
+
   const [documents, setDocuments] = useState<Array<{ id: string; title: string; content: string }>>([]);
   const [activeDocument, setActiveDocument] = useState<string | null>(null);
   const [markdownEnabled, setMarkdownEnabled] = useState(true);
@@ -14,7 +18,7 @@ export function useDocumentTabs() {
   }, [activeDocument, documents]);
 
   const handleDocumentContentChange = useCallback((id: string, content: string) => {
-    console.log('useDocumentTabs - Before content update:', {
+    log(LogLevel.DEBUG, namespace, 'Before content update:', {
       id,
       content,
       currentDocs: documents
@@ -24,6 +28,7 @@ export function useDocumentTabs() {
       const updated = prev.map(doc => 
         doc.id === id ? { ...doc, content } : doc
       );
+      log(LogLevel.DEBUG, namespace, 'Documents being updated to:', updated);
       return updated;
     });
   }, [documents]);
@@ -37,7 +42,7 @@ export function useDocumentTabs() {
     
     setDocuments(prev => {
       const updatedDocs = [...prev, newDoc];
-      console.log('useDocumentTabs - Documents being updated to:', updatedDocs);
+      log(LogLevel.DEBUG, namespace, 'Documents being updated to:', updatedDocs);
       return updatedDocs;
     });
     

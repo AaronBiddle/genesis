@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { SplitContainer } from './SplitContainer';
 import { WindowLayout } from '../types/WindowLayout';
+import { useLoggingStore, LogLevel } from '../stores/loggingStore';
 
 interface DocumentWorkspaceProps {
   windowLayout: WindowLayout;
@@ -24,9 +25,11 @@ export function DocumentWorkspace({
   onDocumentClose,
   markdownEnabled
 }: DocumentWorkspaceProps) {
+  const log = useLoggingStore(state => state.log);
+  const namespace = 'DocumentWorkspace:';
   
   useEffect(() => {
-    console.log('DocumentWorkspace - Documents changed:', documents);
+    log(LogLevel.DEBUG, namespace, 'Documents changed:', documents);
   }, [documents]);
 
   const updateLayoutWithCurrentDocs = useCallback((layout: WindowLayout): WindowLayout => {
@@ -58,29 +61,28 @@ export function DocumentWorkspace({
     return layout;
   }, [documents, activeDocument, onDocumentChange, onDocumentContentChange, onDocumentClose, markdownEnabled]);
 
-  // Add this logging helper
   const logLayout = (layout: WindowLayout, prefix = '') => {
     if (!layout) {
-      console.log(prefix + 'null layout');
+      log(LogLevel.TRACE, namespace, prefix + 'null layout');
       return;
     }
     
     if (layout.type === 'leaf') {
-      console.log(prefix + 'LEAF:', {
+      log(LogLevel.TRACE, namespace, prefix + 'LEAF:', {
         documents: layout.tabProps.documents.map(d => d.id),
         activeDocument: layout.tabProps.activeDocument
       });
     } else if (layout.type === 'split') {
-      console.log(prefix + 'SPLIT:', { direction: layout.direction });
-      console.log(prefix + 'First:');
+      log(LogLevel.TRACE, namespace, prefix + 'SPLIT:', { direction: layout.direction });
+      log(LogLevel.TRACE, namespace, prefix + 'First:');
       logLayout(layout.first, prefix + '  ');
-      console.log(prefix + 'Second:');
+      log(LogLevel.TRACE, namespace, prefix + 'Second:');
       logLayout(layout.second, prefix + '  ');
     }
   };
 
   const handleSplitContainer = useCallback((targetLayout: NonNullable<WindowLayout>, direction: 'horizontal' | 'vertical', windowId: string) => {
-    console.log('Starting split operation:', { 
+    log(LogLevel.DEBUG, namespace, 'Starting split operation:', { 
       direction,
       windowId,
       documents,
@@ -95,12 +97,11 @@ export function DocumentWorkspace({
       const findAndReplace = (layout: WindowLayout): WindowLayout => {
         if (!layout) return null;
         
-        // For leaf nodes, check if this is the one we want to split
         if (layout.type === 'leaf' && !splitApplied) {
           const isTarget = layout.id === windowId;
           
           if (isTarget) {
-            console.log('Splitting layout:', { 
+            log(LogLevel.TRACE, namespace, 'Splitting layout:', { 
               windowId: layout.id,
               documents,
               currentDocs: layout.tabProps.documents
@@ -130,7 +131,6 @@ export function DocumentWorkspace({
           }
         }
         
-        // For split nodes, try to split their children
         if (layout.type === 'split') {
           const updatedSecond = !splitApplied ? findAndReplace(layout.second) : layout.second;
           const updatedFirst = !splitApplied ? findAndReplace(layout.first) : layout.first;
@@ -148,7 +148,7 @@ export function DocumentWorkspace({
       };
       
       const result = findAndReplace(currentLayout);
-      console.log('Split result:', {
+      log(LogLevel.DEBUG, namespace, 'Split result:', {
         splitApplied,
         resultDocs: result?.type === 'leaf' ? result.tabProps.documents : 'split'
       });

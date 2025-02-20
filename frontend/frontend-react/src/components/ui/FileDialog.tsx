@@ -3,6 +3,7 @@ import { useFileList } from '../../hooks/useFileList';
 import { Button } from './button';
 import { DirectoryBrowser } from '../DirectoryBrowser';
 import { API_ENDPOINTS } from '../../config/constants';
+import { useLoggingStore, LogLevel } from '../../stores/loggingStore';
 
 export type FileType = 'chat' | 'document' | 'prompt';
 
@@ -28,6 +29,8 @@ export const FileDialog: React.FC<FileDialogProps> = ({
   const [currentPath, setCurrentPath] = useState("");
   const [loadPrompt, setLoadPrompt] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const log = useLoggingStore(state => state.log);
+  const namespace = 'FileDialog:';
 
   // Get display information based on file type
   const getTypeInfo = (type: FileType) => {
@@ -95,7 +98,7 @@ export const FileDialog: React.FC<FileDialogProps> = ({
       }
       setRefreshKey(prev => prev + 1);
     } catch (error) {
-      console.error("Error creating folder:", error);
+      log(LogLevel.ERROR, namespace, 'Error creating folder:', error);
       alert("Error creating folder");
     }
   };

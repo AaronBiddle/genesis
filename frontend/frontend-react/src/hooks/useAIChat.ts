@@ -98,7 +98,7 @@ export function useAIChat() {
       if (!response.ok) throw new Error('Save failed');
       return await response.json();
     } catch (error) {
-      console.error('Error saving chat:', error);
+      log(LogLevel.ERROR, namespace, 'Error saving chat:', error);
       throw error;
     }
   };
@@ -122,7 +122,7 @@ export function useAIChat() {
         temperature: data.temperature
       };
     } catch (error) {
-      console.error('Error loading chat:', error);
+      log(LogLevel.ERROR, namespace, 'Error loading chat:', error);
       throw error;
     }
   };

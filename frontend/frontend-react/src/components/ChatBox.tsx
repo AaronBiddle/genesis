@@ -56,7 +56,7 @@ export function ChatBox({ width }: { width: number }) {
       setChatTitle(savedTitle);
       await refreshChats();
     } catch (error) {
-      console.error('Failed to save chat:', error);
+      log(LogLevel.ERROR, namespace, 'Failed to save chat:', error);
       alert('Failed to save chat');
     } finally {
       setIsSaving(false);
@@ -203,7 +203,7 @@ export function ChatBox({ width }: { width: number }) {
                   setChatTitle("untitled chat");
                   await refreshChats();
                 } catch (error) {
-                  console.error('Failed to delete chat:', error);
+                  log(LogLevel.ERROR, namespace, 'Failed to delete chat:', error);
                   alert('Failed to delete chat');
                 }
               }}
@@ -307,7 +307,7 @@ export function ChatBox({ width }: { width: number }) {
                   }
                 }
               }).catch((err) => {
-                console.error('Failed to load chat:', err);
+                log(LogLevel.ERROR, namespace, 'Failed to load chat:', err);
                 alert('Failed to load chat');
               });
             } else if (fileDialog.mode === 'save') {

@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useLoggingStore, LogLevel } from '../stores/loggingStore';
 import { API_ENDPOINTS } from '../config/constants';
 
 export function useFileList(fileType: 'document' | 'chat' | 'prompt' = 'document') {
   const [files, setFiles] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const log = useLoggingStore(state => state.log);
   const namespace = 'useFileList:';
 
@@ -33,10 +33,6 @@ export function useFileList(fileType: 'document' | 'chat' | 'prompt' = 'document
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchFiles();
-  }, [fileType]); // Re-fetch when fileType changes
 
   return { files, isLoading, refreshFiles: fetchFiles };
 } 

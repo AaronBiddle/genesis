@@ -23,7 +23,7 @@ export const useLoggingStore = create<LoggingStore>()(
       setLevel: (level: LogLevel) => set({ level }),
       log: (level: LogLevel, namespace: string, message: string, data?: any) => {
         if (level <= get().level) {
-          const prefix = `${namespace}`;
+          const prefix = `${namespace}(${level})`;
           
           switch (level) {
             case LogLevel.ERROR:
