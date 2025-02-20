@@ -2,6 +2,7 @@ import React from 'react';
 import { TabbedWindowProps } from './TabbedWindow';
 import { SplitIcon } from './icons/SplitIcon';
 import { CloseIcon } from './icons/CloseIcon';
+import { useLoggingStore, LogLevel } from '../stores/loggingStore';
 
 interface PreviewWindowProps extends TabbedWindowProps {
   windowId: string;
@@ -15,15 +16,18 @@ const TAB_STYLES = {
 } as const;
 
 export function PreviewWindow({ windowId, onSplit, onClose, ...props }: PreviewWindowProps) {
+  const log = useLoggingStore(state => state.log);
+  const namespace = 'PreviewWindow:';
+
   const handleSplitClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!onSplit) return;
     const direction = e.altKey ? 'vertical' : 'horizontal';
-    console.log('PreviewWindow - Split requested:', { direction, windowId });
+    log(LogLevel.DEBUG, namespace, 'Split requested:', { direction, windowId });
     onSplit(direction, windowId);
   };
 
   if (!props.documents || props.documents.length === 0) {
-    console.log('PreviewWindow - No documents available');
+    log(LogLevel.DEBUG, namespace, 'No documents available');
     return (
       <div className="flex flex-col h-full border rounded-lg overflow-hidden">
         <div className="border-b bg-gray-50 flex items-center">
@@ -93,7 +97,7 @@ export function PreviewWindow({ windowId, onSplit, onClose, ...props }: PreviewW
         <textarea
           value={activeDoc.content}
           onChange={(e) => {
-            console.log('PreviewWindow - TextArea onChange:', {
+            log(LogLevel.DEBUG, namespace, 'TextArea onChange:', {
               docId: activeDoc.id,
               newContent: e.target.value,
               currentDocContent: activeDoc.content
