@@ -6,7 +6,7 @@ export function useFileList(fileType: 'document' | 'chat' | 'prompt' = 'document
   const [files, setFiles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const log = useLoggingStore(state => state.log);
-  const namespace = '📁 FileList:';
+  const namespace = 'useFileList:';
 
   const fetchFiles = async () => {
     if (!fileType) {

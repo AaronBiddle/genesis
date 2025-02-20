@@ -6,8 +6,8 @@ import { useLoggingStore, LogLevel } from '../stores/loggingStore';
 import { API_ENDPOINTS } from '../config/constants';
 
 export function useAIChat() {
-  const log = useLoggingStore((state: { log: any; }) => state.log);
-  const namespace = '🤖 AI Chat:';
+  const log = useLoggingStore(state => state.log);
+  const namespace = 'useAIChat:';
   
   // Pre-populate the chat history with a test markdown message.
   const [messages, setMessages] = useState<ChatMessage[]>([]);

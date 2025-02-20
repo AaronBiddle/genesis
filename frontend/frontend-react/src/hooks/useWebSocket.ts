@@ -4,7 +4,7 @@ import { WS_URL } from '../config/constants'
 
 export function useWebSocket() {
   const log = useLoggingStore(state => state.log)
-  const namespace = '🌐 WebSocket:'
+  const namespace = 'useWebSocket:'
   const [isConnected, setIsConnected] = useState(false)
   const socketRef = useRef<WebSocket | null>(null)
 

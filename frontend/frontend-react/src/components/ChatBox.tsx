@@ -46,7 +46,7 @@ export function ChatBox({ width }: { width: number }) {
     mode: null
   });
   const log = useLoggingStore(state => state.log);
-  const namespace = '💬 ChatBox:';
+  const namespace = 'ChatBox:';
 
   const doSaveChat = async (filename: string) => {
     try {
