@@ -190,15 +190,6 @@ export function DocumentSection({
         markdownEnabled={markdownEnabled}
       />
 
-      {/* <TabbedWindow
-        documents={documents}
-        activeDocument={activeDocument}
-        onDocumentChange={onDocumentChange}
-        onDocumentContentChange={handleContentChange}
-        onDocumentClose={onDocumentClose}
-        markdownEnabled={markdownEnabled}
-      /> */}
-
       {fileDialog.visible && fileDialog.mode && (
         <FileDialog
           mode={fileDialog.mode}
