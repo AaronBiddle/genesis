@@ -1,9 +1,10 @@
 <script lang="ts">
+  import Workspace from '$lib/components/Workspace.svelte';
 </script>
 
-<main>
-  <h1>Hello, world!</h1>
-</main>
-
-<style>
-</style>
+<div class="app-container">
+  <div class="toolbar">
+    <button class="add-button">+ Add Window</button>
+  </div>
+  <Workspace />
+</div>
