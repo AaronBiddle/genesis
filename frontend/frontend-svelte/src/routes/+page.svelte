@@ -1,22 +1,10 @@
 <script lang="ts">
-  import MultiViewPanel from '$lib/MultiViewPanel/MultiViewPanel.svelte';
-  import type { Panel } from '$lib/MultiViewPanel/stores/panelStore';
-  let panelCount: number = 0;
-  let panels: Panel[] = [];
+  import MultiViewPanel from '$lib/components/MultiViewPanel/MultiViewPanel.svelte';
+  import MultiViewBackground from '$lib/components/MultiViewPanel/MultiViewBackground.svelte';
+  import { panels } from '$lib/components/MultiViewPanel/stores/panelStore';
 
   function addPanel(): void {
-    const newPanel: Panel = {
-      id: panelCount.toString(),
-      x: 50,
-      y: 50,
-      width: 300,
-      height: 200,
-      zIndex: panelCount,
-      title: `Panel ${panelCount}`,
-      active: false
-    };
-    panels = [...panels, newPanel];
-    panelCount += 1;
+    panels.createPanel();
   }
 </script>
 
@@ -28,9 +16,11 @@
       </svg>
     </button>
   </header>
-  <main class="flex-1 bg-[#e0e0e0] w-full overflow-auto">
-    {#each panels as panel (panel.id)}
-      <MultiViewPanel panel={panel} />
-    {/each}
+  <main class="flex-1 w-full overflow-auto">
+    <MultiViewBackground>
+      {#each $panels as panel (panel.id)}
+        <MultiViewPanel panel={panel} />
+      {/each}
+    </MultiViewBackground>
   </main>
 </div>

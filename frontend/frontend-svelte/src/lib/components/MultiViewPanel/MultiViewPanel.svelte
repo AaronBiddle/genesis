@@ -1,9 +1,10 @@
 <script lang="ts">
     import type { Panel } from './stores/panelStore';
-    import { panels, setActivePanel, updatePanels, bringToFront } from './stores/panelStore';
+    import { panels, setActivePanel, updatePanelsById, bringToFront } from './stores/panelStore';
     import ResizeHandles from './ResizeHandles.svelte';
     import { createResizeHandler } from './resizeManager';
     import type { ResizeEdge } from './types';
+    import { onMount, getContext } from 'svelte';
 
     export let panel: Panel;
 
@@ -16,8 +17,25 @@
 
     const MIN_SIZE = 100;
 
+    let panelElement: HTMLElement;
+    let containerMinY = 0;
+
+    onMount(() => {
+        // Try to get toolbar height from context set by MultiViewBackground
+        const contextToolbarHeight = getContext('MultiViewToolbarHeight') as number | null;
+        if (contextToolbarHeight != null) {
+            containerMinY = contextToolbarHeight;
+        } else if (panelElement && panelElement.parentElement) {
+            const parentStyle = getComputedStyle(panelElement.parentElement);
+            containerMinY = parseInt(parentStyle.paddingTop) || 0;
+        }
+        if (panel.y < containerMinY) {
+            panels.update(current => current.map(p => p.id === panel.id ? { ...p, y: containerMinY } : p));
+        }
+    });
+
     const resizeHandler = createResizeHandler(() => panel, (updater) => {
-        updatePanels(panel.id, updater);
+        updatePanelsById(panel.id, updater);
     });
 
     function handlePointerDown(e: PointerEvent) {
@@ -54,7 +72,7 @@
         panels.update(current =>
             current.map(p =>
                 p.id === panel.id
-                    ? { ...p, x: initialX + dx, y: initialY + dy }
+                    ? { ...p, x: initialX + dx, y: Math.max(initialY + dy, containerMinY) }
                     : p
             )
         );
@@ -86,17 +104,14 @@
     }
 </script>
 
-<div class="absolute bg-white border-2 border-blue-500 rounded-lg transition-transform flex flex-col {isDragging ? 'cursor-grabbing' : ''}"
-     style={`left: ${panel.x}px; top: ${panel.y}px; width: ${panel.width}px; height: ${panel.height}px; z-index: ${panel.zIndex};`}
-     on:pointerdown={handlePointerDown}
-     on:pointermove={handlePointerMove}
-     on:pointerup={handlePointerUp}>
+<div bind:this={panelElement} class="absolute bg-white border-2 border-blue-500 rounded-lg transition-transform flex flex-col {isDragging ? 'cursor-grabbing' : ''}"
+     style={`left: ${panel.x}px; top: ${panel.y}px; width: ${panel.width}px; height: ${panel.height}px; z-index: ${panel.zIndex};`}>
 
     <ResizeHandles onResizeStart={handleResizeStart} />
 
     <!-- Header Slot: Consumers can provide their own header.
          If not, a default header is shown (displaying the panel title and a close button). -->
-    <div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50 select-none rounded-t-lg">
+    <div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50 select-none rounded-t-lg" on:pointerdown={handlePointerDown}>
         <slot name="header">
             <span class="font-semibold">{panel.title || 'Panel'}</span>
             <button on:click={closePanel}
