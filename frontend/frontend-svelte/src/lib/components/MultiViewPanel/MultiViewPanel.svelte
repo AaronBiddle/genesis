@@ -113,8 +113,8 @@
         panels.update(current => current.filter(p => p.id !== panel.id));
     }
 
-    function handleAppChange(event: CustomEvent) {
-        updatePanelsById(panel.id, (p) => ({ ...p, appId: event.detail.selectedApp }));
+    function handleAppChange(detail: { selectedApp: string }) {
+        updatePanelsById(panel.id, (p) => ({ ...p, appId: detail.selectedApp }));
     }
 
     function handleResizeStart(e: MouseEvent, edge: ResizeEdge) {
@@ -139,7 +139,7 @@
          If not, a default header is shown with app registration and a close button. -->
     <div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50 select-none rounded-t-lg" on:pointerdown={handlePointerDown}>
         <slot name="header">
-            <AppRegistration apps={mergedApps} selectedApp={panel.appId} on:change={handleAppChange} />
+            <AppRegistration apps={mergedApps} selectedApp={panel.appId} onChange={handleAppChange} />
             <button on:click={closePanel}
                     class="p-1 hover:bg-gray-200 rounded-md transition-colors pointer-events-auto"
                     title="Close window"
