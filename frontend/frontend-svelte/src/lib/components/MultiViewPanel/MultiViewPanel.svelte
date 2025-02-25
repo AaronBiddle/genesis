@@ -4,15 +4,14 @@
     import ResizeHandles from './ResizeHandles.svelte';
     import { createResizeHandler } from './resizeManager';
     import type { ResizeEdge } from './types';
-    import { onMount, getContext } from 'svelte';
     import AppRegistration from './AppRegistration.svelte';
-    import type { SvelteComponentTyped } from 'svelte';
+    import type { Component } from 'svelte';
     import EmptyPanel from './EmptyPanel.svelte';
 
     interface PanelApp {
         id: string;
         label: string;
-        component: typeof SvelteComponentTyped<any, any, any>;
+        component: Component;
     }
 
     export let panel: Panel;
@@ -40,21 +39,6 @@
     const MIN_SIZE = 100;
 
     let panelElement: HTMLElement;
-    let containerMinY = 0;
-
-    onMount(() => {
-        // Try to get toolbar height from context set by MultiViewBackground
-        const contextToolbarHeight = getContext('MultiViewToolbarHeight') as number | null;
-        if (contextToolbarHeight != null) {
-            containerMinY = contextToolbarHeight;
-        } else if (panelElement && panelElement.parentElement) {
-            const parentStyle = getComputedStyle(panelElement.parentElement);
-            containerMinY = parseInt(parentStyle.paddingTop) || 0;
-        }
-        if (panel.y < containerMinY) {
-            panels.update(current => current.map(p => p.id === panel.id ? { ...p, y: containerMinY } : p));
-        }
-    });
 
     const resizeHandler = createResizeHandler(() => panel, (updater) => {
         updatePanelsById(panel.id, updater);
@@ -94,7 +78,7 @@
         panels.update(current =>
             current.map(p =>
                 p.id === panel.id
-                    ? { ...p, x: initialX + dx, y: Math.max(initialY + dy, containerMinY) }
+                    ? { ...p, x: initialX + dx, y: initialY + dy }
                     : p
             )
         );
