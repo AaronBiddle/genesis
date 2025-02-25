@@ -2,6 +2,28 @@
   import MultiViewPanel from '$lib/components/MultiViewPanel/MultiViewPanel.svelte';
   import MultiViewBackground from '$lib/components/MultiViewPanel/MultiViewBackground.svelte';
   import { panels } from '$lib/components/MultiViewPanel/stores/panelStore';
+  import CounterComponent from '$lib/components/CounterComponent.svelte';
+  import NotesComponent from '$lib/components/NotesComponent.svelte';
+  import WeatherComponent from '$lib/components/WeatherComponent.svelte';
+
+  // Register the app components to be available in the dropdown
+  const apps = [
+    {
+      id: 'counter',
+      label: 'Counter',
+      component: CounterComponent
+    },
+    {
+      id: 'notes',
+      label: 'Notes',
+      component: NotesComponent
+    },
+    {
+      id: 'weather',
+      label: 'Weather',
+      component: WeatherComponent
+    }
+  ];
 
   function addPanel(): void {
     panels.createPanel();
@@ -19,7 +41,7 @@
   <main class="flex-1 w-full overflow-auto">
     <MultiViewBackground>
       {#each $panels as panel (panel.id)}
-        <MultiViewPanel panel={panel} />
+        <MultiViewPanel panel={panel} {apps} />
       {/each}
     </MultiViewBackground>
   </main>

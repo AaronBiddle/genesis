@@ -5,8 +5,30 @@
     import { createResizeHandler } from './resizeManager';
     import type { ResizeEdge } from './types';
     import { onMount, getContext } from 'svelte';
+    import AppRegistration from './AppRegistration.svelte';
+    import type { SvelteComponentTyped } from 'svelte';
+    import EmptyPanel from './EmptyPanel.svelte';
+
+    interface PanelApp {
+        id: string;
+        label: string;
+        component: typeof SvelteComponentTyped<any, any, any>;
+    }
 
     export let panel: Panel;
+    // Additional apps can be passed in; they should have id, label, and component
+    export let apps: PanelApp[] = [];
+
+    const defaultApp: PanelApp = {
+        id: 'empty',
+        label: 'Empty',
+        component: EmptyPanel
+    };
+
+    // Merge default empty app with any additional apps
+    $: mergedApps = [defaultApp, ...apps];
+    // Determine current app based on panel.appId; fallback to defaultApp
+    $: currentApp = mergedApps.find(app => app.id === panel.appId) || defaultApp;
 
     let isDragging = false;
     let startX: number;
@@ -91,6 +113,10 @@
         panels.update(current => current.filter(p => p.id !== panel.id));
     }
 
+    function handleAppChange(event: CustomEvent) {
+        updatePanelsById(panel.id, (p) => ({ ...p, appId: event.detail.selectedApp }));
+    }
+
     function handleResizeStart(e: MouseEvent, edge: ResizeEdge) {
         resizeHandler.start(e, edge);
         window.addEventListener('mousemove', resizeHandler.move);
@@ -110,10 +136,10 @@
     <ResizeHandles onResizeStart={handleResizeStart} />
 
     <!-- Header Slot: Consumers can provide their own header.
-         If not, a default header is shown (displaying the panel title and a close button). -->
+         If not, a default header is shown with app registration and a close button. -->
     <div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50 select-none rounded-t-lg" on:pointerdown={handlePointerDown}>
         <slot name="header">
-            <span class="font-semibold">{panel.title || 'Panel'}</span>
+            <AppRegistration apps={mergedApps} selectedApp={panel.appId} on:change={handleAppChange} />
             <button on:click={closePanel}
                     class="p-1 hover:bg-gray-200 rounded-md transition-colors pointer-events-auto"
                     title="Close window"
@@ -126,8 +152,8 @@
         </slot>
     </div>
 
-    <!-- Content Area Slot: Contents are provided via the default slot -->
+    <!-- Content Area: Render the component for the current app -->
     <div class="flex-1 overflow-auto" style={`height: ${panel.height - 40}px;`}>
-        <slot></slot>
+        <svelte:component this={currentApp.component} />
     </div>
 </div> 

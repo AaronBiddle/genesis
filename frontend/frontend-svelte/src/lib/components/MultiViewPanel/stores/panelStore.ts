@@ -9,6 +9,7 @@ export type Panel = {
   zIndex: number;
   title: string;
   active: boolean;
+  appId: string;
 };
 
 function createPanelStore() {
@@ -21,10 +22,11 @@ function createPanelStore() {
       x: 50,
       y: 50,
       width: 300,
-      height: 200,
+      height: 400,
       zIndex: panelCount,
       title: `Panel ${panelCount}`,
-      active: false
+      active: false,
+      appId: 'empty'
     };
     panelCount += 1;
     update((panels: Panel[]) => [...panels, newPanel]);
