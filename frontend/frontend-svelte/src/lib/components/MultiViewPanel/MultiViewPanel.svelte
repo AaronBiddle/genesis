@@ -35,6 +35,7 @@
     let initialX: number;
     let initialY: number;
     let dragContainer: HTMLElement;
+    let resizing = false;
 
     const MIN_SIZE = 100;
 
@@ -43,6 +44,8 @@
     const resizeHandler = createResizeHandler(() => panel, (updater) => {
         updatePanelsById(panel.id, updater);
     });
+
+    const toolbarHeight = 0; // Adjust as necessary
 
     function handlePointerDown(e: PointerEvent) {
         // Ignore events on interactive elements
@@ -75,10 +78,13 @@
         if (!isDragging) return;
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
+        const newX = initialX + dx;
+        // Prevent y from going above the toolbar (e.g. below toolbarHeight)
+        const newY = Math.max(initialY + dy, toolbarHeight);
         panels.update(current =>
             current.map(p =>
                 p.id === panel.id
-                    ? { ...p, x: initialX + dx, y: initialY + dy }
+                    ? { ...p, x: newX, y: newY }
                     : p
             )
         );
@@ -101,21 +107,23 @@
         updatePanelsById(panel.id, (p) => ({ ...p, appId: detail.selectedApp }));
     }
 
-    function handleResizeStart(e: MouseEvent, edge: ResizeEdge) {
+    function handleResizeStart(e: PointerEvent, edge: ResizeEdge) {
+        resizing = true;
         resizeHandler.start(e, edge);
-        window.addEventListener('mousemove', resizeHandler.move);
-        window.addEventListener('mouseup', stopResize);
+        window.addEventListener('pointermove', resizeHandler.move);
+        window.addEventListener('pointerup', stopResize);
     }
 
     function stopResize() {
         resizeHandler.stop();
-        window.removeEventListener('mousemove', resizeHandler.move);
-        window.removeEventListener('mouseup', stopResize);
+        window.removeEventListener('pointermove', resizeHandler.move);
+        window.removeEventListener('pointerup', stopResize);
+        resizing = false;
     }
 </script>
 
 <div bind:this={panelElement} class="absolute bg-white border-2 border-blue-500 rounded-lg transition-transform flex flex-col {isDragging ? 'cursor-grabbing' : ''}"
-     style={`left: ${panel.x}px; top: ${panel.y}px; width: ${panel.width}px; height: ${panel.height}px; z-index: ${panel.zIndex};`}>
+     style={`pointer-events: ${resizing ? 'none' : 'auto'}; left: ${panel.x}px; top: ${panel.y}px; width: ${panel.width}px; height: ${panel.height}px; z-index: ${panel.zIndex};`}>
 
     <ResizeHandles onResizeStart={handleResizeStart} />
 

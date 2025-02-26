@@ -29,7 +29,7 @@ export function createResizeHandler(
         currentEdge: null
     };
 
-    function start(e: MouseEvent, edge: ResizeEdge) {
+    function start(e: PointerEvent, edge: ResizeEdge) {
         const panel = getPanel();
         state.isResizing = true;
         state.currentEdge = edge;
@@ -41,7 +41,8 @@ export function createResizeHandler(
         state.startPanelY = panel.y;
     }
 
-    function move(e: MouseEvent) {
+    function move(e: PointerEvent) {
+        e.preventDefault();
         if (!state.isResizing || !state.currentEdge) return;
         
         const deltaX = e.clientX - state.startX;
@@ -53,18 +54,18 @@ export function createResizeHandler(
             let newX = state.startPanelX;
             let newY = state.startPanelY;
 
-            if (state.currentEdge?.includes('left')) {
+            if (state.currentEdge!.includes('left')) {
                 newWidth = Math.max(state.startWidth - deltaX, MIN_SIZE);
                 newX = state.startPanelX + (state.startWidth - newWidth);
             }
-            if (state.currentEdge?.includes('right')) {
+            if (state.currentEdge!.includes('right')) {
                 newWidth = Math.max(state.startWidth + deltaX, MIN_SIZE);
             }
-            if (state.currentEdge?.includes('top')) {
+            if (state.currentEdge!.includes('top')) {
                 newHeight = Math.max(state.startHeight - deltaY, MIN_SIZE);
                 newY = state.startPanelY + (state.startHeight - newHeight);
             }
-            if (state.currentEdge?.includes('bottom')) {
+            if (state.currentEdge!.includes('bottom')) {
                 newHeight = Math.max(state.startHeight + deltaY, MIN_SIZE);
             }
 
