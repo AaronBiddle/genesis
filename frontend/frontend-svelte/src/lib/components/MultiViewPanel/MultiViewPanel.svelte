@@ -131,7 +131,13 @@
          If not, a default header is shown with app registration and a close button. -->
     <div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50 select-none rounded-t-lg" on:pointerdown={handlePointerDown}>
         <slot name="header">
-            <AppRegistration apps={mergedApps} selectedApp={panel.appId} onChange={handleAppChange} />
+            <AppRegistration
+                apps={mergedApps}
+                selectedApp={panel.appId}
+                changeHandler={handleAppChange}
+                suggestedWidth={undefined}
+                suggestedHeight={undefined}
+            />
             <button on:click={closePanel}
                     class="p-1 hover:bg-gray-200 rounded-md transition-colors pointer-events-auto"
                     title="Close window"

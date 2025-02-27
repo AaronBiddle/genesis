@@ -1,5 +1,5 @@
 <script lang="ts">
-	export let onChange: (detail: { selectedApp: string }) => void;
+	export let changeHandler: (detail: { selectedApp: string }) => void;
 	
 	export let apps = [{ id: 'empty', label: 'Empty' }];
 	export let selectedApp = 'empty';
@@ -8,12 +8,12 @@
 	export let suggestedWidth: number | undefined;
 	export let suggestedHeight: number | undefined;
 	
-	// Removed dispatch initialization; using onChange callback instead
+	// Removed dispatch initialization; using changeHandler callback instead
 	
 	function handleChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
 		selectedApp = target.value;
-		if(onChange) onChange({ selectedApp });
+		if(changeHandler) changeHandler({ selectedApp });
 	}
 </script>
 
