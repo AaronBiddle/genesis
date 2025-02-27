@@ -5,6 +5,7 @@
   import CounterComponent from '$lib/components/CounterComponent.svelte';
   import NotesComponent from '$lib/components/NotesComponent.svelte';
   import WeatherComponent from '$lib/components/WeatherComponent.svelte';
+  import ChatboxComponent from '$lib/components/ChatboxComponent.svelte';
 
   // Register the app components to be available in the dropdown
   const apps = [
@@ -22,6 +23,11 @@
       id: 'weather',
       label: 'Weather',
       component: WeatherComponent
+    },
+    {
+      id: 'chatbox',
+      label: 'Chatbox',
+      component: ChatboxComponent
     }
   ];
 </script>
