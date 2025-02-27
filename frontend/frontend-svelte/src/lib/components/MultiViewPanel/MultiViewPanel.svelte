@@ -138,25 +138,27 @@
                 selectedApp={panel.appId}
                 changeHandler={handleAppChange}
             />
-            <!-- New button to apply suggested size -->
-            <button on:click={() => applySuggestedSize(panel.id, currentApp.suggestedWidth, currentApp.suggestedHeight)}
-                    class="p-1 hover:bg-gray-200 rounded-md transition-colors pointer-events-auto"
-                    title="Apply suggested size">
-                <!-- Using a simple refresh icon -->
-                <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M4 4v6h6M20 20v-6h-6"/>
-                </svg>
-            </button>
-            <button on:click={closePanel}
-                    class="p-1 hover:bg-gray-200 rounded-md transition-colors pointer-events-auto"
-                    title="Close window"
-                    aria-label="Close window">
-                <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
+            <div class="flex space-x-2">
+                <!-- New button to apply suggested size -->
+                <button on:click={() => applySuggestedSize(panel.id, currentApp.suggestedWidth, currentApp.suggestedHeight)}
+                        class="p-1 hover:bg-gray-200 rounded-md transition-colors pointer-events-auto"
+                        title="Apply suggested size">
+                    <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <!-- Top Right Corner -->
+                        <polyline points="16 4 20 4 20 8"></polyline>
+                        <!-- Bottom Left Corner -->
+                        <polyline points="4 16 4 20 8 20"></polyline>
+                    </svg>
+                </button>
+                <button on:click={closePanel}
+                        class="p-1 hover:bg-gray-200 rounded-md transition-colors pointer-events-auto"
+                        title="Close window"
+                        aria-label="Close window">
+                    <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <path d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
         </slot>
     </div>
 
