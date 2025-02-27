@@ -6,6 +6,7 @@
   import NotesComponent from '$lib/components/NotesComponent.svelte';
   import WeatherComponent from '$lib/components/WeatherComponent.svelte';
   import ChatboxComponent from '$lib/components/ChatboxComponent.svelte';
+  import LogControlPanel from '$lib/components/LogControlPanel/LogControlPanel.svelte';
 
   // Register the app components to be available in the dropdown
   const apps = [
@@ -28,6 +29,11 @@
       id: 'chatbox',
       label: 'Chatbox',
       component: ChatboxComponent
+    },
+    {
+      id: 'logcontrol',
+      label: 'Log Control',
+      component: LogControlPanel
     }
   ];
 </script>
