@@ -4,10 +4,6 @@
 	export let apps = [{ id: 'empty', label: 'Empty' }];
 	export let selectedApp = 'empty';
 	
-	// Accept optional preferred dimensions
-	export let suggestedWidth: number | undefined;
-	export let suggestedHeight: number | undefined;
-	
 	// Removed dispatch initialization; using changeHandler callback instead
 	
 	function handleChange(event: Event) {

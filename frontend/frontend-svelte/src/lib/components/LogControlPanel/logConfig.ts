@@ -50,20 +50,28 @@ function createPersistedLogStore() {
     // Try to load persisted state from localStorage
     let initialValue = DEFAULT_LOG_CONFIG;
     
-    try {
-        const persistedValue = localStorage.getItem('logConfig');
-        if (persistedValue) {
-            const parsedValue = JSON.parse(persistedValue);
-            // Basic validation to ensure the parsed value has the expected structure
-            if (parsedValue && 
-                typeof parsedValue === 'object' && 
-                typeof parsedValue.globalLevel === 'string' &&
-                Array.isArray(parsedValue.enabledDomains)) {
-                initialValue = parsedValue;
+    // Check if localStorage is available
+    if (typeof localStorage !== 'undefined') {
+        try {
+            const persistedValue = localStorage.getItem('logConfig');
+            if (persistedValue) {
+                const parsedValue = JSON.parse(persistedValue);
+                // Basic validation to ensure the parsed value has the expected structure
+                if (parsedValue && 
+                    typeof parsedValue === 'object' && 
+                    typeof parsedValue.globalLevel === 'string' &&
+                    Array.isArray(parsedValue.enabledDomains) &&
+                    Array.isArray(parsedValue.namespaceFilters) &&
+                    (parsedValue.namespaceFilterType === 'include' || parsedValue.namespaceFilterType === 'exclude')
+                ) {
+                    initialValue = parsedValue;
+                }
             }
+        } catch (error) {
+            console.error('Failed to load persisted log configuration:', error);
         }
-    } catch (error) {
-        console.error('Failed to load persisted log configuration:', error);
+    } else {
+        console.warn('localStorage is not available, using default log configuration');
     }
     
     // Create the store with the initial value
@@ -72,7 +80,8 @@ function createPersistedLogStore() {
     // Subscribe to changes and persist to localStorage
     const unsubscribe = store.subscribe(value => {
         try {
-            localStorage.setItem('logConfig', JSON.stringify(value));
+            console.log('Disabled attempt to write logConfig to localStorage with value:', value);
+            // localStorage.setItem('logConfig', JSON.stringify(value));
         } catch (error) {
             console.error('Failed to persist log configuration:', error);
         }

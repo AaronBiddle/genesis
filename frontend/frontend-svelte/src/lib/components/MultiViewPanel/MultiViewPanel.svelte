@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Panel } from './stores/panelStore';
-    import { panels, setActivePanel, updatePanelsById, bringToFront } from './stores/panelStore';
+    import { panels, setActivePanel, updatePanelsById, bringToFront, applySuggestedSize } from './stores/panelStore';
     import ResizeHandles from './ResizeHandles.svelte';
     import { createResizeHandler } from './resizeManager';
     import type { ResizeEdge } from './types';
@@ -12,6 +12,8 @@
         id: string;
         label: string;
         component: Component;
+        suggestedWidth?: number;
+        suggestedHeight?: number;
     }
 
     export let panel: Panel;
@@ -135,9 +137,17 @@
                 apps={mergedApps}
                 selectedApp={panel.appId}
                 changeHandler={handleAppChange}
-                suggestedWidth={undefined}
-                suggestedHeight={undefined}
             />
+            <!-- New button to apply suggested size -->
+            <button on:click={() => applySuggestedSize(panel.id, currentApp.suggestedWidth, currentApp.suggestedHeight)}
+                    class="p-1 hover:bg-gray-200 rounded-md transition-colors pointer-events-auto"
+                    title="Apply suggested size">
+                <!-- Using a simple refresh icon -->
+                <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M4 4v6h6M20 20v-6h-6"/>
+                </svg>
+            </button>
             <button on:click={closePanel}
                     class="p-1 hover:bg-gray-200 rounded-md transition-colors pointer-events-auto"
                     title="Close window"
