@@ -228,6 +228,7 @@
                     {:else}
                         {#each namespaceSearchResults as namespace}
                             <div 
+                                role="presentation"
                                 class="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 text-sm flex justify-between items-center"
                                 on:click={() => logConfigStore.addNamespaceFilter(namespace)}
                             >
