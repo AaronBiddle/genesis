@@ -33,7 +33,9 @@
     {
       id: 'logcontrol',
       label: 'Log Control',
-      component: LogControlPanel
+      component: LogControlPanel,
+      suggestedWidth: 500,
+      suggestedHeight: 700
     }
   ];
 </script>

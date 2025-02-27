@@ -1,5 +1,8 @@
 import { writable } from 'svelte/store';
 
+const DEFAULT_WIDTH = 400;
+const DEFAULT_HEIGHT = 500;
+
 export type Panel = {
   id: string;
   x: number;
@@ -18,19 +21,19 @@ function createPanelStore() {
   const { subscribe, update, set } = writable<Panel[]>([]);
   let panelCount = 0;
 
-  function createPanel(suggestedWidth?: number, suggestedHeight?: number) {
+  function createPanel(suggestedWidth: number = DEFAULT_WIDTH, suggestedHeight: number = DEFAULT_HEIGHT) {
     const newPanel: Panel = {
       id: panelCount.toString(),
       x: 50,
       y: 50,
-      width: 400,
-      height: 500,
+      width: DEFAULT_WIDTH,
+      height: DEFAULT_HEIGHT,
       zIndex: panelCount,
       title: `Panel ${panelCount}`,
       active: false,
       appId: 'empty',
-      suggestedWidth,
-      suggestedHeight
+      suggestedWidth: suggestedWidth,
+      suggestedHeight: suggestedHeight
     };
     panelCount += 1;
     update((panels: Panel[]) => [...panels, newPanel]);
