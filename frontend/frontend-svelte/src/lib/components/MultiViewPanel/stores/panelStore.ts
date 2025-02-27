@@ -10,13 +10,15 @@ export type Panel = {
   title: string;
   active: boolean;
   appId: string;
+  suggestedWidth?: number;
+  suggestedHeight?: number;
 };
 
 function createPanelStore() {
   const { subscribe, update, set } = writable<Panel[]>([]);
   let panelCount = 0;
 
-  function createPanel() {
+  function createPanel(suggestedWidth?: number, suggestedHeight?: number) {
     const newPanel: Panel = {
       id: panelCount.toString(),
       x: 50,
@@ -26,7 +28,9 @@ function createPanelStore() {
       zIndex: panelCount,
       title: `Panel ${panelCount}`,
       active: false,
-      appId: 'empty'
+      appId: 'empty',
+      suggestedWidth,
+      suggestedHeight
     };
     panelCount += 1;
     update((panels: Panel[]) => [...panels, newPanel]);

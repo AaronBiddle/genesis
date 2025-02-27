@@ -1,9 +1,12 @@
 <script lang="ts">
-	// Removed createEventDispatcher import; using callback prop instead
 	export let onChange: (detail: { selectedApp: string }) => void;
 	
 	export let apps = [{ id: 'empty', label: 'Empty' }];
 	export let selectedApp = 'empty';
+	
+	// Accept optional preferred dimensions
+	export let suggestedWidth: number | undefined;
+	export let suggestedHeight: number | undefined;
 	
 	// Removed dispatch initialization; using onChange callback instead
 	

@@ -14,3 +14,6 @@ git push origin development         # Push the development branch to github
 git checkout main
 git merge development --no-ff       # Merge the development branch into main
 git push origin main                # Push the main branch to github
+
+git clean -nd                       # Displays what files will be removed
+git clean -fd                       # Removed the files listed by using -nd
