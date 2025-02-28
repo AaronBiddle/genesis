@@ -50,6 +50,7 @@ var/
 .env.test.local
 .env.production.local
 .env
+.vscode/
 
 # Debug logs
 npm-debug.log*
