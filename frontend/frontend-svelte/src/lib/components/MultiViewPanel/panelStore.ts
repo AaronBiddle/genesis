@@ -38,7 +38,7 @@ function createPanelStore() {
       suggestedWidth: suggestedWidth,
       suggestedHeight: suggestedHeight
     };
-    logger(NAMESPACE, 'INFO', 'ui', `Creating panel id: ${newPanel.id} with width: ${newPanel.width}, height: ${newPanel.height}, suggestedWidth: ${newPanel.suggestedWidth}, suggestedHeight: ${newPanel.suggestedHeight}`);
+    logger(NAMESPACE, 'DEBUG', 'ui', `Creating panel id: ${newPanel.id} with width: ${newPanel.width}, height: ${newPanel.height}, suggestedWidth: ${newPanel.suggestedWidth}, suggestedHeight: ${newPanel.suggestedHeight}`);
     panelCount += 1;
     update((panels: Panel[]) => [...panels, newPanel]);
   }
@@ -94,7 +94,7 @@ export function applySuggestedSize(id: string, newWidth?: number, newHeight?: nu
   panels.update((current: Panel[]) =>
     current.map((panel) => {
       if (panel.id === id) {
-        logger(NAMESPACE, 'INFO', 'ui', 'applySuggestedSize called with id:', id, 'newWidth:', newWidth, 'newHeight:', newHeight);
+        logger(NAMESPACE, 'DEBUG', 'ui', 'applySuggestedSize called with id:', id, 'newWidth:', newWidth, 'newHeight:', newHeight);
         return { ...panel,
                   width: newWidth ?? panel.width,
                   height: newHeight ?? panel.height };
