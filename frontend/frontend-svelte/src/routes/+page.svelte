@@ -1,7 +1,7 @@
 <script lang="ts">
   import MultiViewPanel from '$lib/components/MultiViewPanel/MultiViewPanel.svelte';
   import MultiViewBackground from '$lib/components/MultiViewPanel/MultiViewBackground.svelte';
-  import { panels } from '$lib/components/MultiViewPanel/stores/panelStore';
+  import { panels } from '$lib/components/MultiViewPanel/panelStore';
   import CounterComponent from '$lib/components/CounterComponent.svelte';
   import NotesComponent from '$lib/components/NotesComponent.svelte';
   import WeatherComponent from '$lib/components/WeatherComponent.svelte';

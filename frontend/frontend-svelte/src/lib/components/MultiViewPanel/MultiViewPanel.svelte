@@ -1,6 +1,6 @@
 <script lang="ts">
-    import type { Panel } from './stores/panelStore';
-    import { panels, setActivePanel, updatePanelsById, bringToFront, applySuggestedSize } from './stores/panelStore';
+    import type { Panel } from './panelStore';
+    import { panels, setActivePanel, updatePanelsById, bringToFront, applySuggestedSize } from './panelStore';
     import ResizeHandles from './ResizeHandles.svelte';
     import { createResizeHandler } from './resizeManager';
     import type { ResizeEdge } from './types';

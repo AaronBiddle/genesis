@@ -1,4 +1,5 @@
 import { writable, type Updater, get } from 'svelte/store';
+import { PROJECT_NAMESPACES } from '../../appConfig';
 
 // Common log levels (in order of increasing severity)
 export const LOG_LEVELS = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'] as const;
@@ -20,11 +21,8 @@ export const LOG_DOMAINS: LogDomain[] = [
 ];
 
 // Namespaces represent specific modules or components
-// In a real app, these might be dynamically registered by different modules
-export const NAMESPACES: string[] = [
-    'frontend.components.MultiViewPanel',
-    'frontend.components.ChatBox'
-];
+// Use project namespaces directly
+export const NAMESPACES = PROJECT_NAMESPACES;
 
 export type NamespaceFilterType = 'include' | 'exclude';
 
@@ -80,8 +78,9 @@ function createPersistedLogStore() {
     // Subscribe to changes and persist to localStorage
     const unsubscribe = store.subscribe(value => {
         try {
-            console.log('Disabled attempt to write logConfig to localStorage with value:', value);
-            // localStorage.setItem('logConfig', JSON.stringify(value));
+            if (typeof localStorage !== 'undefined') {  // Add check to ensure localStorage is available
+                localStorage.setItem('logConfig', JSON.stringify(value));
+            }
         } catch (error) {
             console.error('Failed to persist log configuration:', error);
         }
