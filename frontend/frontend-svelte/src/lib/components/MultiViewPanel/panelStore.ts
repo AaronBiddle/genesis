@@ -1,7 +1,10 @@
 import { writable } from 'svelte/store';
+import { logger } from '$lib/components/LogControlPanel/logger';
 
 const DEFAULT_WIDTH = 400;
 const DEFAULT_HEIGHT = 500;
+
+const NAMESPACE = 'MultiViewPanel';
 
 export type Panel = {
   id: string;
@@ -35,7 +38,7 @@ function createPanelStore() {
       suggestedWidth: suggestedWidth,
       suggestedHeight: suggestedHeight
     };
-    console.log(`Creating panel id: ${newPanel.id} with width: ${newPanel.width}, height: ${newPanel.height}, suggestedWidth: ${newPanel.suggestedWidth}, suggestedHeight: ${newPanel.suggestedHeight}`);
+    logger(NAMESPACE, 'INFO', 'ui', `Creating panel id: ${newPanel.id} with width: ${newPanel.width}, height: ${newPanel.height}, suggestedWidth: ${newPanel.suggestedWidth}, suggestedHeight: ${newPanel.suggestedHeight}`);
     panelCount += 1;
     update((panels: Panel[]) => [...panels, newPanel]);
   }
@@ -91,7 +94,7 @@ export function applySuggestedSize(id: string, newWidth?: number, newHeight?: nu
   panels.update((current: Panel[]) =>
     current.map((panel) => {
       if (panel.id === id) {
-        console.log('applySuggestedSize called with id:', id, 'newWidth:', newWidth, 'newHeight:', newHeight);
+        logger(NAMESPACE, 'INFO', 'ui', 'applySuggestedSize called with id:', id, 'newWidth:', newWidth, 'newHeight:', newHeight);
         return { ...panel,
                   width: newWidth ?? panel.width,
                   height: newHeight ?? panel.height };

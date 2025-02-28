@@ -1,11 +1,7 @@
 <script lang="ts">
-    import {
-        LOG_LEVELS,
-        LOG_DOMAINS,
-        NAMESPACES,
-        logConfigStore,
-        type LogLevel
-    } from './logConfig';
+    import { LOG_LEVELS, LOG_DOMAINS, NAMESPACES, logConfigStore } from './logConfig';
+    import type { LogLevel } from './logConfig';
+    import { onMount } from 'svelte';
     
     // Keep track of namespace filter text
     let namespaceFilterText = '';
@@ -13,6 +9,16 @@
     
     // UI state management
     let selectedTab: 'levels' | 'domains' | 'namespaces' = 'levels';
+    
+    let appliedConfig = {};
+    
+    onMount(() => {
+        // Initialize appliedConfig to current config on mount
+        appliedConfig = JSON.parse(JSON.stringify($logConfigStore));
+    });
+    
+    // Add a reactive statement to determine if the config has changed
+    $: isDirty = JSON.stringify(appliedConfig) !== JSON.stringify($logConfigStore);
     
     function searchNamespaces(): void {
         if (!namespaceFilterText) {
@@ -25,10 +31,10 @@
         );
     }
     
-    // For demonstration: would be replaced with actual logger configuration
+    // Modify the applySettings function to update appliedConfig after applying settings
     function applySettings(): void {
         console.log('Applied log settings:', $logConfigStore);
-        alert('Log settings applied! Check console for details.');
+        appliedConfig = JSON.parse(JSON.stringify($logConfigStore));
     }
     
     // Update search results when filter text changes
@@ -257,7 +263,8 @@
         
         <button 
             on:click={applySettings}
-            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            disabled={!isDirty}
+            class="px-4 py-2 rounded-lg transition-colors {isDirty ? 'bg-blue-500 text-white hover:bg-blue-600' : 'bg-gray-400 text-gray-200 cursor-not-allowed'}"
         >
             Apply Settings
         </button>

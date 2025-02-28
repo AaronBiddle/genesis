@@ -1,5 +1,5 @@
 import type { ResizeEdge } from './types';
-import type { Panel } from './stores/panelStore';
+import type { Panel } from './panelStore';
 
 type ResizeState = {
     isResizing: boolean;
