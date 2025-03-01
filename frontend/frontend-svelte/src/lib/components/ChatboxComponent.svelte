@@ -87,7 +87,9 @@
                     // Auto-scroll on token receipt
                     if (messageContainer) {
                         setTimeout(() => {
-                            messageContainer.scrollTop = messageContainer.scrollHeight;
+                            if (messageContainer) {
+                                messageContainer.scrollTop = messageContainer.scrollHeight;
+                            }
                         }, 0);
                     }
                 }
@@ -149,7 +151,9 @@
     // Auto-scroll when messages update
     $: if (messageContainer && messages.length) {
         setTimeout(() => {
-            messageContainer.scrollTop = messageContainer.scrollHeight;
+            if (messageContainer) {
+                messageContainer.scrollTop = messageContainer.scrollHeight;
+            }
         }, 0);
     }
 </script>
