@@ -156,34 +156,38 @@
         <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color: {wsConnected ? 'green' : 'red'};"></span>
     </div>
 
-    <div class="flex flex-col h-full min-h-0 relative overflow-hidden" style="height: 100%;">
+    <div class="flex flex-col h-full min-h-0 relative overflow-hidden p-2" style="height: 100%;">
         <h2 class="text-xl font-bold mb-4">Chatbox</h2>
 
-        <div bind:this={messageContainer} class="flex-1 overflow-y-auto border border-gray-200 rounded-lg p-3" style="padding-bottom: 80px;">
-            {#each messages as message (message.id)}
-                <div class="mb-3 {message.sender === 'user' ? 'text-right' : 'text-left'}">
-                    <div class="inline-block max-w-[80%] px-4 py-2 rounded-lg {message.sender === 'user' ? 'bg-blue-500 text-white ml-auto' : 'bg-gray-200 text-gray-800 mr-auto'}">
-                        <p>{message.text}</p>
-                        <p class="text-xs mt-1 opacity-70">
-                            {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </p>
-                    </div>
+        <div class="mb-4">
+            <div class="overflow-hidden border border-gray-200 rounded-lg">
+                <div bind:this={messageContainer} class="flex-1 overflow-y-auto p-3">
+                    {#each messages as message (message.id)}
+                        <div class="mb-3 {message.sender === 'user' ? 'text-right' : 'text-left'}">
+                            <div class="inline-block max-w-[80%] px-4 py-2 rounded-lg {message.sender === 'user' ? 'bg-blue-500 text-white ml-auto' : 'bg-gray-200 text-gray-800 mr-auto'}">
+                                <p>{message.text}</p>
+                                <p class="text-xs mt-1 opacity-70">
+                                    {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </p>
+                            </div>
+                        </div>
+                    {/each}
                 </div>
-            {/each}
+            </div>
         </div>
 
-        <div class="flex absolute bottom-0 left-0 right-0 w-full p-4 bg-white border-t border-gray-200 z-10">
+        <div class="flex absolute bottom-0 left-0 right-0 w-full p-2 bg-white border-gray-200 z-10">
             <textarea 
                 bind:value={newMessage} 
                 on:keydown={handleKeyDown}
-                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg mr-2 resize-none"
+                class="flex-1 px-2 border border-gray-300 rounded-lg mr-2 resize-none"
                 rows="2"
                 placeholder="Type your message here..."
             ></textarea>
             
             <button 
                 on:click={sendMessage}
-                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                class="px-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                 disabled={!newMessage.trim()}
             >
                 Send
