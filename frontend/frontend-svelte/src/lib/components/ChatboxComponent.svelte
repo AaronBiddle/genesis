@@ -156,11 +156,11 @@
         <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color: {wsConnected ? 'green' : 'red'};"></span>
     </div>
 
-    <div class="flex flex-col h-full min-h-0 relative overflow-hidden p-2" style="height: 100%;">
-        <h2 class="text-xl font-bold mb-4">Chatbox</h2>
+    <div class="flex flex-col h-full min-h-0 relative overflow-hidden p-1" style="height: 100%;">
+        <h2 class="text-xl font-bold mb-1">Chatbox</h2>
 
-        <div class="mb-4">
-            <div class="overflow-hidden border border-gray-200 rounded-lg">
+        <div class="flex-1 p-1">
+            <div class="flex flex-col overflow-hidden border border-gray-200 rounded-lg h-full">
                 <div bind:this={messageContainer} class="flex-1 overflow-y-auto p-3">
                     {#each messages as message (message.id)}
                         <div class="mb-3 {message.sender === 'user' ? 'text-right' : 'text-left'}">
@@ -176,7 +176,7 @@
             </div>
         </div>
 
-        <div class="flex absolute bottom-0 left-0 right-0 w-full p-2 bg-white border-gray-200 z-10">
+        <div class="flex flex-none p-1">
             <textarea 
                 bind:value={newMessage} 
                 on:keydown={handleKeyDown}
@@ -184,7 +184,6 @@
                 rows="2"
                 placeholder="Type your message here..."
             ></textarea>
-            
             <button 
                 on:click={sendMessage}
                 class="px-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
