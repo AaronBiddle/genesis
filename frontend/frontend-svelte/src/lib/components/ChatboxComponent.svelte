@@ -166,9 +166,6 @@
                         <div class="mb-3 {message.sender === 'user' ? 'text-right' : 'text-left'}">
                             <div class="inline-block max-w-[80%] px-4 py-2 rounded-lg {message.sender === 'user' ? 'bg-blue-500 text-white ml-auto' : 'bg-gray-200 text-gray-800 mr-auto'}">
                                 <p>{message.text}</p>
-                                <p class="text-xs mt-1 opacity-70">
-                                    {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                </p>
                             </div>
                         </div>
                     {/each}
