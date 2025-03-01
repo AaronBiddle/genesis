@@ -13,9 +13,12 @@ async def worker_connection():
         await websocket.send("WORKER_HEARTBEAT")
         print("Sent initial heartbeat")
         
+        # Set up a task to send heartbeats regularly
+        heartbeat_task = asyncio.create_task(send_heartbeats(websocket))
+        
         # Keep the connection alive and handle any messages
-        while True:
-            try:
+        try:
+            while True:
                 # Wait for messages from the server
                 message = await websocket.recv()
                 print(f'Worker received: {message}')
@@ -33,15 +36,26 @@ async def worker_connection():
                             # Send a response back
                             await websocket.send(f"Worker processed: {frontend_text}")
                     except json.JSONDecodeError:
-                        # If not JSON and not an acknowledgment, send a heartbeat
-                        if message != "WORKER_HEARTBEAT":
-                            # Send a heartbeat every 10 seconds to keep the connection alive
-                            await asyncio.sleep(10)
-                            await websocket.send("WORKER_HEARTBEAT")
-                            print("Sent heartbeat")
-            except Exception as e:
-                print(f"Error in worker connection: {str(e)}")
-                break
+                        # Non-JSON, non-acknowledgment message - no need to respond
+                        pass
+        except Exception as e:
+            print(f"Error in worker connection: {str(e)}")
+        finally:
+            # Cancel the heartbeat task when the main task ends
+            heartbeat_task.cancel()
+
+# Separate task to send heartbeats on a regular schedule
+async def send_heartbeats(websocket):
+    try:
+        while True:
+            await asyncio.sleep(30)  # Send a heartbeat every 30 seconds
+            await websocket.send("WORKER_HEARTBEAT")
+            print("Sent heartbeat")
+    except asyncio.CancelledError:
+        # Task was cancelled, exit gracefully
+        pass
+    except Exception as e:
+        print(f"Error in heartbeat task: {str(e)}")
 
 # Test for the frontend requests
 async def frontend_request():
