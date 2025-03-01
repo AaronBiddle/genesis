@@ -170,8 +170,8 @@
             <div class="flex flex-col overflow-hidden border border-gray-200 rounded-lg h-full">
                 <div bind:this={messageContainer} class="flex-1 overflow-y-auto p-3">
                     {#each messages as message (message.id)}
-                        <div class="mb-3 {message.sender === 'user' ? 'text-right' : 'text-left'}">
-                            <div class="inline-block max-w-[80%] px-4 py-2 rounded-lg {message.sender === 'user' ? 'bg-blue-500 text-white ml-auto' : 'bg-gray-200 text-gray-800 mr-auto'}">
+                        <div class="mb-1 {message.sender === 'user' ? 'text-right' : 'text-left'}">
+                            <div class="inline-block max-w-[80%] px-2 py-1 rounded-lg {message.sender === 'user' ? 'bg-blue-500 text-white ml-auto' : 'bg-gray-200 text-gray-800 mr-auto'}">
                                 <p>{message.text}</p>
                             </div>
                         </div>
