@@ -166,11 +166,11 @@
     <div class="flex flex-col h-full min-h-0 relative overflow-hidden p-1" style="height: 100%;">
         <h2 class="text-xl font-bold mb-1">Chatbox</h2>
 
-        <div class="flex-1 p-1">
+        <div class="flex-1 p-1 min-h-0">
             <div class="flex flex-col overflow-hidden border border-gray-200 rounded-lg h-full">
                 <div bind:this={messageContainer} class="flex-1 overflow-y-auto p-3">
                     {#each messages as message (message.id)}
-                        <div class="mb-1 {message.sender === 'user' ? 'text-right' : 'text-left'}">
+                        <div class="mb-2 {message.sender === 'user' ? 'text-right' : 'text-left'}">
                             <div class="inline-block max-w-[80%] px-2 py-1 rounded-lg {message.sender === 'user' ? 'bg-blue-500 text-white ml-auto' : 'bg-gray-200 text-gray-800 mr-auto'}">
                                 <p>{message.text}</p>
                             </div>
