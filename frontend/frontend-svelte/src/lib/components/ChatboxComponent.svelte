@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { WS_URL } from '../config.js';
+    import MarkdownRenderer from './MarkdownRenderer.svelte';
     
     interface Message {
         id: number;
@@ -77,7 +78,8 @@
                     // Auto-scroll on token receipt
                     if (messageContainer) {
                         setTimeout(() => {
-                            if (messageContainer) {
+                            // Only auto-scroll if the user is near the bottom (within 50px)
+                            if (messageContainer.scrollTop + messageContainer.clientHeight >= messageContainer.scrollHeight - 50) {
                                 messageContainer.scrollTop = messageContainer.scrollHeight;
                             }
                         }, 0);
@@ -146,7 +148,8 @@
     // Auto-scroll when messages update
     $: if (messageContainer && messages.length) {
         setTimeout(() => {
-            if (messageContainer) {
+            // Only auto-scroll if the user is near the bottom (within 50px)
+            if (messageContainer.scrollTop + messageContainer.clientHeight >= messageContainer.scrollHeight - 50) {
                 messageContainer.scrollTop = messageContainer.scrollHeight;
             }
         }, 0);
@@ -172,7 +175,8 @@
                     {#each messages as message (message.id)}
                         <div class="mb-2 {message.sender === 'user' ? 'text-right' : 'text-left'}">
                             <div class="inline-block max-w-[80%] px-2 py-1 rounded-lg {message.sender === 'user' ? 'bg-blue-500 text-white ml-auto' : 'bg-gray-200 text-gray-800 mr-auto'}">
-                                <p>{message.text}</p>
+                                <!-- Render the markdown content -->
+                                <MarkdownRenderer content={message.text} />
                             </div>
                         </div>
                     {/each}
