@@ -16,7 +16,7 @@
         
         connectionStatus = 'Connecting...';
         const wsBaseUrl = WS_URL ? WS_URL.split('/ws/')[0] : 'ws://localhost:8000';
-        const fullWsUrl = `${wsBaseUrl}/ws/worker-requests`;
+        const fullWsUrl = `${wsBaseUrl}/ws/frontend-requests`;
         debugInfo = `Connecting to: ${fullWsUrl} (WS_URL from config: ${WS_URL || 'undefined'})`;
 
         console.log('Connecting to:', fullWsUrl);
