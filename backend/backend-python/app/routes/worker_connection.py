@@ -2,7 +2,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 router = APIRouter()
 
-@router.websocket('/ws/worker')
+@router.websocket('/ws/worker-test')
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     try:

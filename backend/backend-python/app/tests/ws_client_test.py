@@ -2,7 +2,7 @@ import asyncio
 import websockets
 
 async def test_websocket():
-    uri = 'ws://localhost:8000/ws/worker'
+    uri = 'ws://localhost:8000/ws/worker-test'
     async with websockets.connect(uri) as websocket:
         counter = 1
         while True:
