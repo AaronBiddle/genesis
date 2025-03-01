@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { WS_URL } from '../config.js';
     
     interface Message {
         id: number;
@@ -11,8 +12,12 @@
     let messages: Message[] = [];
     let newMessage = '';
     let messageContainer: HTMLElement;
-    
-    // Add some sample messages for demonstration
+
+    let ws: WebSocket;
+    let currentResponseId: number | null = null;
+    let wsConnected: boolean = false;
+
+    // Add some sample system greeting message
     onMount(() => {
         messages = [
             {
@@ -22,40 +27,116 @@
                 timestamp: new Date()
             }
         ];
+
+        // Connect to the websocket endpoint
+        ws = new WebSocket(`${WS_URL}/ws/chat`);
+
+        ws.onopen = () => {
+            console.log('WebSocket connected');
+            wsConnected = true;
+        };
+
+        ws.onclose = () => {
+            console.log('WebSocket closed');
+            wsConnected = false;
+        };
+
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            wsConnected = false;
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                // Handle error messages
+                if (data.error) {
+                    // Append error as a system message
+                    const errorMsg: Message = {
+                        id: messages.length + 1,
+                        text: `Error: ${data.error}${data.details ? ' - ' + data.details : ''}`,
+                        sender: 'system',
+                        timestamp: new Date()
+                    };
+                    messages = [...messages, errorMsg];
+                    currentResponseId = null;
+                    return;
+                }
+
+                // Handle streaming tokens
+                if (data.token !== undefined) {
+                    if (currentResponseId === null) {
+                        // Create a new system message for the response
+                        currentResponseId = messages.length + 1;
+                        messages = [...messages, {
+                            id: currentResponseId,
+                            text: data.token,
+                            sender: 'system',
+                            timestamp: new Date()
+                        }];
+                    } else {
+                        // Append token to the last system message
+                        messages = messages.map(msg => {
+                            if (msg.id === currentResponseId) {
+                                return { ...msg, text: msg.text + data.token };
+                            }
+                            return msg;
+                        });
+                    }
+
+                    // Auto-scroll on token receipt
+                    if (messageContainer) {
+                        setTimeout(() => {
+                            messageContainer.scrollTop = messageContainer.scrollHeight;
+                        }, 0);
+                    }
+                }
+
+                // If done flag is received, reset current response
+                if (data.done) {
+                    currentResponseId = null;
+                }
+            } catch (e) {
+                console.error('Error parsing websocket message:', e);
+            }
+        };
     });
     
     function sendMessage() {
         if (!newMessage.trim()) return;
         
-        // Add user message
+        // Add user message to chat
         const userMessage: Message = {
             id: messages.length + 1,
             text: newMessage.trim(),
             sender: 'user',
             timestamp: new Date()
         };
-        
         messages = [...messages, userMessage];
-        newMessage = '';
+
+        // Prepare payload for websocket
+        const payload = {
+            prompt: newMessage.trim(),
+            history: messages.map(msg => ({ role: msg.sender, content: msg.text }))
+        };
         
-        // Simulate a response after a short delay
-        setTimeout(() => {
-            const systemMessage: Message = {
+        // Send payload if websocket is open
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify(payload));
+        } else {
+            console.error('WebSocket is not connected.');
+            const errorMsg: Message = {
                 id: messages.length + 1,
-                text: `I received your message: "${userMessage.text}"`,
+                text: 'Error: Not connected to server',
                 sender: 'system',
                 timestamp: new Date()
             };
-            
-            messages = [...messages, systemMessage];
-            
-            // Scroll to bottom
-            if (messageContainer) {
-                setTimeout(() => {
-                    messageContainer.scrollTop = messageContainer.scrollHeight;
-                }, 0);
-            }
-        }, 1000);
+            messages = [...messages, errorMsg];
+        }
+
+        // Clear the input and prepare for response
+        newMessage = '';
+        currentResponseId = null; // will be set on receiving first token
     }
     
     function handleKeyDown(event: KeyboardEvent) {
@@ -73,37 +154,44 @@
     }
 </script>
 
-<div class="flex flex-col h-full p-4">
-    <h2 class="text-xl font-bold mb-4">Chatbox</h2>
-    
-    <div bind:this={messageContainer} class="flex-1 overflow-y-auto mb-4 border border-gray-200 rounded-lg p-3">
-        {#each messages as message (message.id)}
-            <div class="mb-3 {message.sender === 'user' ? 'text-right' : 'text-left'}">
-                <div class="inline-block max-w-[80%] px-4 py-2 rounded-lg {message.sender === 'user' ? 'bg-blue-500 text-white ml-auto' : 'bg-gray-200 text-gray-800 mr-auto'}">
-                    <p>{message.text}</p>
-                    <p class="text-xs mt-1 opacity-70">
-                        {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                    </p>
-                </div>
-            </div>
-        {/each}
+<!-- Connection status indicator -->
+<div style="position: relative;">
+    <div style="position: absolute; top: 8px; right: 8px;">
+        <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color: {wsConnected ? 'green' : 'red'};"></span>
     </div>
-    
-    <div class="flex">
-        <textarea 
-            bind:value={newMessage} 
-            on:keydown={handleKeyDown}
-            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg mr-2 resize-none"
-            rows="2"
-            placeholder="Type your message here..."
-        ></textarea>
+
+    <div class="flex flex-col h-full p-4">
+        <h2 class="text-xl font-bold mb-4">Chatbox</h2>
         
-        <button 
-            on:click={sendMessage}
-            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors self-end"
-            disabled={!newMessage.trim()}
-        >
-            Send
-        </button>
+        <div bind:this={messageContainer} class="flex-1 overflow-y-auto mb-4 border border-gray-200 rounded-lg p-3">
+            {#each messages as message (message.id)}
+                <div class="mb-3 {message.sender === 'user' ? 'text-right' : 'text-left'}">
+                    <div class="inline-block max-w-[80%] px-4 py-2 rounded-lg {message.sender === 'user' ? 'bg-blue-500 text-white ml-auto' : 'bg-gray-200 text-gray-800 mr-auto'}">
+                        <p>{message.text}</p>
+                        <p class="text-xs mt-1 opacity-70">
+                            {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </p>
+                    </div>
+                </div>
+            {/each}
+        </div>
+        
+        <div class="flex">
+            <textarea 
+                bind:value={newMessage} 
+                on:keydown={handleKeyDown}
+                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg mr-2 resize-none"
+                rows="2"
+                placeholder="Type your message here..."
+            ></textarea>
+            
+            <button 
+                on:click={sendMessage}
+                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors self-end"
+                disabled={!newMessage.trim()}
+            >
+                Send
+            </button>
+        </div>
     </div>
 </div> 
