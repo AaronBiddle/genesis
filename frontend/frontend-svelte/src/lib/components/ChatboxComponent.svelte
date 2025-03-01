@@ -17,12 +17,10 @@
     let currentResponseId: number | null = null;
     let wsConnected: boolean = false;
 
-    // Add some sample system greeting message
-    onMount(() => {
-
-        // Connect to the websocket endpoint
+    // New function to initialize websocket connection
+    function connect() {
         ws = new WebSocket(`${WS_URL}/ws/chat`);
-
+        
         ws.onopen = () => {
             console.log('WebSocket connected');
             wsConnected = true;
@@ -94,6 +92,11 @@
                 console.error('Error parsing websocket message:', e);
             }
         };
+    }
+    
+    onMount(() => {
+        // Connect to the websocket endpoint
+        connect();
     });
     
     function sendMessage() {
@@ -153,7 +156,11 @@
 <!-- Connection status indicator -->
 <div class="flex flex-col h-full" style="position: relative;">
     <div style="position: absolute; top: 8px; right: 8px;">
-        <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color: {wsConnected ? 'green' : 'red'};"></span>
+        {#if wsConnected}
+            <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color: green;"></span>
+        {:else}
+            <button aria-label="Reconnect" on:click={connect} style="background-color: red; border: none; border-radius: 50%; width:12px; height:12px; cursor: pointer;" title="Reconnect"></button>
+        {/if}
     </div>
 
     <div class="flex flex-col h-full min-h-0 relative overflow-hidden p-1" style="height: 100%;">
