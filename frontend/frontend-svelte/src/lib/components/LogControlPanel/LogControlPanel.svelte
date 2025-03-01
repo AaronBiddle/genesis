@@ -1,6 +1,7 @@
 <script lang="ts">
-    import { LOG_LEVELS, LOG_DOMAINS, NAMESPACES, logConfigStore } from './logConfig';
-    import type { LogLevel } from './logConfig';
+    import { logConfigStore } from './logConfig';
+    import { LOG_LEVELS, LOG_DOMAINS, NAMESPACES } from '$lib/appConfig';
+    import type { LogLevel } from '$lib/appConfig';
     import { onMount } from 'svelte';
     
     // Keep track of namespace filter text

@@ -1,28 +1,9 @@
 import { writable, type Updater, get } from 'svelte/store';
-import { PROJECT_NAMESPACES } from '../../appConfig';
-
-// Common log levels (in order of increasing severity)
-export const LOG_LEVELS = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'] as const;
-export type LogLevel = typeof LOG_LEVELS[number];
-
-export interface LogDomain {
-    id: string;
-    label: string;
-    description: string;
-}
-
-// Log domains represent functional areas across the application
-export const LOG_DOMAINS: LogDomain[] = [
-    { id: 'network', label: 'Network', description: 'API calls, WebSocket, fetch operations' },
-    { id: 'ui', label: 'User Interface', description: 'Component rendering, events, interactions' },
-    { id: 'data', label: 'Data Layer', description: 'State management, data transformations' },
-    { id: 'auth', label: 'Authentication', description: 'Login, sessions, permissions' },
-    { id: 'perf', label: 'Performance', description: 'Timings, optimizations, memory usage' }
-];
+import { NAMESPACES, LOG_LEVELS, LOG_DOMAINS } from '../../appConfig';
+import type { LogLevel, LogDomain } from '../../appConfig';
 
 // Namespaces represent specific modules or components
 // Use project namespaces directly
-export const NAMESPACES = PROJECT_NAMESPACES;
 
 export type NamespaceFilterType = 'include' | 'exclude';
 
@@ -69,7 +50,7 @@ function createPersistedLogStore() {
             console.error('Failed to load persisted log configuration:', error);
         }
     } else {
-        console.warn('localStorage is not available, using default log configuration');
+        //console.warn('localStorage is not available, using default log configuration');
     }
     
     // Create the store with the initial value
@@ -187,13 +168,13 @@ export const logConfigStore = createPersistedLogStore();
 // Example of how to use the logger (can be exported as a utility)
 export function shouldLog(
     level: LogLevel, 
-    namespace: string, 
-    domain?: string
+    domain: string, 
+    namespace: string
 ): boolean {
     const config = get(logConfigStore);
     
     // Check if the domain is enabled
-    if (domain && !config.enabledDomains.includes(domain)) {
+    if (!config.enabledDomains.includes(domain)) {
         return false;
     }
     
@@ -210,7 +191,7 @@ export function shouldLog(
     }
     
     // Check domain-specific level override
-    if (domain && config.domainOverrides[domain]) {
+    if (config.domainOverrides[domain]) {
         const domainLevel = config.domainOverrides[domain];
         return LOG_LEVELS.indexOf(level) >= LOG_LEVELS.indexOf(domainLevel);
     }
@@ -222,18 +203,18 @@ export function shouldLog(
 // Helper function to actually log messages (example implementation)
 export function log(
     level: LogLevel,
-    message: string,
+    domain: string,
     namespace: string,
-    domain?: string,
+    message: string,
     ...args: any[]
 ): void {
-    if (!shouldLog(level, namespace, domain)) {
+    if (!shouldLog(level, domain, namespace)) {
         return;
     }
-    
+
     const timestamp = new Date().toISOString();
     const domainStr = domain ? `[${domain}] ` : '';
-    
+
     switch (level) {
         case 'TRACE':
             console.debug(`${timestamp} TRACE ${domainStr}${namespace}:`, message, ...args);
@@ -254,4 +235,4 @@ export function log(
             console.error(`${timestamp} FATAL ${domainStr}${namespace}:`, message, ...args);
             break;
     }
-} 
+}
