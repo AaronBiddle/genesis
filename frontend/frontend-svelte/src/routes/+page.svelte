@@ -6,6 +6,7 @@
   import NotesComponent from '$lib/components/NotesComponent.svelte';
   import WeatherComponent from '$lib/components/WeatherComponent.svelte';
   import ChatboxComponent from '$lib/components/ChatboxComponent.svelte';
+  import WorkerRequestsTest from '$lib/components/WorkerRequestsTest.svelte';
   import LogControlPanel from '$lib/components/LogControlPanel/LogControlPanel.svelte';
 
   // Register the app components to be available in the dropdown
@@ -29,6 +30,11 @@
       id: 'chatbox',
       label: 'Chatbox',
       component: ChatboxComponent
+    },
+    {
+      id: 'worker-test',
+      label: 'Worker Test',
+      component: WorkerRequestsTest
     },
     {
       id: 'logcontrol',
