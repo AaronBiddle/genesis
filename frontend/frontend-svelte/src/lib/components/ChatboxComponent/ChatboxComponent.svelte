@@ -37,6 +37,28 @@
         });
     }
 
+    // Settings
+    let temperature = 0.7;
+    let systemPrompt = "You are a helpful AI assistant.";
+    let settingsApplied = false;
+
+    // Function to update settings
+    function updateSettings() {
+        // Log the updated settings
+        console.log("Settings updated:", { temperature, systemPrompt });
+        
+        // Show a confirmation message
+        settingsApplied = true;
+        
+        // Hide the confirmation after 2 seconds
+        setTimeout(() => {
+            settingsApplied = false;
+        }, 2000);
+        
+        // If we wanted to send a notification to the backend about settings change
+        // outside of a regular message, we could do it here
+    }
+
     // Default settings
     let defaultMarkdown = true;
     let chatTheme = 'light';
@@ -131,7 +153,9 @@
         // Prepare payload for websocket
         const payload = {
             prompt: newMessage.trim(),
-            history: messages.map(msg => ({ role: msg.sender, content: msg.text }))
+            history: messages.map(msg => ({ role: msg.sender, content: msg.text })),
+            system_prompt: systemPrompt,
+            temperature: temperature
         };
         
         // Send payload if websocket is open
@@ -207,57 +231,64 @@
             <div class="flex-1 p-3 border border-gray-200 rounded-lg overflow-y-auto">
                 <div class="space-y-6">
                     <div>
-                        <h3 class="text-lg font-medium mb-2">Chat Preferences</h3>
-                        <div class="space-y-3 pl-2">
-                            <div class="flex items-center justify-between">
-                                <label for="markdown-default" class="text-sm font-medium">Default to Markdown</label>
-                                <input type="checkbox" id="markdown-default" bind:checked={defaultMarkdown}>
+                        <h3 class="text-lg font-medium mb-3">Model Settings</h3>
+                        <div class="space-y-5 pl-2">
+                            <div>
+                                <label for="temperature" class="block text-sm font-medium mb-1">Temperature: {temperature}</label>
+                                <div class="flex items-center">
+                                    <span class="text-xs mr-2">0.1</span>
+                                    <input 
+                                        type="range" 
+                                        id="temperature" 
+                                        min="0.1" 
+                                        max="2.0" 
+                                        step="0.1" 
+                                        bind:value={temperature} 
+                                        class="w-full"
+                                    >
+                                    <span class="text-xs ml-2">2.0</span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Lower values make responses more focused and deterministic. Higher values make responses more creative and varied.
+                                </p>
                             </div>
                             
-                            <div class="flex items-center justify-between">
-                                <label for="chat-theme" class="text-sm font-medium">Chat Theme</label>
-                                <select id="chat-theme" bind:value={chatTheme} class="border border-gray-300 rounded px-2 py-1">
-                                    <option value="light">Light</option>
-                                    <option value="dark">Dark</option>
-                                    <option value="system">System Default</option>
-                                </select>
+                            <div>
+                                <label for="system-prompt" class="block text-sm font-medium mb-1">System Prompt</label>
+                                <textarea 
+                                    id="system-prompt" 
+                                    bind:value={systemPrompt} 
+                                    class="w-full px-2 py-1 border border-gray-300 rounded resize-vertical"
+                                    rows="4"
+                                ></textarea>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    This sets the behavior and context for the AI assistant.
+                                </p>
                             </div>
                         </div>
                     </div>
                     
-                    <div>
-                        <h3 class="text-lg font-medium mb-2">Connection</h3>
-                        <div class="space-y-3 pl-2">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm font-medium">Connection Status</span>
-                                <span class="flex items-center">
-                                    {#if wsConnected}
-                                        <span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-2"></span>
-                                        <span class="text-sm">Connected</span>
-                                    {:else}
-                                        <span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-2"></span>
-                                        <span class="text-sm">Disconnected</span>
-                                    {/if}
+                    <div class="flex justify-between items-center">
+                        <div class="text-sm">
+                            {#if settingsApplied}
+                                <span class="text-green-600 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                    </svg>
+                                    Settings applied
                                 </span>
-                            </div>
-                            
-                            <div class="flex justify-end">
-                                <button 
-                                    on:click={connect}
-                                    class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-                                >
-                                    Reconnect
-                                </button>
-                            </div>
+                            {/if}
                         </div>
+                        <button 
+                            on:click={updateSettings}
+                            class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                        >
+                            Apply Settings
+                        </button>
                     </div>
                     
-                    <div>
-                        <h3 class="text-lg font-medium mb-2">About</h3>
-                        <div class="space-y-2 pl-2 text-sm">
-                            <p>Chat Version: 1.0.0</p>
-                            <p>© 2023 Your Company</p>
-                        </div>
+                    <div class="text-xs text-gray-500 border-t pt-3">
+                        <p>These settings will be applied to your next message.</p>
                     </div>
                 </div>
             </div>
