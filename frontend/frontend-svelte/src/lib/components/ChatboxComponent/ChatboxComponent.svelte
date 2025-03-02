@@ -163,39 +163,43 @@
 </script>
 
 <!-- Main container -->
-<div class="flex flex-col h-full" style="position: relative;">
-    <!-- Move connection indicator to the top-right with more space -->
-    <div style="position: absolute; top: 8px; right: 8px; z-index: 9999; pointer-events: auto;">
-        {#if wsConnected}
-            <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color: green;"></span>
-        {:else}
-            <button aria-label="Reconnect" on:click={connect} style="background-color: red; border: none; border-radius: 50%; width:12px; height:12px; cursor: pointer; pointer-events: auto; position: relative; z-index: 9999 !important;" title="Reconnect"></button>
-        {/if}
-    </div>
-
-    <div class="flex flex-col h-full min-h-0 relative overflow-hidden p-1" style="height: 100%; z-index: 1;">
-        <!-- Header with title and settings button -->
-        <div class="flex justify-between items-center mb-1 pr-6">
+<div class="flex flex-col h-full">
+    <div class="flex flex-col h-full min-h-0 relative overflow-hidden p-1" style="height: 100%;">
+        <!-- Header with title, settings button, and connection indicator -->
+        <div class="flex justify-between items-center mb-1">
             <h2 class="text-xl font-bold">{showSettings ? 'Settings' : 'Chatbox'}</h2>
-            <button 
-                aria-label={showSettings ? "Back to Chat" : "Settings"}
-                on:click={toggleSettings} 
-                class="text-gray-600 hover:text-gray-800 p-1 rounded-full hover:bg-gray-200"
-                title={showSettings ? "Back to Chat" : "Settings"}
-            >
-                {#if showSettings}
-                    <!-- Chat icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
+            <div class="flex items-center">
+                <button 
+                    aria-label={showSettings ? "Back to Chat" : "Settings"}
+                    on:click={toggleSettings} 
+                    class="text-gray-600 hover:text-gray-800 p-1 rounded-full hover:bg-gray-200 mr-2"
+                    title={showSettings ? "Back to Chat" : "Settings"}
+                >
+                    {#if showSettings}
+                        <!-- Chat icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    {:else}
+                        <!-- Settings icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                    {/if}
+                </button>
+                <!-- Connection indicator in the normal flow -->
+                {#if wsConnected}
+                    <span class="inline-block w-3 h-3 rounded-full bg-green-500" title="Connected"></span>
                 {:else}
-                    <!-- Settings icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                    </svg>
+                    <button 
+                        aria-label="Reconnect" 
+                        on:click={connect} 
+                        class="inline-block w-3 h-3 rounded-full bg-red-500 cursor-pointer" 
+                        title="Disconnected - Click to reconnect"
+                    ></button>
                 {/if}
-            </button>
+            </div>
         </div>
 
         {#if showSettings}
