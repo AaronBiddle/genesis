@@ -3,7 +3,6 @@
   import MultiViewBackground from '$lib/components/MultiViewPanel/MultiViewBackground.svelte';
   import { panels } from '$lib/components/MultiViewPanel/panelStore';
   import NotesComponent from '$lib/components/NotesComponent.svelte';
-  import WeatherComponent from '$lib/components/WeatherComponent.svelte';
   import ChatboxComponent from '$lib/components/ChatboxComponent/ChatboxComponent.svelte';
   import WorkerRequestsTest from '$lib/components/WorkerRequestsTest.svelte';
   import LogControlPanel from '$lib/components/LogControlPanel/LogControlPanel.svelte';
@@ -14,11 +13,6 @@
       id: 'notes',
       label: 'Notes',
       component: NotesComponent
-    },
-    {
-      id: 'weather',
-      label: 'Weather',
-      component: WeatherComponent
     },
     {
       id: 'chatbox',

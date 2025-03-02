@@ -20,6 +20,10 @@
     margin-left: 1.5rem;
     padding-left: 0.5rem;
   }
+  :global(.markdown-content p) {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
 </style>
 
 <div class="markdown-content">{@html marked(content)}</div> 
