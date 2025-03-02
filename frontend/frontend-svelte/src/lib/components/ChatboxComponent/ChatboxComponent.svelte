@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { WS_URL } from '../config.js';
-    import MarkdownRenderer from './MarkdownRenderer.svelte';
+    import { WS_URL } from '$lib/config.js';
+    import MarkdownRenderer from '$lib/components/MarkdownRenderer.svelte';
     
     interface Message {
         id: number;
@@ -174,7 +174,7 @@
                 <div bind:this={messageContainer} class="flex-1 overflow-y-auto p-3">
                     {#each messages as message (message.id)}
                         <div class="mb-2 {message.sender === 'user' ? 'text-right' : 'text-left'}">
-                            <div class="inline-block max-w-[80%] px-2 py-1 rounded-lg {message.sender === 'user' ? 'bg-blue-500 text-white ml-auto' : 'bg-gray-200 text-gray-800 mr-auto'}">
+                            <div class="inline-block max-w-[90%] px-2 py-1 rounded-lg {message.sender === 'user' ? 'bg-blue-500 text-white ml-auto' : 'bg-gray-200 text-gray-800 mr-auto'}">
                                 <!-- Render the markdown content -->
                                 <MarkdownRenderer content={message.text} />
                             </div>

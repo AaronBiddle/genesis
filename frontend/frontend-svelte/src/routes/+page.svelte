@@ -5,7 +5,7 @@
   import CounterComponent from '$lib/components/CounterComponent.svelte';
   import NotesComponent from '$lib/components/NotesComponent.svelte';
   import WeatherComponent from '$lib/components/WeatherComponent.svelte';
-  import ChatboxComponent from '$lib/components/ChatboxComponent.svelte';
+  import ChatboxComponent from '$lib/components/ChatboxComponent/ChatboxComponent.svelte';
   import WorkerRequestsTest from '$lib/components/WorkerRequestsTest.svelte';
   import LogControlPanel from '$lib/components/LogControlPanel/LogControlPanel.svelte';
 
