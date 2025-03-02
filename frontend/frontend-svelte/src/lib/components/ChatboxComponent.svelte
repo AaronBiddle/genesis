@@ -158,15 +158,15 @@
 
 <!-- Connection status indicator -->
 <div class="flex flex-col h-full" style="position: relative;">
-    <div style="position: absolute; top: 8px; right: 8px;">
+    <div style="position: absolute; top: 8px; right: 8px; z-index: 9999; pointer-events: auto;">
         {#if wsConnected}
             <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color: green;"></span>
         {:else}
-            <button aria-label="Reconnect" on:click={connect} style="background-color: red; border: none; border-radius: 50%; width:12px; height:12px; cursor: pointer;" title="Reconnect"></button>
+            <button aria-label="Reconnect" on:click={connect} style="background-color: red; border: none; border-radius: 50%; width:12px; height:12px; cursor: pointer; pointer-events: auto; position: relative; z-index: 9999 !important;" title="Reconnect"></button>
         {/if}
     </div>
 
-    <div class="flex flex-col h-full min-h-0 relative overflow-hidden p-1" style="height: 100%;">
+    <div class="flex flex-col h-full min-h-0 relative overflow-hidden p-1" style="height: 100%; z-index: 1;">
         <h2 class="text-xl font-bold mb-1">Chatbox</h2>
 
         <div class="flex-1 p-1 min-h-0">
