@@ -17,7 +17,9 @@
     {
       id: 'chatbox',
       label: 'Chatbox',
-      component: ChatboxComponent
+      component: ChatboxComponent,
+      suggestedWidth: 600,
+      suggestedHeight: 840
     },
     {
       id: 'worker-test',
