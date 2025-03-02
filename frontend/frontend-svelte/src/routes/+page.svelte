@@ -54,7 +54,7 @@
       </svg>
     </button>
   </header>
-  <main class="flex-1 w-full overflow-auto">
+  <main class="flex-1 w-full overflow-hidden">
     <MultiViewBackground>
       {#each $panels as panel (panel.id)}
         <MultiViewPanel panel={panel} {apps} />
