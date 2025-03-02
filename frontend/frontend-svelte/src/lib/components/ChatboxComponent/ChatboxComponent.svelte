@@ -8,6 +8,7 @@
         text: string;
         sender: 'user' | 'system';
         timestamp: Date;
+        renderMarkdown?: boolean; // optional flag to enable markdown rendering (default true)
     }
     
     let messages: Message[] = [];
@@ -17,6 +18,16 @@
     let ws: WebSocket;
     let currentResponseId: number | null = null;
     let wsConnected: boolean = false;
+
+    // New function to toggle markdown rendering for a system message
+    function toggleMarkdown(id: number) {
+        messages = messages.map(msg => {
+            if (msg.id === id) {
+                return { ...msg, renderMarkdown: msg.renderMarkdown === false ? true : false };
+            }
+            return msg;
+        });
+    }
 
     // New function to initialize websocket connection
     function connect() {
@@ -47,7 +58,8 @@
                         id: messages.length + 1,
                         text: `Error: ${data.error}${data.details ? ' - ' + data.details : ''}`,
                         sender: 'system',
-                        timestamp: new Date()
+                        timestamp: new Date(),
+                        renderMarkdown: true
                     };
                     messages = [...messages, errorMsg];
                     currentResponseId = null;
@@ -57,13 +69,14 @@
                 // Handle streaming tokens
                 if (data.token !== undefined) {
                     if (currentResponseId === null) {
-                        // Create a new system message for the response
+                        // Create a new system message for the response, default to markdown enabled
                         currentResponseId = messages.length + 1;
                         messages = [...messages, {
                             id: currentResponseId,
                             text: data.token,
                             sender: 'system',
-                            timestamp: new Date()
+                            timestamp: new Date(),
+                            renderMarkdown: true
                         }];
                     } else {
                         // Append token to the last system message
@@ -128,7 +141,8 @@
                 id: messages.length + 1,
                 text: 'Error: Not connected to server',
                 sender: 'system',
-                timestamp: new Date()
+                timestamp: new Date(),
+                renderMarkdown: true
             };
             messages = [...messages, errorMsg];
         }
@@ -174,10 +188,22 @@
                 <div bind:this={messageContainer} class="flex-1 overflow-y-auto p-3">
                     {#each messages as message (message.id)}
                         <div class="mb-2 {message.sender === 'user' ? 'text-right' : 'text-left'}">
-                            <div class="inline-block max-w-[90%] px-2 py-1 rounded-lg {message.sender === 'user' ? 'bg-blue-500 text-white ml-auto' : 'bg-gray-200 text-gray-800 mr-auto'}">
-                                <!-- Render the markdown content -->
-                                <MarkdownRenderer content={message.text} />
-                            </div>
+                            {#if message.sender === 'system'}
+                                <div class="relative inline-block max-w-[95%] px-2 py-1 rounded-lg bg-gray-200 text-gray-800 mr-auto group">
+                                    {#if message.renderMarkdown === false}
+                                        <span>{message.text}</span>
+                                    {:else}
+                                        <MarkdownRenderer content={message.text} />
+                                    {/if}
+                                    <button on:click={() => toggleMarkdown(message.id)} class="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-300 text-xs px-1 py-0.5 rounded">
+                                        {message.renderMarkdown === false ? '<>' : '<>'}
+                                    </button>
+                                </div>
+                            {:else}
+                                <div class="inline-block max-w-[90%] px-2 py-1 rounded-lg bg-blue-500 text-white ml-auto">
+                                    <span>{message.text}</span>
+                                </div>
+                            {/if}
                         </div>
                     {/each}
                 </div>
