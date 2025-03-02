@@ -87,16 +87,6 @@
                             return msg;
                         });
                     }
-
-                    // Auto-scroll on token receipt
-                    if (messageContainer) {
-                        setTimeout(() => {
-                            // Only auto-scroll if the user is near the bottom (within 50px)
-                            if (messageContainer.scrollTop + messageContainer.clientHeight >= messageContainer.scrollHeight - 50) {
-                                messageContainer.scrollTop = messageContainer.scrollHeight;
-                            }
-                        }, 0);
-                    }
                 }
 
                 // If done flag is received, reset current response
@@ -158,16 +148,6 @@
             sendMessage();
         }
     }
-    
-    // Auto-scroll when messages update
-    $: if (messageContainer && messages.length) {
-        setTimeout(() => {
-            // Only auto-scroll if the user is near the bottom (within 50px)
-            if (messageContainer.scrollTop + messageContainer.clientHeight >= messageContainer.scrollHeight - 50) {
-                messageContainer.scrollTop = messageContainer.scrollHeight;
-            }
-        }, 0);
-    }
 </script>
 
 <!-- Connection status indicator -->
@@ -189,7 +169,7 @@
                     {#each messages as message (message.id)}
                         <div class="mb-2 {message.sender === 'user' ? 'text-right' : 'text-left'}">
                             {#if message.sender === 'system'}
-                                <div class="relative inline-block max-w-[95%] px-2 py-1 rounded-lg bg-gray-200 text-gray-800 mr-auto group">
+                                <div class="relative inline-block max-w-[95%] px-4 rounded-lg bg-gray-200 text-gray-800 mr-auto group">
                                     {#if message.renderMarkdown === false}
                                         <span>{message.text}</span>
                                     {:else}
@@ -200,7 +180,7 @@
                                     </button>
                                 </div>
                             {:else}
-                                <div class="inline-block max-w-[90%] px-2 py-1 rounded-lg bg-blue-500 text-white ml-auto">
+                                <div class="inline-block max-w-[95%] px-4 py-1 rounded-lg bg-blue-500 text-white ml-auto">
                                     <span>{message.text}</span>
                                 </div>
                             {/if}
