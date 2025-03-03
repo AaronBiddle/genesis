@@ -3,7 +3,7 @@ import json
 from services.openai_client import stream_chat_response
 from utils.logging import LogLevel, log
 import asyncio
-from typing import Dict, Any, Set
+from typing import Dict, Any, Set, List
 
 router = APIRouter()
 
@@ -12,6 +12,9 @@ DEBUG_CHAT = False
 # Track active tasks by session ID
 active_tasks: Dict[str, Set[asyncio.Task]] = {}
 
+# Track message queues by session ID
+message_queues: Dict[str, List[Dict[str, Any]]] = {}
+
 @router.websocket("/ws/chat")
 async def ai_chat_endpoint(websocket: WebSocket):
     connection_id = id(websocket)  # Unique identifier for this connection
@@ -19,39 +22,30 @@ async def ai_chat_endpoint(websocket: WebSocket):
         await websocket.accept()
         log(LogLevel.MINIMUM, f"🐍 WebSocket connection established (id: {connection_id})")
         
-        while True:
-            # Wait for the next message
-            data_text = await websocket.receive_text()
-            log(LogLevel.MINIMUM, f"🐍 Received message ({len(data_text)} bytes)")
+        # Create a task to receive messages
+        receiver_task = asyncio.create_task(
+            message_receiver(websocket, connection_id)
+        )
+        
+        # Create a task to process messages from the queue
+        processor_task = asyncio.create_task(
+            message_processor(websocket, connection_id)
+        )
+        
+        # Wait for either task to complete
+        done, pending = await asyncio.wait(
+            [receiver_task, processor_task],
+            return_when=asyncio.FIRST_COMPLETED
+        )
+        
+        # Cancel any pending tasks
+        for task in pending:
+            task.cancel()
             
-            # Parse the message
-            data = json.loads(data_text)
-            
-            # Extract session ID
-            session_id = data.get("sessionId")
-            if not session_id:
-                log(LogLevel.ERROR, f"🐍 Missing sessionId in message")
-                await websocket.send_text(json.dumps({
-                    "error": "Missing sessionId in message"
-                }))
-                continue
-            
-            # Initialize task set for this session if it doesn't exist
-            if session_id not in active_tasks:
-                active_tasks[session_id] = set()
-            
-            # Create a new task to process this message concurrently
-            task = asyncio.create_task(process_message(websocket, data, session_id, connection_id))
-            active_tasks[session_id].add(task)
-            log(LogLevel.MINIMUM, f"🐍 Created new task for session {session_id} (connection: {connection_id}, active tasks: {len(active_tasks[session_id])})")
-            
-            # Clean up completed tasks
-            done_tasks = {t for t in active_tasks[session_id] if t.done()}
-            for task in done_tasks:
-                active_tasks[session_id].discard(task)
-                # Check for exceptions
-                if task.exception():
-                    log(LogLevel.ERROR, f"🐍 Task failed with exception (session: {session_id}, connection: {connection_id}): {task.exception()}")
+        # Re-raise any exceptions
+        for task in done:
+            if task.exception():
+                raise task.exception()
             
     except WebSocketDisconnect as e:
         close_codes = {
@@ -78,6 +72,74 @@ async def ai_chat_endpoint(websocket: WebSocket):
             await websocket.close(code=1011, reason="Internal server error")
         except:
             pass
+
+async def message_receiver(websocket: WebSocket, connection_id: int):
+    """Task that receives messages from the WebSocket and adds them to the queue."""
+    try:
+        while True:
+            # Wait for the next message
+            data_text = await websocket.receive_text()
+            log(LogLevel.MINIMUM, f"🐍 Received message ({len(data_text)} bytes)")
+            
+            # Parse the message
+            data = json.loads(data_text)
+            
+            # Extract session ID
+            session_id = data.get("sessionId")
+            if not session_id:
+                log(LogLevel.ERROR, f"🐍 Missing sessionId in message")
+                await websocket.send_text(json.dumps({
+                    "error": "Missing sessionId in message"
+                }))
+                continue
+            
+            # Initialize message queue for this session if it doesn't exist
+            if session_id not in message_queues:
+                message_queues[session_id] = []
+            
+            # Add message to the queue
+            message_queues[session_id].append(data)
+            log(LogLevel.MINIMUM, f"🐍 Added message to queue for session {session_id} (queue size: {len(message_queues[session_id])})")
+            
+    except Exception as e:
+        log(LogLevel.ERROR, f"🐍 Message receiver error (connection: {connection_id}): {str(e)}")
+        raise
+
+async def message_processor(websocket: WebSocket, connection_id: int):
+    """Task that processes messages from the queue."""
+    try:
+        while True:
+            # Check all message queues
+            for session_id, queue in list(message_queues.items()):
+                if queue:
+                    # Get the next message
+                    data = queue.pop(0)
+                    log(LogLevel.MINIMUM, f"🐍 Processing message from queue for session {session_id} (remaining: {len(queue)})")
+                    
+                    # Initialize task set for this session if it doesn't exist
+                    if session_id not in active_tasks:
+                        active_tasks[session_id] = set()
+                    
+                    # Create a new task to process this message concurrently
+                    task = asyncio.create_task(process_message(websocket, data, session_id, connection_id))
+                    active_tasks[session_id].add(task)
+                    log(LogLevel.MINIMUM, f"🐍 Created new task for session {session_id} (connection: {connection_id}, active tasks: {len(active_tasks[session_id])})")
+            
+            # Clean up completed tasks
+            for session_id, tasks in list(active_tasks.items()):
+                done_tasks = {t for t in tasks if t.done()}
+                for task in done_tasks:
+                    active_tasks[session_id].discard(task)
+                    # Check for exceptions
+                    if task.exception():
+                        log(LogLevel.ERROR, f"🐍 Task failed with exception (session: {session_id}, connection: {connection_id}): {task.exception()}")
+            
+            # Sleep briefly to avoid CPU spinning
+            await asyncio.sleep(0.01)
+            
+    except Exception as e:
+        log(LogLevel.ERROR, f"🐍 Message processor error (connection: {connection_id}): {str(e)}")
+        raise
 
 async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id: str, connection_id: int):
     task_id = id(asyncio.current_task())
