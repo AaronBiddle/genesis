@@ -164,6 +164,6 @@
 
     <!-- Content Area: Render the component for the current app -->
     <div class="flex-1 overflow-auto p-1" style={`height: ${panel.height - 40}px;`}>
-        <svelte:component this={currentApp.component} />
+        <svelte:component this={currentApp.component} panelId={panel.id} />
     </div>
 </div> 
