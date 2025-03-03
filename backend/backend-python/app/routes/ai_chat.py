@@ -237,10 +237,45 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
             try:
                 log(LogLevel.MINIMUM, f"🐍 Starting API stream for session {session_id} at {time.time():.3f} (connection: {connection_id}, task: {task_id})")
                 
+                # Create a queue for stream chunks
+                chunk_queue = asyncio.Queue()
+                
+                # Function to fill the queue from the stream
+                async def fill_queue():
+                    try:
+                        async for content_chunk, chunk_usage in stream_chat_response(prompt, history, temperature):
+                            await chunk_queue.put((content_chunk, chunk_usage, None))
+                        # Mark end of stream
+                        await chunk_queue.put((None, None, None))
+                    except Exception as e:
+                        log(LogLevel.ERROR, f"🐍 Stream error in fill_queue: {str(e)} (session: {session_id}, task: {task_id})")
+                        await chunk_queue.put((None, None, e))
+                
+                # Start filling the queue in a separate task
+                fill_task = asyncio.create_task(fill_queue())
+                log(LogLevel.MINIMUM, f"🐍 Created stream processing task for session {session_id} at {time.time():.3f} (connection: {connection_id}, task: {task_id})")
+                
                 # Track time for each chunk
                 last_chunk_time = time.time()
                 
-                async for content_chunk, chunk_usage in stream_chat_response(prompt, history, temperature):
+                # Process chunks from the queue
+                while True:
+                    # Get the next chunk with a short timeout to avoid blocking indefinitely
+                    try:
+                        content_chunk, chunk_usage, error = await asyncio.wait_for(chunk_queue.get(), timeout=0.1)
+                    except asyncio.TimeoutError:
+                        # No chunk available yet, yield control back to event loop
+                        log(LogLevel.DEBUGGING, f"🐍 Waiting for next chunk (session: {session_id}, task: {task_id})")
+                        await asyncio.sleep(0)
+                        continue
+                    
+                    # Check for end of stream or error
+                    if error:
+                        raise error
+                    if content_chunk is None:
+                        log(LogLevel.DEBUGGING, f"🐍 End of stream reached (session: {session_id}, task: {task_id})")
+                        break
+                    
                     current_time = time.time()
                     chunk_delay = current_time - last_chunk_time
                     last_chunk_time = current_time
@@ -265,6 +300,14 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                             "tokenCount": streaming_token_count  # Helps client track progress
                         }
                         await websocket.send_text(json.dumps(message))
+                
+                # Clean up the fill task
+                if not fill_task.done():
+                    fill_task.cancel()
+                    try:
+                        await fill_task
+                    except asyncio.CancelledError:
+                        pass
                 
                 if not response_started:
                     raise Exception("No response was generated")
