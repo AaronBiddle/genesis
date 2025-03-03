@@ -1,4 +1,5 @@
-import { log, type LogLevel } from './logConfig';
+import { log } from './logConfig';
+import type { LogLevel } from '$lib/appConfig';
 
 /**
  * Log a message with the given namespace, level, domain, and message.
@@ -9,6 +10,6 @@ import { log, type LogLevel } from './logConfig';
  * @example
  * logger('frontend.services.ApiService', 'INFO', 'network', 'Sending API request', { url, method, payload });
  */
-export function logger(namespace: string, level: LogLevel, domain: string, message: string, ...args: any[]): void {
-    log(level, message, namespace, domain, ...args);
+export function logger(level: LogLevel, domain: string, namespace: string, message: string, ...args: any[]): void {
+    log(level, domain, namespace, message, ...args);
 } 

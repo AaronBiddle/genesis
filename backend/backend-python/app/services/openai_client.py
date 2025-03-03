@@ -5,6 +5,7 @@ from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
 from utils.logging import LogLevel, log
 import json
+import time
 
 # Load environment variables from .env file.
 
@@ -85,23 +86,37 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: f
         ]
         log(LogLevel.DEBUGGING, f"Sending messages (temp={temperature}): {json.dumps(debug_messages)}")
         
-        response = client.chat.completions.create(
-            messages=messages,
-            model=MODEL,
-            temperature=temperature,
-            stream=True
+        # Create the completion in a separate thread to avoid blocking
+        loop = asyncio.get_running_loop()
+        response = await loop.run_in_executor(
+            None,
+            lambda: client.chat.completions.create(
+                messages=messages,
+                model=MODEL,
+                temperature=temperature,
+                stream=True
+            )
         )
 
-        for chunk in response:
-            delta = chunk.choices[0].delta
-            is_final = chunk.choices[0].finish_reason == 'stop'
-            
-            # If there's content, yield it with usage stats (if it's the final chunk)
-            if delta.content:
-                yield delta.content, chunk.usage if is_final else None
-            # If it's the final chunk with no content, yield the usage stats with empty content
-            elif is_final:
-                yield "", chunk.usage
+        # Process chunks as they arrive
+        async def process_stream():
+            for chunk in response:
+                # Yield control back to the event loop frequently
+                await asyncio.sleep(0)
+                
+                delta = chunk.choices[0].delta
+                is_final = chunk.choices[0].finish_reason == 'stop'
+                
+                # If there's content, yield it with usage stats (if it's the final chunk)
+                if delta.content:
+                    yield delta.content, chunk.usage if is_final else None
+                # If it's the final chunk with no content, yield the usage stats with empty content
+                elif is_final:
+                    yield "", chunk.usage
+
+        # Use async iteration to process the stream
+        async for content, usage in process_stream():
+            yield content, usage
 
         log(LogLevel.DEBUGGING, "Stream complete")
 

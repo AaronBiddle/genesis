@@ -2,33 +2,29 @@
   import MultiViewPanel from '$lib/components/MultiViewPanel/MultiViewPanel.svelte';
   import MultiViewBackground from '$lib/components/MultiViewPanel/MultiViewBackground.svelte';
   import { panels } from '$lib/components/MultiViewPanel/panelStore';
-  import CounterComponent from '$lib/components/CounterComponent.svelte';
   import NotesComponent from '$lib/components/NotesComponent.svelte';
-  import WeatherComponent from '$lib/components/WeatherComponent.svelte';
-  import ChatboxComponent from '$lib/components/ChatboxComponent.svelte';
+  import ChatboxComponent from '$lib/components/ChatboxComponent/ChatboxComponent.svelte';
+  import WorkerRequestsTest from '$lib/components/WorkerRequestsTest.svelte';
   import LogControlPanel from '$lib/components/LogControlPanel/LogControlPanel.svelte';
 
   // Register the app components to be available in the dropdown
   const apps = [
-    {
-      id: 'counter',
-      label: 'Counter',
-      component: CounterComponent
-    },
     {
       id: 'notes',
       label: 'Notes',
       component: NotesComponent
     },
     {
-      id: 'weather',
-      label: 'Weather',
-      component: WeatherComponent
-    },
-    {
       id: 'chatbox',
       label: 'Chatbox',
-      component: ChatboxComponent
+      component: ChatboxComponent,
+      suggestedWidth: 600,
+      suggestedHeight: 840
+    },
+    {
+      id: 'worker-test',
+      label: 'Worker Test',
+      component: WorkerRequestsTest
     },
     {
       id: 'logcontrol',
@@ -48,7 +44,7 @@
       </svg>
     </button>
   </header>
-  <main class="flex-1 w-full overflow-auto">
+  <main class="flex-1 w-full overflow-hidden">
     <MultiViewBackground>
       {#each $panels as panel (panel.id)}
         <MultiViewPanel panel={panel} {apps} />

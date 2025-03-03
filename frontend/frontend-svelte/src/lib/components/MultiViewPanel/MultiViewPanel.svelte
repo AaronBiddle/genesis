@@ -5,13 +5,13 @@
     import { createResizeHandler } from './resizeManager';
     import type { ResizeEdge } from './types';
     import AppRegistration from './AppRegistration.svelte';
-    import type { Component } from 'svelte';
+    import type { ComponentType, SvelteComponent } from 'svelte';
     import EmptyPanel from './EmptyPanel.svelte';
 
     interface PanelApp {
         id: string;
         label: string;
-        component: Component;
+        component: ComponentType<SvelteComponent<any, any, any>>;
         suggestedWidth?: number;
         suggestedHeight?: number;
     }
@@ -163,7 +163,7 @@
     </div>
 
     <!-- Content Area: Render the component for the current app -->
-    <div class="flex-1 overflow-auto" style={`height: ${panel.height - 40}px;`}>
-        <svelte:component this={currentApp.component} />
+    <div class="flex-1 overflow-auto p-1" style={`height: ${panel.height - 40}px;`}>
+        <svelte:component this={currentApp.component} panelId={panel.id} />
     </div>
 </div> 
