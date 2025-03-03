@@ -18,111 +18,90 @@ message_queues: Dict[str, List[Dict[str, Any]]] = {}
 
 @router.websocket("/ws/chat")
 async def ai_chat_endpoint(websocket: WebSocket):
-    connection_id = id(websocket)  # Unique identifier for this connection
+    """WebSocket endpoint for AI chat."""
+    connection_id = id(asyncio.current_task())
+    
     try:
+        # Accept the WebSocket connection
         await websocket.accept()
-        log(LogLevel.MINIMUM, f"🐍 WebSocket connection established (id: {connection_id})")
+        log(LogLevel.MINIMUM, f"🐍 WebSocket connection established")
         
-        # Create a task to receive messages
-        log(LogLevel.MINIMUM, f"🐍 Starting message receiver task (connection: {connection_id})")
-        receiver_task = asyncio.create_task(
-            message_receiver(websocket, connection_id)
-        )
+        # Start the message receiver and processor tasks
+        log(LogLevel.MINIMUM, f"🐍 Starting message receiver and processor tasks")
+        receiver_task = asyncio.create_task(message_receiver(websocket, connection_id))
+        processor_task = asyncio.create_task(message_processor(websocket, connection_id))
         
-        # Create a task to process messages from the queue
-        log(LogLevel.MINIMUM, f"🐍 Starting message processor task (connection: {connection_id})")
-        processor_task = asyncio.create_task(
-            message_processor(websocket, connection_id)
-        )
-        
-        # Wait for either task to complete
-        log(LogLevel.MINIMUM, f"🐍 Waiting for tasks to complete (connection: {connection_id})")
+        # Wait for both tasks to complete (they should run indefinitely unless there's an error)
         done, pending = await asyncio.wait(
             [receiver_task, processor_task],
             return_when=asyncio.FIRST_COMPLETED
         )
         
-        # Log which task completed
+        # If we get here, one of the tasks has completed (likely due to an error)
         for task in done:
-            if task == receiver_task:
-                log(LogLevel.MINIMUM, f"🐍 Message receiver task completed (connection: {connection_id})")
-            elif task == processor_task:
-                log(LogLevel.MINIMUM, f"🐍 Message processor task completed (connection: {connection_id})")
+            if task.exception():
+                log(LogLevel.ERROR, f"🐍 Task failed with exception: {task.exception()}")
         
         # Cancel any pending tasks
         for task in pending:
-            task_name = "receiver" if task == receiver_task else "processor"
-            log(LogLevel.MINIMUM, f"🐍 Cancelling {task_name} task (connection: {connection_id})")
             task.cancel()
-            
-        # Re-raise any exceptions
-        for task in done:
-            if task.exception():
-                log(LogLevel.ERROR, f"🐍 Task failed with exception (connection: {connection_id}): {task.exception()}")
-                raise task.exception()
-            
-    except WebSocketDisconnect as e:
-        close_codes = {
-            1000: "Normal closure",
-            1001: "Going away",
-            1006: "Abnormal closure",
-            1011: "Internal server error"
-        }
-        reason = close_codes.get(e.code, f"Code {e.code}")
-        log(LogLevel.MINIMUM, f"🐍 WebSocket closed (id: {connection_id}): {reason}, active sessions: {len(active_tasks)}")
-        
-        # Clean up tasks for all sessions using this connection
-        for session_id, tasks in active_tasks.items():
-            if tasks:
-                log(LogLevel.MINIMUM, f"🐍 Cancelling {len(tasks)} tasks for session {session_id}")
-                for task in tasks:
-                    if not task.done():
-                        task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
     
+    except WebSocketDisconnect:
+        log(LogLevel.MINIMUM, f"🐍 WebSocket disconnected")
     except Exception as e:
-        log(LogLevel.ERROR, f"🐍 WebSocket error (id: {connection_id}): {str(e)}")
-        # Try to close the connection gracefully
+        log(LogLevel.ERROR, f"🐍 WebSocket error: {str(e)}")
         try:
-            await websocket.close(code=1011, reason="Internal server error")
+            await websocket.close()
         except:
             pass
+    finally:
+        # Clean up any resources associated with this connection
+        log(LogLevel.MINIMUM, f"🐍 WebSocket connection closed")
 
 async def message_receiver(websocket: WebSocket, connection_id: int):
-    """Task that receives messages from the WebSocket and adds them to the queue."""
+    """Task that receives messages from the WebSocket."""
     try:
         log(LogLevel.MINIMUM, f"🐍 Message receiver started (connection: {connection_id})")
+        
         while True:
-            # Log that we're waiting for a message
-            log(LogLevel.MINIMUM, f"🐍 Waiting for next message (connection: {connection_id})")
+            # Wait for a message from the client
+            log(LogLevel.DEBUGGING, f"🐍 Waiting for next message")
+            data_str = await websocket.receive_text()
             
-            # Wait for the next message
-            data_text = await websocket.receive_text()
-            receive_time = time.time()
-            log(LogLevel.MINIMUM, f"🐍 Received message at {receive_time:.3f} ({len(data_text)} bytes, connection: {connection_id})")
-            
-            # Parse the message
-            data = json.loads(data_text)
-            
-            # Extract session ID
-            session_id = data.get("sessionId")
-            if not session_id:
-                log(LogLevel.ERROR, f"🐍 Missing sessionId in message (connection: {connection_id})")
+            try:
+                # Parse the message
+                data = json.loads(data_str)
+                
+                # Extract session ID
+                session_id = data.get("sessionId")
+                if not session_id:
+                    log(LogLevel.ERROR, f"🐍 No session ID provided in message")
+                    await websocket.send_text(json.dumps({
+                        "error": "No session ID provided"
+                    }))
+                    continue
+                
+                # Create a queue for this session if it doesn't exist
+                if session_id not in message_queues:
+                    message_queues[session_id] = []
+                    log(LogLevel.MINIMUM, f"🐍 Created new message queue for session {session_id}")
+                
+                # Add message to the queue
+                message_queues[session_id].append(data)
+                log(LogLevel.MINIMUM, f"🐍 Added message to queue for session {session_id} (queue size: {len(message_queues[session_id])})")
+                
+            except json.JSONDecodeError:
+                log(LogLevel.ERROR, f"🐍 Invalid JSON received: {data_str[:100]}...")
                 await websocket.send_text(json.dumps({
-                    "error": "Missing sessionId in message"
+                    "error": "Invalid JSON format"
                 }))
-                continue
-            
-            # Initialize message queue for this session if it doesn't exist
-            if session_id not in message_queues:
-                message_queues[session_id] = []
-                log(LogLevel.MINIMUM, f"🐍 Created new message queue for session {session_id} (connection: {connection_id})")
-            
-            # Add message to the queue
-            message_queues[session_id].append(data)
-            log(LogLevel.MINIMUM, f"🐍 Added message to queue for session {session_id} at {time.time():.3f} (queue size: {len(message_queues[session_id])}, connection: {connection_id})")
             
     except Exception as e:
-        log(LogLevel.ERROR, f"🐍 Message receiver error (connection: {connection_id}): {str(e)}")
+        log(LogLevel.ERROR, f"🐍 Message receiver error: {str(e)}")
         raise
 
 async def message_processor(websocket: WebSocket, connection_id: int):
@@ -130,10 +109,12 @@ async def message_processor(websocket: WebSocket, connection_id: int):
     try:
         log(LogLevel.MINIMUM, f"🐍 Message processor started (connection: {connection_id})")
         iteration = 0
+        last_log_time = time.time()
         
         while True:
             iteration += 1
             processing_started = False
+            current_time = time.time()
             
             # Check all message queues
             for session_id, queue in list(message_queues.items()):
@@ -141,53 +122,53 @@ async def message_processor(websocket: WebSocket, connection_id: int):
                     processing_started = True
                     # Get the next message
                     data = queue.pop(0)
-                    process_time = time.time()
-                    log(LogLevel.MINIMUM, f"🐍 Processing message from queue for session {session_id} at {process_time:.3f} (remaining: {len(queue)}, connection: {connection_id})")
+                    log(LogLevel.MINIMUM, f"🐍 Processing message from queue for session {session_id} (remaining: {len(queue)})")
                     
                     # Initialize task set for this session if it doesn't exist
                     if session_id not in active_tasks:
                         active_tasks[session_id] = set()
-                        log(LogLevel.MINIMUM, f"🐍 Created new task set for session {session_id} (connection: {connection_id})")
+                        log(LogLevel.MINIMUM, f"🐍 Created new task set for session {session_id}")
                     
                     # Create a new task to process this message concurrently
                     task = asyncio.create_task(process_message(websocket, data, session_id, connection_id))
                     active_tasks[session_id].add(task)
-                    log(LogLevel.MINIMUM, f"🐍 Created new task for session {session_id} at {time.time():.3f} (connection: {connection_id}, active tasks: {len(active_tasks[session_id])})")
+                    log(LogLevel.MINIMUM, f"🐍 Created new task for session {session_id} (active tasks: {len(active_tasks[session_id])})")
             
             # Clean up completed tasks
             for session_id, tasks in list(active_tasks.items()):
                 done_tasks = {t for t in tasks if t.done()}
                 if done_tasks:
-                    log(LogLevel.MINIMUM, f"🐍 Cleaning up {len(done_tasks)} completed tasks for session {session_id} (connection: {connection_id})")
+                    log(LogLevel.MINIMUM, f"🐍 Cleaning up {len(done_tasks)} completed tasks for session {session_id}")
                     for task in done_tasks:
                         active_tasks[session_id].discard(task)
                         # Check for exceptions
                         if task.exception():
-                            log(LogLevel.ERROR, f"🐍 Task failed with exception (session: {session_id}, connection: {connection_id}): {task.exception()}")
+                            log(LogLevel.ERROR, f"🐍 Task failed with exception (session: {session_id}): {task.exception()}")
             
-            # Log processor iteration
-            if iteration % 100 == 0 or processing_started:
+            # Log processor status periodically (every 30 seconds) or when processing starts
+            if processing_started or (current_time - last_log_time > 30):
                 active_count = sum(len(tasks) for tasks in active_tasks.values())
                 queue_count = sum(len(queue) for queue in message_queues.values())
-                log(LogLevel.MINIMUM, f"🐍 Processor iteration {iteration}: {active_count} active tasks, {queue_count} queued messages (connection: {connection_id})")
+                log(LogLevel.MINIMUM, f"🐍 Processor status: {active_count} active tasks, {queue_count} queued messages")
+                last_log_time = current_time
             
             # Sleep briefly to avoid CPU spinning
             await asyncio.sleep(0.01)
             
     except Exception as e:
-        log(LogLevel.ERROR, f"🐍 Message processor error (connection: {connection_id}): {str(e)}")
+        log(LogLevel.ERROR, f"🐍 Message processor error: {str(e)}")
         raise
 
 async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id: str, connection_id: int):
     task_id = id(asyncio.current_task())
     start_time = time.time()
     try:
-        log(LogLevel.MINIMUM, f"🐍 Starting to process message for session {session_id} at {start_time:.3f} (connection: {connection_id}, task: {task_id})")
+        log(LogLevel.MINIMUM, f"🐍 Processing message for session {session_id} (connection: {connection_id})")
         
         # Extract message type
         message_type = data.get("type")
         if message_type != "message":
-            log(LogLevel.ERROR, f"🐍 Unsupported message type: {message_type} (session: {session_id}, connection: {connection_id})")
+            log(LogLevel.ERROR, f"🐍 Unsupported message type: {message_type} (session: {session_id})")
             await websocket.send_text(json.dumps({
                 "sessionId": session_id,
                 "error": "Unsupported message type",
@@ -218,7 +199,7 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
             temperature = payload.get("temperature", 0.7)  # Default to 0.7 if not provided
             
             if not prompt:
-                log(LogLevel.ERROR, f"🐍 No prompt provided for session {session_id} (connection: {connection_id})")
+                log(LogLevel.ERROR, f"🐍 No prompt provided for session {session_id}")
                 await websocket.send_text(json.dumps({
                     "sessionId": session_id,
                     "error": "No prompt provided."
@@ -235,7 +216,7 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
             received_final_chunk = False
             
             try:
-                log(LogLevel.MINIMUM, f"🐍 Starting API stream for session {session_id} at {time.time():.3f} (connection: {connection_id}, task: {task_id})")
+                log(LogLevel.MINIMUM, f"🐍 Starting API stream for session {session_id}")
                 
                 # Create a queue for stream chunks
                 chunk_queue = asyncio.Queue()
@@ -248,12 +229,11 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                         # Mark end of stream
                         await chunk_queue.put((None, None, None))
                     except Exception as e:
-                        log(LogLevel.ERROR, f"🐍 Stream error in fill_queue: {str(e)} (session: {session_id}, task: {task_id})")
+                        log(LogLevel.ERROR, f"🐍 Stream error in fill_queue: {str(e)} (session: {session_id})")
                         await chunk_queue.put((None, None, e))
                 
                 # Start filling the queue in a separate task
                 fill_task = asyncio.create_task(fill_queue())
-                log(LogLevel.MINIMUM, f"🐍 Created stream processing task for session {session_id} at {time.time():.3f} (connection: {connection_id}, task: {task_id})")
                 
                 # Track time for each chunk
                 last_chunk_time = time.time()
@@ -265,7 +245,6 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                         content_chunk, chunk_usage, error = await asyncio.wait_for(chunk_queue.get(), timeout=0.1)
                     except asyncio.TimeoutError:
                         # No chunk available yet, yield control back to event loop
-                        log(LogLevel.DEBUGGING, f"🐍 Waiting for next chunk (session: {session_id}, task: {task_id})")
                         await asyncio.sleep(0)
                         continue
                     
@@ -273,7 +252,6 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                     if error:
                         raise error
                     if content_chunk is None:
-                        log(LogLevel.DEBUGGING, f"🐍 End of stream reached (session: {session_id}, task: {task_id})")
                         break
                     
                     current_time = time.time()
@@ -284,13 +262,12 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                     if chunk_usage:  # Final chunk with usage stats
                         usage_stats = chunk_usage
                         received_final_chunk = True
-                        log(LogLevel.MINIMUM, f"🐍 Received final chunk with usage stats at {current_time:.3f} (session: {session_id}, task: {task_id}, delay: {chunk_delay:.3f}s)")
                     else:  # Normal token
                         streaming_token_count += 1  # Used for progress tracking
                         
-                        # Log every 50 tokens or if there's a significant delay
-                        if streaming_token_count % 50 == 0 or chunk_delay > 0.5:
-                            log(LogLevel.MINIMUM, f"🐍 Streaming token {streaming_token_count} at {current_time:.3f} (session: {session_id}, task: {task_id}, delay: {chunk_delay:.3f}s)")
+                        # Only log every 50 tokens to reduce noise
+                        if streaming_token_count % 50 == 0:
+                            log(LogLevel.DEBUGGING, f"🐍 Streaming token {streaming_token_count} (session: {session_id})")
                         
                         message = {
                             "sessionId": session_id,
@@ -313,11 +290,11 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                     raise Exception("No response was generated")
                     
                 if not received_final_chunk:
-                    log(LogLevel.MINIMUM, f"🐍 Warning: Stream completed without receiving usage stats at {time.time():.3f} (session: {session_id}, task: {task_id})")
+                    log(LogLevel.MINIMUM, f"🐍 Warning: Stream completed without receiving usage stats (session: {session_id})")
                     
             except Exception as e:
                 error_message = str(e)
-                log(LogLevel.MINIMUM, f"🐍 Streaming error for session {session_id} at {time.time():.3f}: {error_message} (connection: {connection_id})")
+                log(LogLevel.ERROR, f"🐍 Streaming error for session {session_id}: {error_message}")
                 await websocket.send_text(json.dumps({
                     "sessionId": session_id,
                     "type": "error",
@@ -330,7 +307,7 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
             if response_started:
                 completion_time = time.time()
                 if not usage_stats:
-                    log(LogLevel.MINIMUM, f"🐍 Stream complete without usage stats at {completion_time:.3f}. Counted tokens: {streaming_token_count} (session: {session_id}, task: {task_id})")
+                    log(LogLevel.MINIMUM, f"🐍 Stream complete without usage stats. Counted tokens: {streaming_token_count} (session: {session_id})")
                     await websocket.send_text(json.dumps({
                         "sessionId": session_id,
                         "type": "token",
@@ -342,9 +319,9 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                 else:
                     # Log if there's a significant discrepancy between our count and OpenAI's count
                     if abs(streaming_token_count - usage_stats.completion_tokens) > 5:
-                        log(LogLevel.ERROR, f"🐍 Token count discrepancy - Streamed: {streaming_token_count}, OpenAI: {usage_stats.completion_tokens} (session: {session_id}, task: {task_id})")
+                        log(LogLevel.ERROR, f"🐍 Token count discrepancy - Streamed: {streaming_token_count}, OpenAI: {usage_stats.completion_tokens} (session: {session_id})")
                     
-                    log(LogLevel.MINIMUM, f"🐍 Stream complete at {completion_time:.3f} for session {session_id}. Tokens - Input: {usage_stats.prompt_tokens}, Output: {usage_stats.completion_tokens} (task: {task_id}, total time: {completion_time - start_time:.3f}s)")
+                    log(LogLevel.MINIMUM, f"🐍 Stream complete for session {session_id}. Tokens - Input: {usage_stats.prompt_tokens}, Output: {usage_stats.completion_tokens}")
                     await websocket.send_text(json.dumps({
                         "sessionId": session_id,
                         "type": "token",
@@ -354,23 +331,23 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                     }))
             
         except json.JSONDecodeError as e:
-            log(LogLevel.ERROR, f"🐍 Invalid JSON received for session {session_id} at {time.time():.3f}: {e} (connection: {connection_id})")
+            log(LogLevel.ERROR, f"🐍 Invalid JSON received for session {session_id}: {e}")
             await websocket.send_text(json.dumps({
                 "sessionId": session_id,
                 "type": "error",
                 "error": "Invalid JSON format"
             }))
         except Exception as e:
-            log(LogLevel.ERROR, f"🐍 Error processing message for session {session_id} at {time.time():.3f}: {e} (connection: {connection_id})")
+            log(LogLevel.ERROR, f"🐍 Error processing message for session {session_id}: {e}")
             await websocket.send_text(json.dumps({
                 "sessionId": session_id,
                 "type": "error",
                 "error": f"Internal server error: {str(e)}"
             }))
     except Exception as e:
-        log(LogLevel.ERROR, f"🐍 Task error at {time.time():.3f} (session: {session_id}, task: {task_id}): {str(e)}")
+        log(LogLevel.ERROR, f"🐍 Task error (session: {session_id}): {str(e)}")
     finally:
         # Log task completion
         end_time = time.time()
         duration = end_time - start_time
-        log(LogLevel.MINIMUM, f"🐍 Task completed at {end_time:.3f} for session {session_id} (task: {task_id}, duration: {duration:.3f}s)") 
+        log(LogLevel.MINIMUM, f"🐍 Task completed for session {session_id} (duration: {duration:.1f}s)") 

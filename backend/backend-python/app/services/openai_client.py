@@ -87,7 +87,6 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: f
         log(LogLevel.DEBUGGING, f"Sending messages (temp={temperature}): {json.dumps(debug_messages)}")
         
         # Create the completion in a separate thread to avoid blocking
-        log(LogLevel.MINIMUM, f"🔄 Creating API stream request at {time.time():.3f}")
         loop = asyncio.get_running_loop()
         response = await loop.run_in_executor(
             None,
@@ -98,20 +97,12 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: f
                 stream=True
             )
         )
-        log(LogLevel.MINIMUM, f"🔄 API stream connection established at {time.time():.3f}")
 
         # Process chunks as they arrive
-        chunk_count = 0
         async def process_stream():
-            nonlocal chunk_count
-            start_time = time.time()
             for chunk in response:
                 # Yield control back to the event loop frequently
                 await asyncio.sleep(0)
-                
-                chunk_count += 1
-                if chunk_count == 1 or chunk_count % 50 == 0:
-                    log(LogLevel.MINIMUM, f"🔄 Received chunk {chunk_count} at {time.time():.3f} (elapsed: {time.time() - start_time:.3f}s)")
                 
                 delta = chunk.choices[0].delta
                 is_final = chunk.choices[0].finish_reason == 'stop'
@@ -124,15 +115,10 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: f
                     yield "", chunk.usage
 
         # Use async iteration to process the stream
-        token_count = 0
-        stream_start = time.time()
         async for content, usage in process_stream():
-            token_count += 1
-            if token_count == 1:
-                log(LogLevel.MINIMUM, f"🔄 First token yielded at {time.time():.3f} (delay: {time.time() - stream_start:.3f}s)")
             yield content, usage
 
-        log(LogLevel.MINIMUM, f"🔄 Stream complete at {time.time():.3f}, yielded {token_count} tokens from {chunk_count} chunks")
+        log(LogLevel.DEBUGGING, "Stream complete")
 
     except Exception as e:
         log(LogLevel.ERROR, f"Error in stream_chat_response: {str(e)}")
