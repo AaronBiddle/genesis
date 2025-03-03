@@ -1,50 +1,125 @@
 import { WS_URL } from '$lib/config.js';
 import { get } from 'svelte/store';
-import type { Message, WebSocketMessage } from './types';
+import type { WebSocketMessage, WebSocketPayload } from './types';
 import { getChatStore } from './ChatStore';
+import { writable } from 'svelte/store';
 
-// WebSocket connections for each chat instance
-const connections: Record<string, WebSocket> = {};
+// Single WebSocket connection for all chat instances
+let webSocket: WebSocket | null = null;
+let isConnecting = false;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 5;
+const RECONNECT_DELAY = 2000; // 2 seconds
 
-export function connect(chatId: string): void {
-    const store = getChatStore(chatId);
-    
-    // Close existing connection if any
-    if (connections[chatId]) {
-        connections[chatId].close();
+// Track active sessions
+const activeSessions = new Set<string>();
+
+// Global connection status
+export const connectionStatus = writable<boolean>(false);
+
+// Initialize the WebSocket connection
+function initWebSocket() {
+    if (webSocket && (webSocket.readyState === WebSocket.OPEN || webSocket.readyState === WebSocket.CONNECTING)) {
+        return; // Already connected or connecting
     }
-
-    // Create new WebSocket connection
-    const ws = new WebSocket(`${WS_URL}/ws/chat`);
-    connections[chatId] = ws;
     
-    ws.onopen = () => {
-        console.log(`WebSocket connected for chat ${chatId}`);
-        store.wsConnected.set(true);
+    if (isConnecting) {
+        return; // Already attempting to connect
+    }
+    
+    isConnecting = true;
+    
+    console.log('Initializing WebSocket connection');
+    webSocket = new WebSocket(`${WS_URL}/ws/chat`);
+    
+    webSocket.onopen = () => {
+        console.log('WebSocket connected');
+        connectionStatus.set(true);
+        isConnecting = false;
+        reconnectAttempts = 0;
+        
+        // Update connection status for all active sessions
+        activeSessions.forEach(sessionId => {
+            const store = getChatStore(sessionId);
+            store.wsConnected.set(true);
+        });
     };
-
-    ws.onclose = () => {
-        console.log(`WebSocket closed for chat ${chatId}`);
-        store.wsConnected.set(false);
+    
+    webSocket.onclose = (event) => {
+        console.log(`WebSocket closed: ${event.code} - ${event.reason}`);
+        connectionStatus.set(false);
+        isConnecting = false;
+        
+        // Update connection status for all active sessions
+        activeSessions.forEach(sessionId => {
+            const store = getChatStore(sessionId);
+            store.wsConnected.set(false);
+        });
+        
+        // Attempt to reconnect
+        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+            reconnectAttempts++;
+            console.log(`Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+            setTimeout(initWebSocket, RECONNECT_DELAY);
+        } else {
+            console.error('Max reconnection attempts reached');
+        }
     };
-
-    ws.onerror = (error) => {
-        console.error(`WebSocket error for chat ${chatId}:`, error);
-        store.wsConnected.set(false);
+    
+    webSocket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        connectionStatus.set(false);
     };
-
-    ws.onmessage = (event) => {
+    
+    webSocket.onmessage = (event) => {
         try {
             const data: WebSocketMessage = JSON.parse(event.data);
-            handleWebSocketMessage(chatId, data);
+            
+            // Route message to the appropriate session handler
+            if (data.sessionId) {
+                handleWebSocketMessage(data.sessionId, data);
+            } else {
+                console.error('Received message without sessionId:', data);
+            }
         } catch (e) {
-            console.error(`Error parsing websocket message for chat ${chatId}:`, e);
+            console.error('Error parsing websocket message:', e);
         }
     };
 }
 
-function handleWebSocketMessage(chatId: string, data: WebSocketMessage): void {
-    const store = getChatStore(chatId);
+// Register a session with the WebSocket service
+export function registerSession(sessionId: string): void {
+    console.log(`Registering session: ${sessionId}`);
+    activeSessions.add(sessionId);
+    
+    // Initialize WebSocket if not already connected
+    initWebSocket();
+    
+    // Update connection status for this session
+    const store = getChatStore(sessionId);
+    if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+        store.wsConnected.set(true);
+    } else {
+        store.wsConnected.set(false);
+    }
+}
+
+// Unregister a session when it's no longer needed
+export function unregisterSession(sessionId: string): void {
+    console.log(`Unregistering session: ${sessionId}`);
+    activeSessions.delete(sessionId);
+    
+    // If no more active sessions, close the WebSocket
+    if (activeSessions.size === 0 && webSocket) {
+        console.log('No active sessions, closing WebSocket');
+        webSocket.close(1000, 'No active sessions');
+        webSocket = null;
+    }
+}
+
+// Handle incoming WebSocket messages
+function handleWebSocketMessage(sessionId: string, data: WebSocketMessage): void {
+    const store = getChatStore(sessionId);
     
     // Handle error messages
     if (data.error) {
@@ -53,7 +128,7 @@ function handleWebSocketMessage(chatId: string, data: WebSocketMessage): void {
         store.currentResponseId.set(null);
         return;
     }
-
+    
     // Handle streaming tokens
     if (data.token !== undefined) {
         const currentId = get(store.currentResponseId);
@@ -73,40 +148,59 @@ function handleWebSocketMessage(chatId: string, data: WebSocketMessage): void {
             }
         }
     }
-
+    
     // If done flag is received, reset current response
     if (data.done) {
+        console.log(`Received final packet (done=true) for session ${sessionId}`);
         store.currentResponseId.set(null);
     }
 }
 
-export function sendMessage(chatId: string, messageText: string): void {
+// Send a message via the WebSocket
+export function sendMessage(sessionId: string, messageText: string): void {
     if (!messageText.trim()) return;
     
-    const store = getChatStore(chatId);
-    const ws = connections[chatId];
+    const store = getChatStore(sessionId);
     
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-        console.error(`WebSocket is not connected for chat ${chatId}`);
+    // Ensure WebSocket is connected
+    if (!webSocket || webSocket.readyState !== WebSocket.OPEN) {
+        console.error(`WebSocket is not connected for session ${sessionId}`);
         store.addSystemMessage('Error: Not connected to server', true);
+        
+        // Try to reconnect
+        initWebSocket();
         return;
     }
-
+    
     const currentMessages = get(store.messages);
     const currentSettings = get(store.settings);
     
-    // Prepare payload for websocket
-    const payload = {
-        prompt: messageText.trim(),
-        history: currentMessages.map(msg => ({ 
-            role: msg.sender, 
-            content: msg.text 
-        })),
-        system_prompt: currentSettings.systemPrompt,
-        temperature: currentSettings.temperature
+    // Prepare payload with sessionId
+    const payload: WebSocketPayload = {
+        sessionId: sessionId,
+        type: 'message',
+        payload: {
+            prompt: messageText.trim(),
+            history: currentMessages.map(msg => ({ 
+                role: msg.sender, 
+                content: msg.text 
+            })),
+            system_prompt: currentSettings.systemPrompt,
+            temperature: currentSettings.temperature
+        }
     };
     
     // Send payload
-    ws.send(JSON.stringify(payload));
+    console.log(`Sending message for session ${sessionId}`);
+    webSocket.send(JSON.stringify(payload));
     store.currentResponseId.set(null); // will be set on receiving first token
+}
+
+// Close all connections when the page unloads
+if (typeof window !== 'undefined') {
+    window.addEventListener('beforeunload', () => {
+        if (webSocket) {
+            webSocket.close(1000, 'Page unloaded');
+        }
+    });
 } 

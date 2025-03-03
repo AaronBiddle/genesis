@@ -1,93 +1,103 @@
 <script lang="ts">
     import { getChatStore } from './ChatStore';
+    import { createEventDispatcher } from 'svelte';
     
     // Accept panel ID as a prop
     export let panelId: string;
+    
+    // Create event dispatcher
+    const dispatch = createEventDispatcher();
     
     // Get the store for this specific chat instance
     const chatStore = getChatStore(panelId);
     const { settings, settingsApplied, applySettings, resetSettings } = chatStore;
     
+    // Local copy of settings for editing
+    let localSettings = { ...$settings };
+    
+    // Update settings when apply button is clicked
     function updateSettings(): void {
-        // Log the updated settings
-        console.log(`Settings updated for chat ${panelId}:`, $settings);
-        
-        // Show confirmation and hide after delay
+        console.log(`Updating settings for panel ${panelId}:`, localSettings);
+        $settings = { ...localSettings };
         applySettings();
+        dispatch('back'); // Go back to chat view
+    }
+    
+    // Reset settings to defaults
+    function handleReset(): void {
+        resetSettings();
+        localSettings = { ...$settings };
+    }
+    
+    // Go back without applying changes
+    function handleCancel(): void {
+        localSettings = { ...$settings }; // Revert changes
+        dispatch('back');
     }
 </script>
 
-<div class="flex-1 p-3 border border-gray-200 rounded-lg overflow-y-auto">
-    <div class="space-y-6">
+<div class="flex flex-col p-4 h-full overflow-auto">
+    <div class="mb-4">
+        <label for="temperature" class="block text-sm font-medium text-gray-700 mb-1">
+            Temperature: {localSettings.temperature.toFixed(1)}
+        </label>
+        <input 
+            id="temperature" 
+            type="range" 
+            min="0" 
+            max="2" 
+            step="0.1" 
+            bind:value={localSettings.temperature} 
+            class="w-full"
+        />
+        <p class="text-xs text-gray-500 mt-1">
+            Lower values make responses more focused and deterministic. Higher values make responses more creative and varied.
+        </p>
+    </div>
+    
+    <div class="mb-4">
+        <label for="systemPrompt" class="block text-sm font-medium text-gray-700 mb-1">
+            System Prompt
+        </label>
+        <textarea 
+            id="systemPrompt" 
+            bind:value={localSettings.systemPrompt} 
+            class="w-full p-2 border border-gray-300 rounded-md h-32"
+            placeholder="Enter a system prompt to guide the AI's behavior..."
+        ></textarea>
+        <p class="text-xs text-gray-500 mt-1">
+            The system prompt helps set the behavior and role of the AI assistant.
+        </p>
+    </div>
+    
+    <div class="flex justify-between mt-4">
+        <button 
+            on:click={handleReset}
+            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+        >
+            Reset to Defaults
+        </button>
+        
         <div>
-            <h3 class="text-lg font-medium mb-3">Model Settings</h3>
-            <div class="space-y-5 pl-2">
-                <div>
-                    <label for="temperature" class="block text-sm font-medium mb-1">Temperature: {$settings.temperature}</label>
-                    <div class="flex items-center">
-                        <span class="text-xs mr-2">0.1</span>
-                        <input 
-                            type="range" 
-                            id="temperature" 
-                            min="0.1" 
-                            max="2.0" 
-                            step="0.1" 
-                            bind:value={$settings.temperature} 
-                            class="w-full"
-                        >
-                        <span class="text-xs ml-2">2.0</span>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">
-                        Lower values make responses more focused and deterministic. Higher values make responses more creative and varied.
-                    </p>
-                </div>
-                
-                <div>
-                    <label for="system-prompt" class="block text-sm font-medium mb-1">System Prompt</label>
-                    <textarea 
-                        id="system-prompt" 
-                        bind:value={$settings.systemPrompt} 
-                        class="w-full px-2 py-1 border border-gray-300 rounded resize-vertical"
-                        rows="4"
-                    ></textarea>
-                    <p class="text-xs text-gray-500 mt-1">
-                        This sets the behavior and context for the AI assistant.
-                    </p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="flex justify-between items-center">
-            <div class="text-sm">
-                {#if $settingsApplied}
-                    <span class="text-green-600 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                        </svg>
-                        Settings applied
-                    </span>
-                {/if}
-            </div>
-            <div class="flex space-x-2">
-                <button 
-                    on:click={resetSettings}
-                    class="px-3 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 text-sm"
-                    title="Reset to default settings"
-                >
-                    Reset
-                </button>
-                <button 
-                    on:click={updateSettings}
-                    class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-                >
-                    Apply Settings
-                </button>
-            </div>
-        </div>
-        
-        <div class="text-xs text-gray-500 border-t pt-3">
-            <p>These settings will be applied to your next message.</p>
-            <p class="mt-1">Settings are automatically applied when returning to chat.</p>
+            <button 
+                on:click={handleCancel}
+                class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors mr-2"
+            >
+                Cancel
+            </button>
+            
+            <button 
+                on:click={updateSettings}
+                class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+            >
+                Apply Settings
+            </button>
         </div>
     </div>
+    
+    {#if $settingsApplied}
+        <div class="mt-4 p-2 bg-green-100 text-green-800 rounded-md">
+            Settings applied successfully!
+        </div>
+    {/if}
 </div> 
