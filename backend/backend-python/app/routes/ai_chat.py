@@ -264,11 +264,7 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                         received_final_chunk = True
                     else:  # Normal token
                         streaming_token_count += 1  # Used for progress tracking
-                        
-                        # Only log every 50 tokens to reduce noise
-                        if streaming_token_count % 50 == 0:
-                            log(LogLevel.DEBUGGING, f"🐍 Streaming token {streaming_token_count} (session: {session_id})")
-                        
+                                              
                         message = {
                             "sessionId": session_id,
                             "type": "token",
