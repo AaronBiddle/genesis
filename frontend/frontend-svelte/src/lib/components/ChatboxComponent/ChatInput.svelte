@@ -35,7 +35,7 @@
         bind:value={$newMessage} 
         on:keydown={handleKeyDown}
         class="flex-1 px-2 border border-gray-300 rounded-lg mr-2 resize-none"
-        rows="2"
+        rows="4"
         placeholder="Type your message here..."
     ></textarea>
     <button 
