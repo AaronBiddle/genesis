@@ -3,6 +3,7 @@
     import { LOG_LEVELS, LOG_DOMAINS, NAMESPACES } from '$lib/appConfig';
     import type { LogLevel } from '$lib/appConfig';
     import { onMount } from 'svelte';
+    import { logger } from './logger';
     
     // Keep track of namespace filter text
     let namespaceFilterText = '';
@@ -34,7 +35,7 @@
     
     // Modify the applySettings function to update appliedConfig after applying settings
     function applySettings(): void {
-        console.log('Applied log settings:', $logConfigStore);
+        logger('INFO', 'ui', 'LogControlPanel', 'Applied log settings:', $logConfigStore);
         appliedConfig = JSON.parse(JSON.stringify($logConfigStore));
     }
     

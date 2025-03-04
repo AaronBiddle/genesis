@@ -3,6 +3,7 @@ import { get } from 'svelte/store';
 import type { WebSocketMessage, WebSocketPayload } from './types';
 import { getChatStore } from './ChatStore';
 import { writable } from 'svelte/store';
+import { logger } from '$lib/components/LogControlPanel/logger';
 
 // Single WebSocket connection for all chat instances
 let webSocket: WebSocket | null = null;
@@ -29,11 +30,11 @@ function initWebSocket() {
     
     isConnecting = true;
     
-    console.log('Initializing WebSocket connection');
+    logger('DEBUG', 'network', 'WebSocketService', 'Initializing WebSocket connection');
     webSocket = new WebSocket(`${WS_URL}/ws/chat`);
     
     webSocket.onopen = () => {
-        console.log('WebSocket connected');
+        logger('DEBUG', 'network', 'WebSocketService', 'WebSocket connected');
         connectionStatus.set(true);
         isConnecting = false;
         reconnectAttempts = 0;
@@ -46,7 +47,7 @@ function initWebSocket() {
     };
     
     webSocket.onclose = (event) => {
-        console.log(`WebSocket closed: ${event.code} - ${event.reason}`);
+        logger('DEBUG', 'network', 'WebSocketService', `WebSocket closed: ${event.code} - ${event.reason}`);
         connectionStatus.set(false);
         isConnecting = false;
         
@@ -59,15 +60,15 @@ function initWebSocket() {
         // Attempt to reconnect
         if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
             reconnectAttempts++;
-            console.log(`Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+            logger('DEBUG', 'network', 'WebSocketService', `Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
             setTimeout(initWebSocket, RECONNECT_DELAY);
         } else {
-            console.error('Max reconnection attempts reached');
+            logger('ERROR', 'network', 'WebSocketService', 'Max reconnection attempts reached');
         }
     };
     
     webSocket.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        logger('ERROR', 'network', 'WebSocketService', 'WebSocket error:', error);
         connectionStatus.set(false);
     };
     
@@ -79,17 +80,17 @@ function initWebSocket() {
             if (data.sessionId) {
                 handleWebSocketMessage(data.sessionId, data);
             } else {
-                console.error('Received message without sessionId:', data);
+                logger('ERROR', 'network', 'WebSocketService', 'Received message without sessionId:', data);
             }
         } catch (e) {
-            console.error('Error parsing websocket message:', e);
+            logger('ERROR', 'network', 'WebSocketService', 'Error parsing websocket message:', e);
         }
     };
 }
 
 // Register a session with the WebSocket service
 export function registerSession(sessionId: string): void {
-    console.log(`Registering session: ${sessionId}`);
+    logger('DEBUG', 'network', 'WebSocketService', `Registering session: ${sessionId}`);
     activeSessions.add(sessionId);
     
     // Initialize WebSocket if not already connected
@@ -106,12 +107,12 @@ export function registerSession(sessionId: string): void {
 
 // Unregister a session when it's no longer needed
 export function unregisterSession(sessionId: string): void {
-    console.log(`Unregistering session: ${sessionId}`);
+    logger('DEBUG', 'network', 'WebSocketService', `Unregistering session: ${sessionId}`);
     activeSessions.delete(sessionId);
     
     // If no more active sessions, close the WebSocket
     if (activeSessions.size === 0 && webSocket) {
-        console.log('No active sessions, closing WebSocket');
+        logger('DEBUG', 'network', 'WebSocketService', 'No active sessions, closing WebSocket');
         webSocket.close(1000, 'No active sessions');
         webSocket = null;
     }
@@ -151,7 +152,7 @@ function handleWebSocketMessage(sessionId: string, data: WebSocketMessage): void
     
     // If done flag is received, reset current response
     if (data.done) {
-        console.log(`Received final packet (done=true) for session ${sessionId}`);
+        logger('DEBUG', 'network', 'WebSocketService', `Received final packet (done=true) for session ${sessionId}`);
         store.currentResponseId.set(null);
     }
 }
@@ -164,7 +165,7 @@ export function sendMessage(sessionId: string, messageText: string): void {
     
     // Ensure WebSocket is connected
     if (!webSocket || webSocket.readyState !== WebSocket.OPEN) {
-        console.error(`WebSocket is not connected for session ${sessionId}`);
+        logger('ERROR', 'network', 'WebSocketService', `WebSocket is not connected for session ${sessionId}`);
         store.addSystemMessage('Error: Not connected to server', true);
         
         // Try to reconnect
@@ -191,7 +192,7 @@ export function sendMessage(sessionId: string, messageText: string): void {
     };
     
     // Send payload
-    console.log(`Sending message for session ${sessionId}`);
+    logger('DEBUG', 'network', 'WebSocketService', `Sending message for session ${sessionId}`);
     webSocket.send(JSON.stringify(payload));
     store.currentResponseId.set(null); // will be set on receiving first token
 }

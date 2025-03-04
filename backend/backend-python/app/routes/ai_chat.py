@@ -149,7 +149,6 @@ async def message_processor(websocket: WebSocket, connection_id: int):
             if processing_started or (current_time - last_log_time > 30):
                 active_count = sum(len(tasks) for tasks in active_tasks.values())
                 queue_count = sum(len(queue) for queue in message_queues.values())
-                log(LogLevel.MINIMUM, f"🐍 Processor status: {active_count} active tasks, {queue_count} queued messages")
                 last_log_time = current_time
             
             # Sleep briefly to avoid CPU spinning

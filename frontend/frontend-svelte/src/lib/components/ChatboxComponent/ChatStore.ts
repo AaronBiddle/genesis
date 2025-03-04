@@ -82,6 +82,10 @@ export function createChatStore(id: string) {
         showSettings.update(value => !value);
     }
 
+    function clearMessages(): void {
+        messages.set([]);
+    }
+
     return {
         // Stores
         messages,
@@ -99,7 +103,8 @@ export function createChatStore(id: string) {
         toggleMarkdownRendering,
         applySettings,
         resetSettings,
-        toggleSettingsView
+        toggleSettingsView,
+        clearMessages
     };
 }
 

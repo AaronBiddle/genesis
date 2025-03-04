@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount, onDestroy } from 'svelte';
     import { WS_URL } from '$lib/config';
+    import { logger } from '$lib/components/LogControlPanel/logger';
     
     let socket: WebSocket | null = null;
     let connected = false;
@@ -19,7 +20,7 @@
         const fullWsUrl = `${wsBaseUrl}/ws/frontend-requests`;
         debugInfo = `Connecting to: ${fullWsUrl} (WS_URL from config: ${WS_URL || 'undefined'})`;
 
-        console.log('Connecting to:', fullWsUrl);
+        logger('INFO', 'network', 'WorkerRequestsTest', 'Connecting to:', fullWsUrl);
         
         socket = new WebSocket(fullWsUrl);
         
@@ -47,7 +48,7 @@
         socket.onerror = (error) => {
             connectionStatus = 'Error';
             messages = [...messages, { type: 'error', content: `WebSocket error: ${error}` }];
-            console.error('WebSocket error:', error);
+            logger('ERROR', 'network', 'WorkerRequestsTest', 'WebSocket error:', error);
         };
     }
     

@@ -1,6 +1,7 @@
 <script lang="ts">
     import { getChatStore } from './ChatStore';
     import { createEventDispatcher } from 'svelte';
+    import { logger } from '$lib/components/LogControlPanel/logger';
     
     // Accept panel ID as a prop
     export let panelId: string;
@@ -17,7 +18,7 @@
     
     // Update settings when apply button is clicked
     function updateSettings(): void {
-        console.log(`Updating settings for panel ${panelId}:`, localSettings);
+        logger('INFO', 'ui', 'SettingsPanel', `Updating settings for panel ${panelId}:`, localSettings);
         $settings = { ...localSettings };
         applySettings();
         dispatch('back'); // Go back to chat view
