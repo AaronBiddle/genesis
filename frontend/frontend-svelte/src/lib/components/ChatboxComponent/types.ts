@@ -11,6 +11,7 @@ export interface Message {
 export interface ChatSettings {
     temperature: number;
     systemPrompt: string;
+    modelId: string; // Added model selection
 }
 
 export interface WebSocketMessage {
@@ -30,5 +31,6 @@ export interface WebSocketPayload {
         history: { role: string; content: string }[];
         system_prompt: string;
         temperature: number;
+        model_id: string; // Added model selection
     };
 } 

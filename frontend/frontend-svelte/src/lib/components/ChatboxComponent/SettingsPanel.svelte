@@ -1,7 +1,8 @@
 <script lang="ts">
     import { getChatStore } from './ChatStore';
-    import { createEventDispatcher } from 'svelte';
+    import { createEventDispatcher, onMount } from 'svelte';
     import { logger } from '$lib/components/LogControlPanel/logger';
+    import { availableModels, fetchAvailableModels, isLoadingModels, modelError } from './ModelService';
     
     // Accept panel ID as a prop
     export let panelId: string;
@@ -15,6 +16,11 @@
     
     // Local copy of settings for editing
     let localSettings = { ...$settings };
+    
+    // Fetch available models on component mount
+    onMount(() => {
+        fetchAvailableModels();
+    });
     
     // Update settings when apply button is clicked
     function updateSettings(): void {
@@ -38,6 +44,30 @@
 </script>
 
 <div class="flex flex-col p-4 h-full overflow-auto">
+    <div class="mb-4">
+        <label for="model" class="block text-sm font-medium text-gray-700 mb-1">
+            Model
+        </label>
+        {#if $isLoadingModels}
+            <div class="text-sm text-gray-500">Loading models...</div>
+        {:else if $modelError}
+            <div class="text-sm text-red-500">Error loading models: {$modelError}</div>
+        {:else}
+            <select 
+                id="model" 
+                bind:value={localSettings.modelId} 
+                class="w-full p-2 border border-gray-300 rounded-md"
+            >
+                {#each $availableModels as model}
+                    <option value={model.id}>{model.name}</option>
+                {/each}
+            </select>
+            <p class="text-xs text-gray-500 mt-1">
+                Select the AI model to use for this conversation.
+            </p>
+        {/if}
+    </div>
+    
     <div class="mb-4">
         <label for="temperature" class="block text-sm font-medium text-gray-700 mb-1">
             Temperature: {localSettings.temperature.toFixed(1)}

@@ -187,7 +187,8 @@ export function sendMessage(sessionId: string, messageText: string): void {
                 content: msg.text 
             })),
             system_prompt: currentSettings.systemPrompt,
-            temperature: currentSettings.temperature
+            temperature: currentSettings.temperature,
+            model_id: currentSettings.modelId
         }
     };
     

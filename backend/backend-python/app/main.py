@@ -5,6 +5,7 @@ from routes.chats import router as chats_router
 from routes.documents import router as documents_router
 from routes.directory import router as directory_router
 from routes.worker_connection import router as worker_connection_router
+from routes.models import router as models_router
 
 app = FastAPI()
 
@@ -22,3 +23,4 @@ app.include_router(chats_router)
 app.include_router(documents_router)
 app.include_router(directory_router)
 app.include_router(worker_connection_router)
+app.include_router(models_router)
