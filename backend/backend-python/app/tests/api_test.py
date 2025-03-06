@@ -1,16 +1,25 @@
 from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
 import os
+import sys
 from pathlib import Path
-from utils.config import get_model_api_config
 
 # Find and load the .env file from the app directory
 dotenv_path = find_dotenv()
 load_dotenv(dotenv_path)
 
+# Add the app directory to the Python path using the APP_DIR environment variable
+app_dir = os.environ.get('APP_DIR', '/app')
+if app_dir not in sys.path:
+    sys.path.append(app_dir)
+
+# Now import the config module
+from utils.config import get_model_api_config
+
 # Get model configuration
 model_config = get_model_api_config()
 model_id = model_config.get("model_id")
+model_id = "deepseek-reasoner"
 api_key = model_config.get("api_key")
 base_url = model_config.get("base_url")
 
