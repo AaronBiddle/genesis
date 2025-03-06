@@ -9,6 +9,10 @@ from utils.config import get_model_api_config
 import json
 import time
 
+# Constants for reasoning tags
+REASONING_START_TAG = "\n### Reasoning\n"
+REASONING_END_TAG = "\n### Answer\n"
+
 # Load environment variables from .env file.
 dotenv_path = find_dotenv()
 print(f"dotenv_path: {dotenv_path}")
@@ -70,7 +74,22 @@ def chat_completion_sync(prompt: str, model_id: Optional[str] = None, temperatur
             model=model_id,
             temperature=temp
         )
-        return response.choices[0].message.content.strip()
+        
+        # Check if this is a reasoning model with reasoning_content
+        if hasattr(response.choices[0].message, 'reasoning_content') and response.choices[0].message.reasoning_content:
+            # Combine reasoning content (wrapped in markdown formatting) with the regular content
+            reasoning = response.choices[0].message.reasoning_content
+            
+            # Format the reasoning content with blockquote markers for each line
+            formatted_reasoning = ""
+            for line in reasoning.split('\n'):
+                formatted_reasoning += f"> {line}\n"
+            
+            content = response.choices[0].message.content.strip()
+            return f"{REASONING_START_TAG}{formatted_reasoning.strip()}{REASONING_END_TAG}\n{content}"
+        else:
+            # Regular model, just return the content
+            return response.choices[0].message.content.strip()
     except Exception as e:
         log(LogLevel.ERROR, f"Error in chat_completion_sync: {str(e)}")
         raise
@@ -93,6 +112,9 @@ async def get_chat_response(prompt: str, model_id: Optional[str] = None, tempera
 def stream_chat_completion_sync(prompt: str, model_id: Optional[str] = None, temperature: Optional[float] = None):
     """
     Synchronously initiates a streaming chat completion request.
+    Returns the raw stream response from the API.
+    This function doesn't process the stream - it just returns the stream object.
+    The caller is responsible for iterating through the stream and handling reasoning_content.
     """
     try:
         model_config = get_model_api_config(model_id)
@@ -158,6 +180,12 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: O
 
         # Process chunks as they arrive
         async def process_stream():
+            # Track if we're currently in a reasoning section
+            in_reasoning_section = False
+            reasoning_started = False
+            content_started = False
+            last_char_was_newline = False
+            
             for chunk in response:
                 # Yield control back to the event loop frequently
                 await asyncio.sleep(0)
@@ -165,11 +193,49 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: O
                 delta = chunk.choices[0].delta
                 is_final = chunk.choices[0].finish_reason == 'stop'
                 
-                # If there's content, yield it with usage stats (if it's the final chunk)
-                if delta.content:
+                # Check for reasoning_content (for models like deepseek-reasoner)
+                if hasattr(delta, 'reasoning_content') and delta.reasoning_content:
+                    # If this is the first reasoning chunk, add the opening tag
+                    if not reasoning_started:
+                        reasoning_started = True
+                        in_reasoning_section = True
+                        # First yield the tag, then yield the first token with a space after the tag
+                        yield REASONING_START_TAG + " ", None
+                        # Now yield the first token of reasoning content
+                        yield delta.reasoning_content, None
+                    else:
+                        # For multi-line reasoning content, add blockquote markers after newlines
+                        if delta.reasoning_content.startswith('\n'):
+                            yield '\n> ' + delta.reasoning_content[1:], None
+                        elif last_char_was_newline:
+                            yield '> ' + delta.reasoning_content, None
+                            last_char_was_newline = False
+                        else:
+                            yield delta.reasoning_content, None
+                    
+                    # Track if this chunk ends with a newline
+                    last_char_was_newline = delta.reasoning_content.endswith('\n')
+                
+                # If there's content and we were in a reasoning section, close the reasoning section
+                if hasattr(delta, 'content') and delta.content:
+                    if in_reasoning_section:
+                        in_reasoning_section = False
+                        # Add a space after the REASONING_END_TAG to ensure proper formatting
+                        yield REASONING_END_TAG + " ", None
+                    
+                    # If this is the first content chunk, mark content as started
+                    if not content_started:
+                        content_started = True
+                    
+                    # Yield the content with usage stats (if it's the final chunk)
                     yield delta.content, chunk.usage if is_final else None
+                
                 # If it's the final chunk with no content, yield the usage stats with empty content
                 elif is_final:
+                    # If we're still in a reasoning section, close it
+                    if in_reasoning_section:
+                        yield REASONING_END_TAG + " ", None
+                    
                     yield "", chunk.usage
 
         # Use async iteration to process the stream

@@ -19,7 +19,7 @@ from utils.config import get_model_api_config
 # Get model configuration
 model_config = get_model_api_config()
 model_id = model_config.get("model_id")
-model_id = "deepseek-reasoner"
+model_id = "deepseek-reasoner"  # Using the reasoning model
 api_key = model_config.get("api_key")
 base_url = model_config.get("base_url")
 
@@ -29,13 +29,47 @@ print(f"base_url: {base_url}")
 
 client = OpenAI(api_key=api_key, base_url=base_url)
 
+# Example 1: Non-streaming response
+print("\n--- Non-streaming response ---")
 response = client.chat.completions.create(
     model=model_id,
     messages=[
         {"role": "system", "content": "You are a helpful assistant"},
-        {"role": "user", "content": "Hello"},
+        {"role": "user", "content": "What is 15 * 17?"},
     ],
     stream=False
 )
 
-print(response.choices[0].message.content)
+print(f"Final answer: {response.choices[0].message.content}")
+if hasattr(response.choices[0].message, 'reasoning_content'):
+    print(f"Reasoning process: {response.choices[0].message.reasoning_content}")
+
+# Example 2: Streaming response
+print("\n--- Streaming response ---")
+stream_response = client.chat.completions.create(
+    model=model_id,
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant"},
+        {"role": "user", "content": "What is the square root of 144?"},
+    ],
+    stream=True
+)
+
+reasoning_content = ""
+content = ""
+
+print("Streaming chunks as they arrive:")
+for chunk in stream_response:
+    # Check if the chunk contains reasoning_content
+    if hasattr(chunk.choices[0].delta, 'reasoning_content') and chunk.choices[0].delta.reasoning_content:
+        reasoning_content += chunk.choices[0].delta.reasoning_content
+        print(f"Reasoning chunk: {chunk.choices[0].delta.reasoning_content}", end="", flush=True)
+    
+    # Check if the chunk contains regular content
+    if hasattr(chunk.choices[0].delta, 'content') and chunk.choices[0].delta.content:
+        content += chunk.choices[0].delta.content
+        print(f"Content chunk: {chunk.choices[0].delta.content}", end="", flush=True)
+
+print("\n\nFinal accumulated content:")
+print(f"Final answer: {content}")
+print(f"Reasoning process: {reasoning_content}")
