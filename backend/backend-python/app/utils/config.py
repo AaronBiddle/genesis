@@ -9,8 +9,16 @@ from utils.logging import log, LogLevel
 dotenv_path = find_dotenv()
 load_dotenv(dotenv_path)
 
+# Get the config directory from environment variable or use a relative path
+CONFIG_DIR = os.environ.get("CONFIG_DIR")
+if CONFIG_DIR:
+    CONFIG_DIR = Path(CONFIG_DIR)
+    log(LogLevel.DEBUGGING, f"Using CONFIG_DIR from environment: {CONFIG_DIR}")
+else:
+    log(LogLevel.ERROR, f"Missing CONFIG_DIR environment variable")
+
 # Path to the models.yaml file
-MODELS_CONFIG_PATH = Path(__file__).parent.parent / "config" / "models.yaml"
+MODELS_CONFIG_PATH = CONFIG_DIR / "models.yaml"
 
 # Cache for the loaded config
 _models_config = None
