@@ -1,74 +1,132 @@
 import os
 import asyncio
-from typing import AsyncGenerator, Any
+import sys
+from typing import AsyncGenerator, Any, Dict, Optional
 from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
 from utils.logging import LogLevel, log
+from utils.config import get_model_api_config
 import json
 import time
 
 # Load environment variables from .env file.
-
 dotenv_path = find_dotenv()
 print(f"dotenv_path: {dotenv_path}")
 load_dotenv(dotenv_path)
 
-# Initialize the client with DeepSeek credentials from .env.
-client = OpenAI(
-    api_key=os.environ.get("DEEPSEEK_API_KEY"),
-    base_url=os.environ.get("DEEPSEEK_API_BASE_URL")
-)
+try:
+    # Get default model configuration
+    DEFAULT_MODEL_CONFIG = get_model_api_config()
+    DEFAULT_MODEL_ID = DEFAULT_MODEL_CONFIG.get("model_id")
+    DEFAULT_TEMPERATURE = DEFAULT_MODEL_CONFIG.get("temperature_default", 0.7)
 
-MODEL = os.environ.get("DEEPSEEK_API_MODEL", "gpt-4o")
-TEMPERATURE = 0.7
+    # Initialize the client with DeepSeek credentials from config
+    client = OpenAI(
+        api_key=DEFAULT_MODEL_CONFIG.get("api_key"),
+        base_url=DEFAULT_MODEL_CONFIG.get("base_url")
+    )
+except Exception as e:
+    log(LogLevel.ERROR, f"Fatal error initializing OpenAI client: {str(e)}")
+    print(f"Fatal error: {str(e)}", file=sys.stderr)
+    # Exit the application with an error code
+    sys.exit(1)
 
 DEBUG_OPENAI = False
 
-def chat_completion_sync(prompt: str) -> str:
+def get_client_for_model(model_id: Optional[str] = None) -> OpenAI:
+    """
+    Get an OpenAI client configured for the specified model.
+    If model_id is not provided, uses the default model.
+    """
+    if model_id is None:
+        return client
+    
+    try:    
+        model_config = get_model_api_config(model_id)
+        return OpenAI(
+            api_key=model_config.get("api_key"),
+            base_url=model_config.get("base_url")
+        )
+    except Exception as e:
+        log(LogLevel.ERROR, f"Error getting client for model {model_id}: {str(e)}")
+        raise
+
+def chat_completion_sync(prompt: str, model_id: Optional[str] = None, temperature: Optional[float] = None) -> str:
     """
     Synchronously gets a chat completion using the API.
     """
-    response = client.chat.completions.create(
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": prompt},
-        ],
-        model=MODEL,
-        temperature=TEMPERATURE
-    )
-    return response.choices[0].message.content.strip()
+    try:
+        model_config = get_model_api_config(model_id)
+        model_id = model_config.get("model_id")
+        temp = temperature if temperature is not None else model_config.get("temperature_default", DEFAULT_TEMPERATURE)
+    
+        client_instance = get_client_for_model(model_id)
+        
+        response = client_instance.chat.completions.create(
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt},
+            ],
+            model=model_id,
+            temperature=temp
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        log(LogLevel.ERROR, f"Error in chat_completion_sync: {str(e)}")
+        raise
 
-async def get_chat_response(prompt: str) -> str:
+async def get_chat_response(prompt: str, model_id: Optional[str] = None, temperature: Optional[float] = None) -> str:
     """
     Asynchronously wraps the synchronous chat completion call.
     """
-    loop = asyncio.get_running_loop()
-    answer = await loop.run_in_executor(
-        None,
-        lambda: chat_completion_sync(prompt)
-    )
-    return answer
+    try:
+        loop = asyncio.get_running_loop()
+        answer = await loop.run_in_executor(
+            None,
+            lambda: chat_completion_sync(prompt, model_id, temperature)
+        )
+        return answer
+    except Exception as e:
+        log(LogLevel.ERROR, f"Error in get_chat_response: {str(e)}")
+        raise
 
-def stream_chat_completion_sync(prompt: str):
+def stream_chat_completion_sync(prompt: str, model_id: Optional[str] = None, temperature: Optional[float] = None):
     """
     Synchronously initiates a streaming chat completion request.
     """
-    return client.chat.completions.create(
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": prompt},
-        ],
-        model=MODEL,
-        temperature=TEMPERATURE,
-        stream=True  # Enable streaming
-    )
+    try:
+        model_config = get_model_api_config(model_id)
+        model_id = model_config.get("model_id")
+        temp = temperature if temperature is not None else model_config.get("temperature_default", DEFAULT_TEMPERATURE)
+    
+        client_instance = get_client_for_model(model_id)
+        
+        return client_instance.chat.completions.create(
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt},
+            ],
+            model=model_id,
+            temperature=temp,
+            stream=True  # Enable streaming
+        )
+    except Exception as e:
+        log(LogLevel.ERROR, f"Error in stream_chat_completion_sync: {str(e)}")
+        raise
 
-async def stream_chat_response(prompt: str, history: list = None, temperature: float = TEMPERATURE) -> AsyncGenerator[tuple[str, Any], None]:
+async def stream_chat_response(prompt: str, history: list = None, temperature: Optional[float] = None, model_id: Optional[str] = None) -> AsyncGenerator[tuple[str, Any], None]:
     """
     Asynchronously streams chat completion using the API.
     Returns tuples of (content_chunk, usage_stats).
     """
     try:
+        # Get model configuration
+        model_config = get_model_api_config(model_id)
+        model_id = model_config.get("model_id")
+        temp = temperature if temperature is not None else model_config.get("temperature_default", DEFAULT_TEMPERATURE)
+        
+        client_instance = get_client_for_model(model_id)
+        
         messages = []
         if history:
             messages.extend(history)
@@ -84,16 +142,16 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: f
                 "content": msg["content"] if msg["role"] == "system" else (msg["content"][:10] + "...")
             } for msg in messages
         ]
-        log(LogLevel.DEBUGGING, f"Sending messages (temp={temperature}): {json.dumps(debug_messages)}")
+        log(LogLevel.DEBUGGING, f"Sending messages to {model_id} (temp={temp}): {json.dumps(debug_messages)}")
         
         # Create the completion in a separate thread to avoid blocking
         loop = asyncio.get_running_loop()
         response = await loop.run_in_executor(
             None,
-            lambda: client.chat.completions.create(
+            lambda: client_instance.chat.completions.create(
                 messages=messages,
-                model=MODEL,
-                temperature=temperature,
+                model=model_id,
+                temperature=temp,
                 stream=True
             )
         )

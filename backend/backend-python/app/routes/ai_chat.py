@@ -2,9 +2,10 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import json
 from services.openai_client import stream_chat_response
 from utils.logging import LogLevel, log
+from utils.config import get_model_config
 import asyncio
 import time
-from typing import Dict, Any, Set, List
+from typing import Dict, Any, Set, List, Optional
 
 router = APIRouter()
 
@@ -195,7 +196,13 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
             prompt = payload.get("prompt")
             history = payload.get("history", [])
             system_prompt = payload.get("system_prompt")
-            temperature = payload.get("temperature", 0.7)  # Default to 0.7 if not provided
+            model_id = payload.get("model_id")  # Get model_id from payload if provided
+            
+            # Get temperature from payload or model config
+            temperature = payload.get("temperature")
+            if temperature is None and model_id:
+                model_config = get_model_config(model_id)
+                temperature = model_config.get("temperature_default")
             
             if not prompt:
                 log(LogLevel.ERROR, f"🐍 No prompt provided for session {session_id}")
@@ -223,7 +230,12 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                 # Function to fill the queue from the stream
                 async def fill_queue():
                     try:
-                        async for content_chunk, chunk_usage in stream_chat_response(prompt, history, temperature):
+                        async for content_chunk, chunk_usage in stream_chat_response(
+                            prompt, 
+                            history, 
+                            temperature, 
+                            model_id
+                        ):
                             await chunk_queue.put((content_chunk, chunk_usage, None))
                         # Mark end of stream
                         await chunk_queue.put((None, None, None))
