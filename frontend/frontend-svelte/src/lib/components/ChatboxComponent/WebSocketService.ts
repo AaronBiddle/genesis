@@ -176,16 +176,24 @@ export function sendMessage(sessionId: string, messageText: string): void {
     const currentMessages = get(store.messages);
     const currentSettings = get(store.settings);
     
+    // Use all messages except the most recent one for the history
+    // The most recent message is the one we're currently sending as the prompt
+    // This avoids duplication without relying on content matching
+    const historyMessages = currentMessages.slice(0, -1);
+    
+    // Convert messages to the format expected by the backend
+    const messageHistory = historyMessages.map(msg => ({ 
+        role: msg.sender, 
+        content: msg.text 
+    }));
+    
     // Prepare payload with sessionId
     const payload: WebSocketPayload = {
         sessionId: sessionId,
         type: 'message',
         payload: {
             prompt: messageText.trim(),
-            history: currentMessages.map(msg => ({ 
-                role: msg.sender, 
-                content: msg.text 
-            })),
+            history: messageHistory,
             system_prompt: currentSettings.systemPrompt,
             temperature: currentSettings.temperature,
             model_id: currentSettings.modelId
@@ -194,6 +202,7 @@ export function sendMessage(sessionId: string, messageText: string): void {
     
     // Send payload
     logger('DEBUG', 'network', 'WebSocketService', `Sending message for session ${sessionId}`);
+    logger('TRACE', 'network', 'WebSocketService', `Message payload for session ${sessionId}:`, JSON.stringify(payload));
     webSocket.send(JSON.stringify(payload));
     store.currentResponseId.set(null); // will be set on receiving first token
 }
