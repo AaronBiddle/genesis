@@ -3,7 +3,7 @@
 export interface Message {
     id: number;
     text: string;
-    sender: 'user' | 'system';
+    sender: 'user' | 'assistant';
     timestamp: Date;
     renderMarkdown?: boolean; // optional flag to enable markdown rendering (default true)
 }

@@ -38,7 +38,7 @@ export function createChatStore(id: string) {
             {
                 id: msgs.length + 1,
                 text,
-                sender: 'system',
+                sender: 'assistant',
                 timestamp: new Date(),
                 renderMarkdown
             }

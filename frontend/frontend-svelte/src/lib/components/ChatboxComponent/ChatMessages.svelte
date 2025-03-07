@@ -13,7 +13,7 @@
 <div class="flex-1 overflow-y-auto p-3">
     {#each $messages as message (message.id)}
         <div class="mb-2 {message.sender === 'user' ? 'text-right' : 'text-left'}">
-            {#if message.sender === 'system'}
+            {#if message.sender === 'assistant'}
                 <div class="relative inline-block max-w-[95%] px-4 rounded-lg bg-gray-200 text-gray-800 mr-auto group">
                     {#if message.renderMarkdown === false}
                         <span>{message.text}</span>

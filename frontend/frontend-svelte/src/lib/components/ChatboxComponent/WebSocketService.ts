@@ -183,7 +183,7 @@ export function sendMessage(sessionId: string, messageText: string): void {
     
     // Convert messages to the format expected by the backend
     const messageHistory = historyMessages.map(msg => ({ 
-        role: msg.sender, 
+        role: msg.sender === 'assistant' ? 'assistant' : 'user', 
         content: msg.text 
     }));
     
