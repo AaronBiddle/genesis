@@ -1,6 +1,6 @@
 <script lang="ts">
     import { getChatStore } from './ChatStore';
-    import { createEventDispatcher, onMount } from 'svelte';
+    import { createEventDispatcher, onMount, onDestroy } from 'svelte';
     import { logger } from '$lib/components/LogControlPanel/logger';
     import { availableModels, fetchAvailableModels, isLoadingModels, modelError } from './ModelService';
     
@@ -22,24 +22,22 @@
         fetchAvailableModels();
     });
     
-    // Update settings when apply button is clicked
-    function updateSettings(): void {
-        logger('INFO', 'ui', 'SettingsPanel', `Updating settings for panel ${panelId}:`, localSettings);
+    // Save settings when component is unmounted
+    onDestroy(() => {
+        saveSettings();
+    });
+    
+    // Update settings automatically when leaving the panel
+    function saveSettings(): void {
+        logger('INFO', 'ui', 'SettingsPanel', `Automatically saving settings for panel ${panelId}:`, localSettings);
         $settings = { ...localSettings };
         applySettings();
-        dispatch('back'); // Go back to chat view
     }
     
     // Reset settings to defaults
     function handleReset(): void {
         resetSettings();
         localSettings = { ...$settings };
-    }
-    
-    // Go back without applying changes
-    function handleCancel(): void {
-        localSettings = { ...$settings }; // Revert changes
-        dispatch('back');
     }
 </script>
 
@@ -101,29 +99,13 @@
         </p>
     </div>
     
-    <div class="flex justify-between mt-4">
+    <div class="flex justify-start mt-4">
         <button 
             on:click={handleReset}
             class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
         >
             Reset to Defaults
         </button>
-        
-        <div>
-            <button 
-                on:click={handleCancel}
-                class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors mr-2"
-            >
-                Cancel
-            </button>
-            
-            <button 
-                on:click={updateSettings}
-                class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-            >
-                Apply Settings
-            </button>
-        </div>
     </div>
     
     {#if $settingsApplied}

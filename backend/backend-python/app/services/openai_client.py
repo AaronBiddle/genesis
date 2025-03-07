@@ -10,8 +10,8 @@ import json
 import time
 
 # Constants for reasoning tags
-REASONING_START_TAG = "\n### Reasoning\n"
-REASONING_END_TAG = "\n### Answer\n"
+REASONING_START_TAG = "\n### Reasoning:\n"
+REASONING_END_TAG = "\n### Answer:\n"
 
 # Load environment variables from .env file.
 dotenv_path = find_dotenv()
