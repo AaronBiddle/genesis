@@ -154,7 +154,7 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: O
         
         # Extract system message from history if present
         system_message = None
-        user_messages = []
+        other_messages = []
         
         if history:
             for msg in history:
@@ -163,7 +163,7 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: O
                     system_message = msg
                 else:
                     # Save other messages
-                    user_messages.append(msg)
+                    other_messages.append(msg)
         
         # Always add system message first
         if system_message:
@@ -172,19 +172,48 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: O
             # Default system message if none provided
             messages.append({"role": "system", "content": "You are a helpful assistant."})
         
-        # Then add all other messages
-        messages.extend(user_messages)
+        # Process other messages to combine consecutive messages of the same role
+        processed_messages = []
         
-        # Finally add the current user prompt
-        messages.append({"role": "user", "content": prompt})
+        for msg in other_messages:
+            if processed_messages and processed_messages[-1]["role"] == msg["role"]:
+                # Combine with previous message of the same role
+                processed_messages[-1]["content"] += "\n\n" + msg["content"]
+                log(LogLevel.WARNING, f"Combining consecutive {msg['role']} messages for {model_id}")
+            else:
+                # Add as a new message
+                processed_messages.append(msg.copy())
+        
+        # Add processed messages
+        messages.extend(processed_messages)
+        
+        # Add the current prompt as a user message
+        if prompt:
+            if messages[-1]["role"] == "user":
+                # Combine with the last user message
+                messages[-1]["content"] += "\n\n" + prompt
+                log(LogLevel.WARNING, f"Combining prompt with last user message for {model_id}")
+            else:
+                # Add as a new message
+                messages.append({"role": "user", "content": prompt})
 
         # Create truncated version of messages for logging
-        debug_messages = [
-            {
-                "role": msg["role"],
-                "content": msg["content"] if msg["role"] == "system" else (msg["content"][:10] + "...")
-            } for msg in messages
-        ]
+        debug_messages = []
+        for msg in messages:
+            role = msg["role"]
+            content = msg["content"]
+            
+            # Trim all message contents for readability
+            if content and len(content) > 30:
+                trimmed_content = content[:30] + "..."
+            else:
+                trimmed_content = content
+                
+            debug_messages.append({
+                "role": role,
+                "content": trimmed_content
+            })
+            
         log(LogLevel.DEBUGGING, f"Sending messages to {model_id} (temp={temp}): {json.dumps(debug_messages)}")
         
         # Create the completion in a separate thread to avoid blocking

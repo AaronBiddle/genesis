@@ -181,15 +181,25 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
         
         # Create truncated version of data for logging
         debug_data = payload.copy()
-        if "prompt" in debug_data:
-            debug_data["prompt"] = debug_data["prompt"][:10] + "..."
+        if "prompt" in debug_data and debug_data["prompt"]:
+            if len(debug_data["prompt"]) > 30:
+                debug_data["prompt"] = debug_data["prompt"][:30] + "..."
+                
         if "history" in debug_data and debug_data["history"]:
+            trimmed_history = []
             for msg in debug_data["history"]:
-                if "content" in msg:
-                    # Keep full system prompts, truncate other messages
-                    if msg.get("role") == "system":
-                        continue
-                    msg["content"] = msg["content"][:10] + "..."
+                if "content" in msg and msg["content"]:
+                    # Trim all message contents for readability
+                    if len(msg["content"]) > 30:
+                        msg_copy = msg.copy()
+                        msg_copy["content"] = msg["content"][:30] + "..."
+                        trimmed_history.append(msg_copy)
+                    else:
+                        trimmed_history.append(msg)
+                else:
+                    trimmed_history.append(msg)
+            debug_data["history"] = trimmed_history
+            
         log(LogLevel.DEBUGGING, f"🐍 Received message for session {session_id}: {json.dumps(debug_data)}")
         
         try:
@@ -213,12 +223,30 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                 return
             
             # Process history to ensure system prompt is at the beginning
-            # First, remove any existing system messages from history
-            history = [msg for msg in history if msg.get("role") != "system"]
-            
-            # Then add system prompt at the beginning if provided
-            if system_prompt:
-                history.insert(0, {"role": "system", "content": system_prompt})
+            # First, extract system message if present
+            system_message = None
+            other_messages = []
+
+            for msg in history:
+                if msg.get("role") == "system":
+                    system_message = msg
+                else:
+                    other_messages.append(msg)
+
+            # Create a new history list starting with the system message
+            processed_history = []
+
+            # Add system message (from history or from system_prompt parameter)
+            if system_message:
+                processed_history.append(system_message)
+            elif system_prompt:
+                processed_history.append({"role": "system", "content": system_prompt})
+            else:
+                processed_history.append({"role": "system", "content": "You are a helpful assistant."})
+
+            # Add all other messages
+            processed_history.extend(other_messages)
+            history = processed_history
             
             streaming_token_count = 0
             usage_stats = None
