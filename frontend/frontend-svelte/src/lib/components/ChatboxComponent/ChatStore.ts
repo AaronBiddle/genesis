@@ -16,22 +16,11 @@ export function createChatStore(id: string) {
     const currentResponseId = writable<number | null>(null);
     const newMessage = writable<string>('');
     const settings = writable<ChatSettings>({
-        temperature: 0.7,
-        systemPrompt: 'You are a helpful assistant.',
-        modelId: 'gpt-3.5-turbo', // Default model
-        includeReasoning: false // Default to not including reasoning
+        ...DEFAULT_SETTINGS // Use the DEFAULT_SETTINGS to ensure consistency
     });
     const settingsApplied = writable<boolean>(false);
     const showSettings = writable<boolean>(false);
     const wsConnected = writable<boolean>(false);
-
-    // Default settings
-    const defaultSettings: ChatSettings = {
-        temperature: 0.7,
-        systemPrompt: 'You are a helpful assistant.',
-        modelId: 'gpt-3.5-turbo', // Default model
-        includeReasoning: false // Default to not including reasoning
-    };
 
     // Helper functions for message management
     function addUserMessage(text: string): void {
