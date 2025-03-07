@@ -5,8 +5,7 @@ import type { Message, ChatSettings } from './types';
 const DEFAULT_SETTINGS: ChatSettings = {
     temperature: 0.7,
     systemPrompt: "You are a helpful AI assistant.",
-    modelId: "deepseek-chat", // Default model
-    includeReasoning: false // Default to not including reasoning
+    modelId: "deepseek-chat" // Default model
 };
 
 // Store factory to create independent stores for each chat instance

@@ -207,7 +207,6 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
             history = payload.get("history", [])
             system_prompt = payload.get("system_prompt")
             model_id = payload.get("model_id")  # Get model_id from payload if provided
-            include_reasoning = payload.get("include_reasoning", False)  # Get include_reasoning flag
             
             # Get temperature from payload or model config
             temperature = payload.get("temperature")
@@ -263,8 +262,8 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                 # Function to fill the queue from the stream
                 async def fill_queue():
                     try:
-                        # If include_reasoning is true, use a model that supports reasoning if available
-                        if include_reasoning and model_id and "reasoner" not in model_id.lower():
+                        # Always try to use a reasoner model if available
+                        if model_id and "reasoner" not in model_id.lower():
                             # Try to find a reasoner variant of the selected model
                             reasoner_model_id = model_id + "-reasoner"
                             try:
@@ -299,7 +298,7 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                         ):
                             # Check if the content contains reasoning data (from the model via the API)
                             # Note: This depends on the API's capability to return reasoning directly
-                            if include_reasoning and isinstance(content_chunk, dict) and 'reasoning' in content_chunk:
+                            if isinstance(content_chunk, dict) and 'reasoning' in content_chunk:
                                 # If the model provides reasoning directly, send it separately
                                 await chunk_queue.put((content_chunk, chunk_usage, None))
                             else:
@@ -359,7 +358,7 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                             # This is a combined content+reasoning chunk from a model that supports it
                             
                             # Send reasoning data if requested
-                            if include_reasoning and 'reasoning' in content_chunk:
+                            if 'reasoning' in content_chunk:
                                 reasoning_message = {
                                     "sessionId": session_id,
                                     "type": "token",

@@ -14,7 +14,6 @@ export interface ChatSettings {
     temperature: number;
     systemPrompt: string;
     modelId: string; // Added model selection
-    includeReasoning: boolean; // Whether to request reasoning from the model
 }
 
 export interface WebSocketMessage {
@@ -39,6 +38,5 @@ export interface WebSocketPayload {
         system_prompt: string;
         temperature: number;
         model_id: string; // Added model selection
-        include_reasoning?: boolean; // Flag to request reasoning from the model
     };
 } 

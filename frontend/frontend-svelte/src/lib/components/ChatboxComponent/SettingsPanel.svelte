@@ -85,23 +85,6 @@
     </div>
     
     <div class="mb-4">
-        <div class="flex items-center">
-            <input 
-                type="checkbox" 
-                id="includeReasoning" 
-                bind:checked={localSettings.includeReasoning} 
-                class="mr-2"
-            />
-            <label for="includeReasoning" class="text-sm font-medium text-gray-700">
-                Include model reasoning
-            </label>
-        </div>
-        <p class="text-xs text-gray-500 mt-1 ml-6">
-            When enabled, the model will provide its reasoning process alongside responses.
-        </p>
-    </div>
-    
-    <div class="mb-4">
         <label for="systemPrompt" class="block text-sm font-medium text-gray-700 mb-1">
             System Prompt
         </label>

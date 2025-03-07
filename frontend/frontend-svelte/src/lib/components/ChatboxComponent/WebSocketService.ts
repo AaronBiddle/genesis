@@ -207,8 +207,8 @@ export function sendMessage(sessionId: string, messageText: string): void {
             history,
             system_prompt: currentSettings.systemPrompt,
             temperature: currentSettings.temperature,
-            model_id: currentSettings.modelId,
-            include_reasoning: currentSettings.includeReasoning
+            model_id: currentSettings.modelId
+            // Removed include_reasoning flag - backend will always send reasoning if available
         }
     };
     
