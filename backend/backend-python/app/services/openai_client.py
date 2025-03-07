@@ -9,10 +9,6 @@ from utils.config import get_model_api_config
 import json
 import time
 
-# Constants for reasoning tags
-REASONING_START_TAG = "\n### Reasoning:\n"
-REASONING_END_TAG = "\n### Answer:\n"
-
 # Load environment variables from .env file.
 dotenv_path = find_dotenv()
 print(f"dotenv_path: {dotenv_path}")
@@ -47,12 +43,24 @@ def get_client_for_model(model_id: Optional[str] = None) -> OpenAI:
     
     try:    
         model_config = get_model_api_config(model_id)
+        if not model_config:
+            log(LogLevel.ERROR, f"No configuration found for model: {model_id}")
+            raise ValueError(f"No configuration found for model: {model_id}")
+            
+        api_key = model_config.get("api_key")
+        base_url = model_config.get("base_url")
+        
+        if not api_key or not base_url:
+            log(LogLevel.ERROR, f"Invalid configuration for model {model_id}: missing api_key or base_url")
+            raise ValueError(f"Invalid configuration for model {model_id}: missing api_key or base_url")
+            
         return OpenAI(
-            api_key=model_config.get("api_key"),
-            base_url=model_config.get("base_url")
+            api_key=api_key,
+            base_url=base_url
         )
     except Exception as e:
-        log(LogLevel.ERROR, f"Error getting client for model {model_id}: {str(e)}")
+        error_type = type(e).__name__
+        log(LogLevel.ERROR, f"Error getting client for model {model_id}: {error_type} - {str(e)}")
         raise
 
 def chat_completion_sync(prompt: str, model_id: Optional[str] = None, temperature: Optional[float] = None) -> str:
@@ -77,16 +85,9 @@ def chat_completion_sync(prompt: str, model_id: Optional[str] = None, temperatur
         
         # Check if this is a reasoning model with reasoning_content
         if hasattr(response.choices[0].message, 'reasoning_content') and response.choices[0].message.reasoning_content:
-            # Combine reasoning content (wrapped in markdown formatting) with the regular content
-            reasoning = response.choices[0].message.reasoning_content
-            
-            # Format the reasoning content with blockquote markers for each line
-            formatted_reasoning = ""
-            for line in reasoning.split('\n'):
-                formatted_reasoning += f"> {line}\n"
-            
-            content = response.choices[0].message.content.strip()
-            return f"{REASONING_START_TAG}{formatted_reasoning.strip()}{REASONING_END_TAG}\n{content}"
+            # For models that support reasoning, just return the content
+            # The reasoning_content will be available as a separate property if needed
+            return response.choices[0].message.content.strip()
         else:
             # Regular model, just return the content
             return response.choices[0].message.content.strip()
@@ -144,10 +145,22 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: O
     try:
         # Get model configuration
         model_config = get_model_api_config(model_id)
+        if not model_config:
+            log(LogLevel.ERROR, f"No configuration found for model: {model_id}")
+            raise ValueError(f"No configuration found for model: {model_id}")
+            
         model_id = model_config.get("model_id")
+        if not model_id:
+            log(LogLevel.ERROR, f"Model ID not specified in configuration")
+            raise ValueError(f"Model ID not specified in configuration")
+            
         temp = temperature if temperature is not None else model_config.get("temperature_default", DEFAULT_TEMPERATURE)
         
-        client_instance = get_client_for_model(model_id)
+        try:
+            client_instance = get_client_for_model(model_id)
+        except Exception as client_err:
+            log(LogLevel.ERROR, f"Failed to create client for model {model_id}: {str(client_err)}")
+            raise
         
         # Prepare messages with system message first
         messages = []
@@ -179,7 +192,7 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: O
             if processed_messages and processed_messages[-1]["role"] == msg["role"]:
                 # Combine with previous message of the same role
                 processed_messages[-1]["content"] += "\n\n" + msg["content"]
-                log(LogLevel.WARNING, f"Combining consecutive {msg['role']} messages for {model_id}")
+                log(LogLevel.DEBUGGING, f"Combining consecutive {msg['role']} messages for {model_id}")
             else:
                 # Add as a new message
                 processed_messages.append(msg.copy())
@@ -192,7 +205,7 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: O
             if messages[-1]["role"] == "user":
                 # Combine with the last user message
                 messages[-1]["content"] += "\n\n" + prompt
-                log(LogLevel.WARNING, f"Combining prompt with last user message for {model_id}")
+                log(LogLevel.DEBUGGING, f"Combining prompt with last user message for {model_id}")
             else:
                 # Add as a new message
                 messages.append({"role": "user", "content": prompt})
@@ -218,24 +231,24 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: O
         
         # Create the completion in a separate thread to avoid blocking
         loop = asyncio.get_running_loop()
-        response = await loop.run_in_executor(
-            None,
-            lambda: client_instance.chat.completions.create(
-                messages=messages,
-                model=model_id,
-                temperature=temp,
-                stream=True
+        try:
+            response = await loop.run_in_executor(
+                None,
+                lambda: client_instance.chat.completions.create(
+                    messages=messages,
+                    model=model_id,
+                    temperature=temp,
+                    stream=True
+                )
             )
-        )
+        except Exception as api_err:
+            log(LogLevel.ERROR, f"API call failed for model {model_id}: {type(api_err).__name__} - {str(api_err)}")
+            api_error_details = getattr(api_err, "__dict__", {})
+            log(LogLevel.ERROR, f"API error details: {str(api_error_details)}")
+            raise
 
         # Process chunks as they arrive
         async def process_stream():
-            # Track if we're currently in a reasoning section
-            in_reasoning_section = False
-            reasoning_started = False
-            content_started = False
-            last_char_was_newline = False
-            
             for chunk in response:
                 # Yield control back to the event loop frequently
                 await asyncio.sleep(0)
@@ -243,49 +256,30 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: O
                 delta = chunk.choices[0].delta
                 is_final = chunk.choices[0].finish_reason == 'stop'
                 
-                # Check for reasoning_content (for models like deepseek-reasoner)
+                # Check for content and reasoning separately
+                content = None
+                reasoning = None
+                
+                # Extract reasoning content if available
                 if hasattr(delta, 'reasoning_content') and delta.reasoning_content:
-                    # If this is the first reasoning chunk, add the opening tag
-                    if not reasoning_started:
-                        reasoning_started = True
-                        in_reasoning_section = True
-                        # First yield the tag, then yield the first token with a space after the tag
-                        yield REASONING_START_TAG + " ", None
-                        # Now yield the first token of reasoning content
-                        yield delta.reasoning_content, None
-                    else:
-                        # For multi-line reasoning content, add blockquote markers after newlines
-                        if delta.reasoning_content.startswith('\n'):
-                            yield '\n> ' + delta.reasoning_content[1:], None
-                        elif last_char_was_newline:
-                            yield '> ' + delta.reasoning_content, None
-                            last_char_was_newline = False
-                        else:
-                            yield delta.reasoning_content, None
-                    
-                    # Track if this chunk ends with a newline
-                    last_char_was_newline = delta.reasoning_content.endswith('\n')
+                    reasoning = delta.reasoning_content
                 
-                # If there's content and we were in a reasoning section, close the reasoning section
+                # Extract regular content if available
                 if hasattr(delta, 'content') and delta.content:
-                    if in_reasoning_section:
-                        in_reasoning_section = False
-                        # Add a space after the REASONING_END_TAG to ensure proper formatting
-                        yield REASONING_END_TAG + " ", None
-                    
-                    # If this is the first content chunk, mark content as started
-                    if not content_started:
-                        content_started = True
-                    
-                    # Yield the content with usage stats (if it's the final chunk)
-                    yield delta.content, chunk.usage if is_final else None
+                    content = delta.content
                 
-                # If it's the final chunk with no content, yield the usage stats with empty content
+                # If it's a model that provides reasoning, return both content and reasoning
+                if reasoning is not None:
+                    # Return an object with both content and reasoning
+                    yield {
+                        'content': content or '',
+                        'reasoning': reasoning
+                    }, chunk.usage if is_final else None
+                elif content is not None:
+                    # For regular content, just return the content string
+                    yield content, chunk.usage if is_final else None
                 elif is_final:
-                    # If we're still in a reasoning section, close it
-                    if in_reasoning_section:
-                        yield REASONING_END_TAG + " ", None
-                    
+                    # Final chunk with no content, yield empty string with usage stats
                     yield "", chunk.usage
 
         # Use async iteration to process the stream
@@ -295,5 +289,14 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: O
         log(LogLevel.DEBUGGING, "Stream complete")
 
     except Exception as e:
-        log(LogLevel.ERROR, f"Error in stream_chat_response: {str(e)}")
+        # Enhanced error logging with more details
+        error_type = type(e).__name__
+        error_msg = str(e)
+        error_repr = repr(e)
+        error_dict = getattr(e, '__dict__', {})
+        
+        log(LogLevel.ERROR, f"Error in stream_chat_response - Type: {error_type}, Message: {error_msg}")
+        log(LogLevel.ERROR, f"Error details - Repr: {error_repr}, Attributes: {error_dict}")
+        
+        # Re-raise for proper error handling up the chain
         raise

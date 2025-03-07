@@ -207,6 +207,7 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
             history = payload.get("history", [])
             system_prompt = payload.get("system_prompt")
             model_id = payload.get("model_id")  # Get model_id from payload if provided
+            include_reasoning = payload.get("include_reasoning", False)  # Get include_reasoning flag
             
             # Get temperature from payload or model config
             temperature = payload.get("temperature")
@@ -262,17 +263,62 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                 # Function to fill the queue from the stream
                 async def fill_queue():
                     try:
+                        # If include_reasoning is true, use a model that supports reasoning if available
+                        if include_reasoning and model_id and "reasoner" not in model_id.lower():
+                            # Try to find a reasoner variant of the selected model
+                            reasoner_model_id = model_id + "-reasoner"
+                            try:
+                                # Check if this model exists in config
+                                model_config = get_model_config(reasoner_model_id)
+                                # Verify the model config has the necessary fields
+                                if not model_config or not model_config.get("model_id"):
+                                    raise ValueError(f"Invalid config for model {reasoner_model_id}")
+                                    
+                                log(LogLevel.MINIMUM, f"🐍 Using reasoning model {reasoner_model_id} (session: {session_id})")
+                                model_to_use = reasoner_model_id
+                            except Exception as model_err:
+                                # Log specific error for model selection
+                                log(LogLevel.ERROR, f"🐍 Error selecting reasoning model for {model_id}: {str(model_err)} (session: {session_id})")
+                                # Fallback to the original model
+                                log(LogLevel.MINIMUM, f"🐍 Falling back to original model {model_id} (session: {session_id})")
+                                model_to_use = model_id
+                        else:
+                            model_to_use = model_id
+                        
+                        # Verify the selected model is valid
+                        if not model_to_use:
+                            raise ValueError("No model selected for generating response")
+                            
+                        log(LogLevel.MINIMUM, f"🐍 Using model {model_to_use} for session {session_id}")
+                        
                         async for content_chunk, chunk_usage in stream_chat_response(
                             prompt, 
                             history, 
                             temperature, 
-                            model_id
+                            model_to_use
                         ):
-                            await chunk_queue.put((content_chunk, chunk_usage, None))
+                            # Check if the content contains reasoning data (from the model via the API)
+                            # Note: This depends on the API's capability to return reasoning directly
+                            if include_reasoning and isinstance(content_chunk, dict) and 'reasoning' in content_chunk:
+                                # If the model provides reasoning directly, send it separately
+                                await chunk_queue.put((content_chunk, chunk_usage, None))
+                            else:
+                                # Regular content handling
+                                await chunk_queue.put((content_chunk, chunk_usage, None))
+                        
                         # Mark end of stream
                         await chunk_queue.put((None, None, None))
                     except Exception as e:
-                        log(LogLevel.ERROR, f"🐍 Stream error in fill_queue: {str(e)} (session: {session_id})")
+                        # Enhanced error logging
+                        error_type = type(e).__name__
+                        error_msg = str(e)
+                        error_repr = repr(e)
+                        error_dict = str(getattr(e, '__dict__', {}))
+                        
+                        log(LogLevel.ERROR, f"🐍 Stream error in fill_queue - Type: {error_type}, Message: {error_msg} (session: {session_id})")
+                        log(LogLevel.ERROR, f"🐍 Error details - Repr: {error_repr}, Attributes: {error_dict} (session: {session_id})")
+                        
+                        # Pass the exception to the main processing loop
                         await chunk_queue.put((None, None, e))
                 
                 # Start filling the queue in a separate task
@@ -307,15 +353,41 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                         received_final_chunk = True
                     else:  # Normal token
                         streaming_token_count += 1  # Used for progress tracking
-                                              
-                        message = {
-                            "sessionId": session_id,
-                            "type": "token",
-                            "token": content_chunk, 
-                            "done": False,
-                            "tokenCount": streaming_token_count  # Helps client track progress
-                        }
-                        await websocket.send_text(json.dumps(message))
+                        
+                        # Handle different chunk formats
+                        if isinstance(content_chunk, dict) and 'content' in content_chunk:
+                            # This is a combined content+reasoning chunk from a model that supports it
+                            
+                            # Send reasoning data if requested
+                            if include_reasoning and 'reasoning' in content_chunk:
+                                reasoning_message = {
+                                    "sessionId": session_id,
+                                    "type": "token",
+                                    "reasoning": content_chunk['reasoning'],
+                                    "done": False,
+                                    "tokenCount": streaming_token_count
+                                }
+                                await websocket.send_text(json.dumps(reasoning_message))
+                            
+                            # Send content data
+                            content_message = {
+                                "sessionId": session_id,
+                                "type": "token",
+                                "token": content_chunk['content'], 
+                                "done": False,
+                                "tokenCount": streaming_token_count
+                            }
+                            await websocket.send_text(json.dumps(content_message))
+                        else:
+                            # This is a regular text chunk
+                            message = {
+                                "sessionId": session_id,
+                                "type": "token",
+                                "token": content_chunk, 
+                                "done": False,
+                                "tokenCount": streaming_token_count
+                            }
+                            await websocket.send_text(json.dumps(message))
                 
                 # Clean up the fill task
                 if not fill_task.done():
@@ -330,18 +402,25 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                     
                 if not received_final_chunk:
                     log(LogLevel.MINIMUM, f"🐍 Warning: Stream completed without receiving usage stats (session: {session_id})")
-                    
+            
             except Exception as e:
-                error_message = str(e)
-                log(LogLevel.ERROR, f"🐍 Streaming error for session {session_id}: {error_message}")
+                # Enhanced error logging
+                error_type = type(e).__name__
+                error_msg = str(e)
+                error_repr = repr(e)
+                error_dict = str(getattr(e, '__dict__', {}))
+                
+                log(LogLevel.ERROR, f"🐍 Streaming error for session {session_id} - Type: {error_type}, Message: {error_msg}")
+                log(LogLevel.ERROR, f"🐍 Error details - Repr: {error_repr}, Attributes: {error_dict} (session: {session_id})")
+                
                 await websocket.send_text(json.dumps({
                     "sessionId": session_id,
                     "type": "error",
                     "error": "Failed to generate response",
-                    "details": error_message
+                    "details": f"{error_type}: {error_msg}"
                 }))
                 return
-            
+                
             # Send completion message
             if response_started:
                 completion_time = time.time()
@@ -376,6 +455,7 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                 "type": "error",
                 "error": "Invalid JSON format"
             }))
+                
         except Exception as e:
             log(LogLevel.ERROR, f"🐍 Error processing message for session {session_id}: {e}")
             await websocket.send_text(json.dumps({

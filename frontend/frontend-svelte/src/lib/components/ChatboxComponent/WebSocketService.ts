@@ -131,13 +131,13 @@ function handleWebSocketMessage(sessionId: string, data: WebSocketMessage): void
     }
     
     // Handle streaming tokens
-    if (data.token !== undefined) {
+    if (data.token !== undefined || data.reasoning !== undefined) {
         const currentId = get(store.currentResponseId);
         
         if (currentId === null) {
             // Create a new system message for the response
             const newId = get(store.messages).length + 1;
-            store.addSystemMessage(data.token, true, data.reasoning);
+            store.addSystemMessage(data.token || '', true, data.reasoning);
             store.currentResponseId.set(newId);
         } else {
             // Append token to the last system message
@@ -145,7 +145,23 @@ function handleWebSocketMessage(sessionId: string, data: WebSocketMessage): void
             const lastMessage = currentMessages.find(msg => msg.id === currentId);
             
             if (lastMessage) {
-                store.updateSystemMessage(currentId, lastMessage.text + data.token, data.reasoning);
+                if (data.token !== undefined) {
+                    // If this is a token update, append to the message text
+                    store.updateSystemMessage(
+                        currentId, 
+                        lastMessage.text + data.token, 
+                        data.reasoning !== undefined 
+                            ? (lastMessage.reasoning || '') + data.reasoning 
+                            : lastMessage.reasoning
+                    );
+                } else if (data.reasoning !== undefined) {
+                    // If this is just a reasoning update, only update the reasoning
+                    store.updateSystemMessage(
+                        currentId, 
+                        lastMessage.text, 
+                        (lastMessage.reasoning || '') + data.reasoning
+                    );
+                }
             }
         }
     }
