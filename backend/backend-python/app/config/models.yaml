@@ -1,0 +1,18 @@
+models:
+  deepseek-chat:
+    api: deepseek
+    model_id: deepseek-chat
+    temperature_default: 0.7
+    description: "General purpose chat model"
+    
+  deepseek-reasoner:
+    api: deepseek
+    model_id: deepseek-reasoner
+    temperature_default: 0.5
+    description: "Specialized reasoning model"
+
+apis:
+  deepseek:
+    base_url: ${DEEPSEEK_API_BASE_URL}
+    api_key: ${DEEPSEEK_API_KEY}
+    library: openai 

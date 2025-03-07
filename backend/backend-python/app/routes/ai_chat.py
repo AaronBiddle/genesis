@@ -2,9 +2,10 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import json
 from services.openai_client import stream_chat_response
 from utils.logging import LogLevel, log
+from utils.config import get_model_config
 import asyncio
 import time
-from typing import Dict, Any, Set, List
+from typing import Dict, Any, Set, List, Optional
 
 router = APIRouter()
 
@@ -180,22 +181,38 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
         
         # Create truncated version of data for logging
         debug_data = payload.copy()
-        if "prompt" in debug_data:
-            debug_data["prompt"] = debug_data["prompt"][:10] + "..."
+        if "prompt" in debug_data and debug_data["prompt"]:
+            if len(debug_data["prompt"]) > 30:
+                debug_data["prompt"] = debug_data["prompt"][:30] + "..."
+                
         if "history" in debug_data and debug_data["history"]:
+            trimmed_history = []
             for msg in debug_data["history"]:
-                if "content" in msg:
-                    # Keep full system prompts, truncate other messages
-                    if msg.get("role") == "system":
-                        continue
-                    msg["content"] = msg["content"][:10] + "..."
+                if "content" in msg and msg["content"]:
+                    # Trim all message contents for readability
+                    if len(msg["content"]) > 30:
+                        msg_copy = msg.copy()
+                        msg_copy["content"] = msg["content"][:30] + "..."
+                        trimmed_history.append(msg_copy)
+                    else:
+                        trimmed_history.append(msg)
+                else:
+                    trimmed_history.append(msg)
+            debug_data["history"] = trimmed_history
+            
         log(LogLevel.DEBUGGING, f"🐍 Received message for session {session_id}: {json.dumps(debug_data)}")
         
         try:
             prompt = payload.get("prompt")
             history = payload.get("history", [])
             system_prompt = payload.get("system_prompt")
-            temperature = payload.get("temperature", 0.7)  # Default to 0.7 if not provided
+            model_id = payload.get("model_id")  # Get model_id from payload if provided
+            
+            # Get temperature from payload or model config
+            temperature = payload.get("temperature")
+            if temperature is None and model_id:
+                model_config = get_model_config(model_id)
+                temperature = model_config.get("temperature_default")
             
             if not prompt:
                 log(LogLevel.ERROR, f"🐍 No prompt provided for session {session_id}")
@@ -205,9 +222,31 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                 }))
                 return
             
-            # Add system prompt to history if not already present
-            if system_prompt and (not history or history[0].get("role") != "system"):
-                history.insert(0, {"role": "system", "content": system_prompt})
+            # Process history to ensure system prompt is at the beginning
+            # First, extract system message if present
+            system_message = None
+            other_messages = []
+
+            for msg in history:
+                if msg.get("role") == "system":
+                    system_message = msg
+                else:
+                    other_messages.append(msg)
+
+            # Create a new history list starting with the system message
+            processed_history = []
+
+            # Add system message (from history or from system_prompt parameter)
+            if system_message:
+                processed_history.append(system_message)
+            elif system_prompt:
+                processed_history.append({"role": "system", "content": system_prompt})
+            else:
+                processed_history.append({"role": "system", "content": "You are a helpful assistant."})
+
+            # Add all other messages
+            processed_history.extend(other_messages)
+            history = processed_history
             
             streaming_token_count = 0
             usage_stats = None
@@ -223,12 +262,62 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                 # Function to fill the queue from the stream
                 async def fill_queue():
                     try:
-                        async for content_chunk, chunk_usage in stream_chat_response(prompt, history, temperature):
-                            await chunk_queue.put((content_chunk, chunk_usage, None))
+                        # Always try to use a reasoner model if available
+                        if model_id and "reasoner" not in model_id.lower():
+                            # Try to find a reasoner variant of the selected model
+                            reasoner_model_id = model_id + "-reasoner"
+                            try:
+                                # Check if this model exists in config
+                                model_config = get_model_config(reasoner_model_id)
+                                # Verify the model config has the necessary fields
+                                if not model_config or not model_config.get("model_id"):
+                                    raise ValueError(f"Invalid config for model {reasoner_model_id}")
+                                    
+                                log(LogLevel.MINIMUM, f"🐍 Using reasoning model {reasoner_model_id} (session: {session_id})")
+                                model_to_use = reasoner_model_id
+                            except Exception as model_err:
+                                # Log specific error for model selection
+                                log(LogLevel.ERROR, f"🐍 Error selecting reasoning model for {model_id}: {str(model_err)} (session: {session_id})")
+                                # Fallback to the original model
+                                log(LogLevel.MINIMUM, f"🐍 Falling back to original model {model_id} (session: {session_id})")
+                                model_to_use = model_id
+                        else:
+                            model_to_use = model_id
+                        
+                        # Verify the selected model is valid
+                        if not model_to_use:
+                            raise ValueError("No model selected for generating response")
+                            
+                        log(LogLevel.MINIMUM, f"🐍 Using model {model_to_use} for session {session_id}")
+                        
+                        async for content_chunk, chunk_usage in stream_chat_response(
+                            prompt, 
+                            history, 
+                            temperature, 
+                            model_to_use
+                        ):
+                            # Check if the content contains reasoning data (from the model via the API)
+                            # Note: This depends on the API's capability to return reasoning directly
+                            if isinstance(content_chunk, dict) and 'reasoning' in content_chunk:
+                                # If the model provides reasoning directly, send it separately
+                                await chunk_queue.put((content_chunk, chunk_usage, None))
+                            else:
+                                # Regular content handling
+                                await chunk_queue.put((content_chunk, chunk_usage, None))
+                        
                         # Mark end of stream
                         await chunk_queue.put((None, None, None))
                     except Exception as e:
-                        log(LogLevel.ERROR, f"🐍 Stream error in fill_queue: {str(e)} (session: {session_id})")
+                        # Enhanced error logging
+                        error_type = type(e).__name__
+                        error_msg = str(e)
+                        error_repr = repr(e)
+                        error_dict = str(getattr(e, '__dict__', {}))
+                        
+                        log(LogLevel.ERROR, f"🐍 Stream error in fill_queue - Type: {error_type}, Message: {error_msg} (session: {session_id})")
+                        log(LogLevel.ERROR, f"🐍 Error details - Repr: {error_repr}, Attributes: {error_dict} (session: {session_id})")
+                        
+                        # Pass the exception to the main processing loop
                         await chunk_queue.put((None, None, e))
                 
                 # Start filling the queue in a separate task
@@ -263,15 +352,41 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                         received_final_chunk = True
                     else:  # Normal token
                         streaming_token_count += 1  # Used for progress tracking
-                                              
-                        message = {
-                            "sessionId": session_id,
-                            "type": "token",
-                            "token": content_chunk, 
-                            "done": False,
-                            "tokenCount": streaming_token_count  # Helps client track progress
-                        }
-                        await websocket.send_text(json.dumps(message))
+                        
+                        # Handle different chunk formats
+                        if isinstance(content_chunk, dict) and 'content' in content_chunk:
+                            # This is a combined content+reasoning chunk from a model that supports it
+                            
+                            # Send reasoning data if requested
+                            if 'reasoning' in content_chunk:
+                                reasoning_message = {
+                                    "sessionId": session_id,
+                                    "type": "token",
+                                    "reasoning": content_chunk['reasoning'],
+                                    "done": False,
+                                    "tokenCount": streaming_token_count
+                                }
+                                await websocket.send_text(json.dumps(reasoning_message))
+                            
+                            # Send content data
+                            content_message = {
+                                "sessionId": session_id,
+                                "type": "token",
+                                "token": content_chunk['content'], 
+                                "done": False,
+                                "tokenCount": streaming_token_count
+                            }
+                            await websocket.send_text(json.dumps(content_message))
+                        else:
+                            # This is a regular text chunk
+                            message = {
+                                "sessionId": session_id,
+                                "type": "token",
+                                "token": content_chunk, 
+                                "done": False,
+                                "tokenCount": streaming_token_count
+                            }
+                            await websocket.send_text(json.dumps(message))
                 
                 # Clean up the fill task
                 if not fill_task.done():
@@ -286,18 +401,25 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                     
                 if not received_final_chunk:
                     log(LogLevel.MINIMUM, f"🐍 Warning: Stream completed without receiving usage stats (session: {session_id})")
-                    
+            
             except Exception as e:
-                error_message = str(e)
-                log(LogLevel.ERROR, f"🐍 Streaming error for session {session_id}: {error_message}")
+                # Enhanced error logging
+                error_type = type(e).__name__
+                error_msg = str(e)
+                error_repr = repr(e)
+                error_dict = str(getattr(e, '__dict__', {}))
+                
+                log(LogLevel.ERROR, f"🐍 Streaming error for session {session_id} - Type: {error_type}, Message: {error_msg}")
+                log(LogLevel.ERROR, f"🐍 Error details - Repr: {error_repr}, Attributes: {error_dict} (session: {session_id})")
+                
                 await websocket.send_text(json.dumps({
                     "sessionId": session_id,
                     "type": "error",
                     "error": "Failed to generate response",
-                    "details": error_message
+                    "details": f"{error_type}: {error_msg}"
                 }))
                 return
-            
+                
             # Send completion message
             if response_started:
                 completion_time = time.time()
@@ -332,6 +454,7 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                 "type": "error",
                 "error": "Invalid JSON format"
             }))
+                
         except Exception as e:
             log(LogLevel.ERROR, f"🐍 Error processing message for session {session_id}: {e}")
             await websocket.send_text(json.dumps({

@@ -124,20 +124,20 @@ function handleWebSocketMessage(sessionId: string, data: WebSocketMessage): void
     
     // Handle error messages
     if (data.error) {
-        const errorText = `Error: ${data.error}${data.details ? ' - ' + data.details : ''}`;
-        store.addSystemMessage(errorText, true);
+        logger('ERROR', 'websocket', 'handleWebSocketMessage', `Received error: ${data.error}`, data.details);
+        store.addSystemMessage(`Error: ${data.error}${data.details ? ` - ${data.details}` : ''}`, true);
         store.currentResponseId.set(null);
         return;
     }
     
     // Handle streaming tokens
-    if (data.token !== undefined) {
+    if (data.token !== undefined || data.reasoning !== undefined) {
         const currentId = get(store.currentResponseId);
         
         if (currentId === null) {
             // Create a new system message for the response
             const newId = get(store.messages).length + 1;
-            store.addSystemMessage(data.token, true);
+            store.addSystemMessage(data.token || '', true, data.reasoning);
             store.currentResponseId.set(newId);
         } else {
             // Append token to the last system message
@@ -145,14 +145,29 @@ function handleWebSocketMessage(sessionId: string, data: WebSocketMessage): void
             const lastMessage = currentMessages.find(msg => msg.id === currentId);
             
             if (lastMessage) {
-                store.updateSystemMessage(currentId, lastMessage.text + data.token);
+                if (data.token !== undefined) {
+                    // If this is a token update, append to the message text
+                    store.updateSystemMessage(
+                        currentId, 
+                        lastMessage.text + data.token, 
+                        data.reasoning !== undefined 
+                            ? (lastMessage.reasoning || '') + data.reasoning 
+                            : lastMessage.reasoning
+                    );
+                } else if (data.reasoning !== undefined) {
+                    // If this is just a reasoning update, only update the reasoning
+                    store.updateSystemMessage(
+                        currentId, 
+                        lastMessage.text, 
+                        (lastMessage.reasoning || '') + data.reasoning
+                    );
+                }
             }
         }
     }
     
-    // If done flag is received, reset current response
+    // Handle completion message
     if (data.done) {
-        logger('DEBUG', 'network', 'WebSocketService', `Received final packet (done=true) for session ${sessionId}`);
         store.currentResponseId.set(null);
     }
 }
@@ -165,8 +180,8 @@ export function sendMessage(sessionId: string, messageText: string): void {
     
     // Ensure WebSocket is connected
     if (!webSocket || webSocket.readyState !== WebSocket.OPEN) {
-        logger('ERROR', 'network', 'WebSocketService', `WebSocket is not connected for session ${sessionId}`);
-        store.addSystemMessage('Error: Not connected to server', true);
+        logger('ERROR', 'websocket', 'sendMessage', 'WebSocket is not connected');
+        store.addSystemMessage('Error: Cannot send message, WebSocket is not connected.', true);
         
         // Try to reconnect
         initWebSocket();
@@ -176,23 +191,30 @@ export function sendMessage(sessionId: string, messageText: string): void {
     const currentMessages = get(store.messages);
     const currentSettings = get(store.settings);
     
-    // Prepare payload with sessionId
+    // Build conversation history for the API - without reasoning data
+    const history = currentMessages.map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'assistant',
+        content: msg.text
+        // Reasoning data removed as it's not used by the backend
+    }));
+    
+    // Build the payload with the includeReasoning flag
     const payload: WebSocketPayload = {
-        sessionId: sessionId,
+        sessionId,
         type: 'message',
         payload: {
-            prompt: messageText.trim(),
-            history: currentMessages.map(msg => ({ 
-                role: msg.sender, 
-                content: msg.text 
-            })),
+            prompt: messageText,
+            history,
             system_prompt: currentSettings.systemPrompt,
-            temperature: currentSettings.temperature
+            temperature: currentSettings.temperature,
+            model_id: currentSettings.modelId
+            // Removed include_reasoning flag - backend will always send reasoning if available
         }
     };
     
     // Send payload
-    logger('DEBUG', 'network', 'WebSocketService', `Sending message for session ${sessionId}`);
+    logger('INFO', 'websocket', 'sendMessage', `Sent message to WebSocket for session ${sessionId}`);
+    logger('TRACE', 'network', 'WebSocketService', `Message payload for session ${sessionId}:`, JSON.stringify(payload));
     webSocket.send(JSON.stringify(payload));
     store.currentResponseId.set(null); // will be set on receiving first token
 }

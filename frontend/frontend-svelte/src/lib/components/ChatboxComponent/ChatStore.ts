@@ -4,7 +4,8 @@ import type { Message, ChatSettings } from './types';
 // Default settings values
 const DEFAULT_SETTINGS: ChatSettings = {
     temperature: 0.7,
-    systemPrompt: "You are a helpful AI assistant."
+    systemPrompt: "You are a helpful AI assistant.",
+    modelId: "deepseek-chat" // Default model
 };
 
 // Store factory to create independent stores for each chat instance
@@ -13,7 +14,9 @@ export function createChatStore(id: string) {
     const messages = writable<Message[]>([]);
     const currentResponseId = writable<number | null>(null);
     const newMessage = writable<string>('');
-    const settings = writable<ChatSettings>({...DEFAULT_SETTINGS});
+    const settings = writable<ChatSettings>({
+        ...DEFAULT_SETTINGS // Use the DEFAULT_SETTINGS to ensure consistency
+    });
     const settingsApplied = writable<boolean>(false);
     const showSettings = writable<boolean>(false);
     const wsConnected = writable<boolean>(false);
@@ -31,24 +34,30 @@ export function createChatStore(id: string) {
         ]);
     }
 
-    function addSystemMessage(text: string, renderMarkdown: boolean = true): void {
+    function addSystemMessage(text: string, renderMarkdown: boolean = true, reasoning?: string): void {
         messages.update(msgs => [
             ...msgs, 
             {
                 id: msgs.length + 1,
                 text,
-                sender: 'system',
+                sender: 'assistant',
                 timestamp: new Date(),
-                renderMarkdown
+                renderMarkdown,
+                reasoning,
+                showReasoning: false
             }
         ]);
     }
 
-    function updateSystemMessage(id: number, text: string): void {
+    function updateSystemMessage(id: number, text: string, reasoning?: string): void {
         messages.update(msgs => 
             msgs.map(msg => {
                 if (msg.id === id) {
-                    return { ...msg, text };
+                    return { 
+                        ...msg, 
+                        text,
+                        reasoning: reasoning || msg.reasoning 
+                    };
                 }
                 return msg;
             })
@@ -60,6 +69,17 @@ export function createChatStore(id: string) {
             msgs.map(msg => {
                 if (msg.id === id) {
                     return { ...msg, renderMarkdown: msg.renderMarkdown === false ? true : false };
+                }
+                return msg;
+            })
+        );
+    }
+
+    function toggleReasoningDisplay(id: number): void {
+        messages.update(msgs => 
+            msgs.map(msg => {
+                if (msg.id === id && msg.reasoning) {
+                    return { ...msg, showReasoning: !msg.showReasoning };
                 }
                 return msg;
             })
@@ -101,6 +121,7 @@ export function createChatStore(id: string) {
         addSystemMessage,
         updateSystemMessage,
         toggleMarkdownRendering,
+        toggleReasoningDisplay,
         applySettings,
         resetSettings,
         toggleSettingsView,
