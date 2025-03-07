@@ -212,8 +212,12 @@ async def process_message(websocket: WebSocket, data: Dict[Any, Any], session_id
                 }))
                 return
             
-            # Add system prompt to history if not already present
-            if system_prompt and (not history or history[0].get("role") != "system"):
+            # Process history to ensure system prompt is at the beginning
+            # First, remove any existing system messages from history
+            history = [msg for msg in history if msg.get("role") != "system"]
+            
+            # Then add system prompt at the beginning if provided
+            if system_prompt:
                 history.insert(0, {"role": "system", "content": system_prompt})
             
             streaming_token_count = 0

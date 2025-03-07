@@ -149,12 +149,33 @@ async def stream_chat_response(prompt: str, history: list = None, temperature: O
         
         client_instance = get_client_for_model(model_id)
         
+        # Prepare messages with system message first
         messages = []
+        
+        # Extract system message from history if present
+        system_message = None
+        user_messages = []
+        
         if history:
-            messages.extend(history)
+            for msg in history:
+                if msg["role"] == "system":
+                    # Save the system message
+                    system_message = msg
+                else:
+                    # Save other messages
+                    user_messages.append(msg)
+        
+        # Always add system message first
+        if system_message:
+            messages.append(system_message)
         else:
+            # Default system message if none provided
             messages.append({"role": "system", "content": "You are a helpful assistant."})
-            
+        
+        # Then add all other messages
+        messages.extend(user_messages)
+        
+        # Finally add the current user prompt
         messages.append({"role": "user", "content": prompt})
 
         # Create truncated version of messages for logging
