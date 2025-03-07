@@ -35,7 +35,6 @@ export interface WebSocketPayload {
         history: { 
             role: string; 
             content: string;
-            reasoning?: string; // Optional reasoning from previous messages
         }[];
         system_prompt: string;
         temperature: number;

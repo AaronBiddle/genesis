@@ -191,12 +191,11 @@ export function sendMessage(sessionId: string, messageText: string): void {
     const currentMessages = get(store.messages);
     const currentSettings = get(store.settings);
     
-    // Build conversation history for the API
+    // Build conversation history for the API - without reasoning data
     const history = currentMessages.map(msg => ({
         role: msg.sender === 'user' ? 'user' : 'assistant',
-        content: msg.text,
-        // Include reasoning if available
-        reasoning: msg.reasoning
+        content: msg.text
+        // Reasoning data removed as it's not used by the backend
     }));
     
     // Build the payload with the includeReasoning flag
