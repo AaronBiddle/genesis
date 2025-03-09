@@ -64,6 +64,7 @@ export async function loadChat(filename: string): Promise<any> {
     try {
         logger('INFO', 'ui', 'FileOperationsService', `Loading chat from ${filename}`);
         
+        // The backend expects a BaseFileRequest model with a filename field
         const response = await fetch(`${API_URL}/files/chat/load`, {
             method: 'POST',
             headers: {
@@ -75,7 +76,8 @@ export async function loadChat(filename: string): Promise<any> {
         });
         
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+            logger('ERROR', 'ui', 'FileOperationsService', `Server error: ${JSON.stringify(errorData)}`);
             throw new Error(errorData.detail || 'Failed to load chat');
         }
         

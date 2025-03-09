@@ -4,6 +4,7 @@ from typing import Dict, List, Any, Optional, Union
 import os
 import json
 from pathlib import Path
+from utils.logging import log, LogLevel
 
 router = APIRouter(prefix="/files", tags=["files"])
 
@@ -121,14 +122,20 @@ async def load_file(
 ):
     """Load a file of the specified type"""
     try:
+        log(LogLevel.DEBUGGING, f"DEBUG - load_file - file_type: {file_type}, file_request: {file_request}")
+        
         base_dir = get_base_directory(file_type)
         file_path = base_dir / file_request.filename
         
+        log(LogLevel.DEBUGGING, f"DEBUG - load_file - base_dir: {base_dir}, file_path: {file_path}")
+        
         # Ensure the path is safe
         if not is_safe_path(file_path, base_dir):
+            log(LogLevel.ERROR, f"Invalid file path: {file_path}")
             raise HTTPException(status_code=400, detail="Invalid file path")
         
         if not os.path.exists(file_path):
+            log(LogLevel.ERROR, f"File not found: {file_path}")
             raise HTTPException(status_code=404, detail=f"{file_type} not found")
         
         if file_type == "document" or file_type == "prompt":
@@ -137,25 +144,30 @@ async def load_file(
             return {"filename": file_request.filename, "content": content}
         
         elif file_type == "chat":
-            with open(file_path, "r", encoding="utf-8") as f:
-                chat_data = json.load(f)
-            
-            # Ensure the chat data has the expected structure
-            required_fields = ["messages", "system_prompt", "temperature"]
-            for field in required_fields:
-                if field not in chat_data:
-                    chat_data[field] = [] if field == "messages" else "" if field == "system_prompt" else 0.7
-            
-            return {
-                "filename": file_request.filename,
-                "messages": chat_data["messages"],
-                "system_prompt": chat_data["system_prompt"],
-                "temperature": chat_data["temperature"]
-            }
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    chat_data = json.load(f)
+                
+                # Ensure the chat data has the expected structure
+                required_fields = ["messages", "system_prompt", "temperature"]
+                for field in required_fields:
+                    if field not in chat_data:
+                        chat_data[field] = [] if field == "messages" else "" if field == "system_prompt" else 0.7
+                
+                return {
+                    "filename": file_request.filename,
+                    "messages": chat_data["messages"],
+                    "system_prompt": chat_data["system_prompt"],
+                    "temperature": chat_data["temperature"]
+                }
+            except json.JSONDecodeError as e:
+                log(LogLevel.ERROR, f"Invalid JSON format in chat file: {file_path}, error: {e}")
+                raise HTTPException(status_code=400, detail="Invalid JSON format in chat file")
     
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON format in chat file")
     except Exception as e:
+        log(LogLevel.ERROR, f"Error loading file: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to load {file_type}: {str(e)}")
 
 @router.delete("/{file_type}/delete/{filename:path}", response_model=Dict[str, Any])
