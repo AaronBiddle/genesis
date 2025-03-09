@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query, Path
+from fastapi import APIRouter, HTTPException, Query, Path as FastAPIPath
 from pydantic import BaseModel
 from typing import Dict, List, Any, Optional, Union
 import os
@@ -41,7 +41,7 @@ def is_safe_path(path: Path, base_dir: Path) -> bool:
 # Unified API endpoints
 @router.post("/{file_type}/save", response_model=Dict[str, Any])
 async def save_file(
-    file_type: str = Path(..., regex="^(document|chat|prompt)$"),
+    file_type: str = FastAPIPath(..., regex="^(document|chat|prompt)$"),
     file_content: FileContent = None
 ):
     """
@@ -91,7 +91,7 @@ async def save_file(
         raise HTTPException(status_code=500, detail=f"Failed to save {file_type}: {str(e)}")
 
 @router.get("/{file_type}/list", response_model=Dict[str, Any])
-async def list_files(file_type: str = Path(..., regex="^(document|chat|prompt)$")):
+async def list_files(file_type: str = FastAPIPath(..., regex="^(document|chat|prompt)$")):
     """List all files of the specified type"""
     try:
         base_dir = get_base_directory(file_type)
@@ -117,7 +117,7 @@ async def list_files(file_type: str = Path(..., regex="^(document|chat|prompt)$"
 @router.post("/{file_type}/load", response_model=Dict[str, Any])
 async def load_file(
     file_request: BaseFileRequest,
-    file_type: str = Path(..., regex="^(document|chat|prompt)$")
+    file_type: str = FastAPIPath(..., regex="^(document|chat|prompt)$")
 ):
     """Load a file of the specified type"""
     try:
@@ -161,7 +161,7 @@ async def load_file(
 @router.delete("/{file_type}/delete/{filename:path}", response_model=Dict[str, Any])
 async def delete_file(
     filename: str,
-    file_type: str = Path(..., regex="^(document|chat|prompt)$")
+    file_type: str = FastAPIPath(..., regex="^(document|chat|prompt)$")
 ):
     """Delete a file of the specified type"""
     try:
