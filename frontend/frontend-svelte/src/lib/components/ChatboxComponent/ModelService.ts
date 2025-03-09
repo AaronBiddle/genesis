@@ -20,7 +20,7 @@ export async function fetchAvailableModels(): Promise<void> {
     
     try {
         logger('INFO', 'network', 'ModelService', 'Fetching available models');
-        const response = await fetch(`${API_URL}/api/models`);
+        const response = await fetch(`${API_URL}/models`);
         
         if (!response.ok) {
             throw new Error(`Failed to fetch models: ${response.statusText}`);

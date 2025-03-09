@@ -8,9 +8,6 @@ import { logger } from '$lib/components/LogControlPanel/logger';
 // Single WebSocket connection for all chat instances
 let webSocket: WebSocket | null = null;
 let isConnecting = false;
-let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 5;
-const RECONNECT_DELAY = 2000; // 2 seconds
 
 // Track active sessions
 const activeSessions = new Set<string>();
@@ -37,7 +34,6 @@ function initWebSocket() {
         logger('DEBUG', 'network', 'WebSocketService', 'WebSocket connected');
         connectionStatus.set(true);
         isConnecting = false;
-        reconnectAttempts = 0;
         
         // Update connection status for all active sessions
         activeSessions.forEach(sessionId => {
@@ -57,14 +53,7 @@ function initWebSocket() {
             store.wsConnected.set(false);
         });
         
-        // Attempt to reconnect
-        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-            reconnectAttempts++;
-            logger('DEBUG', 'network', 'WebSocketService', `Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
-            setTimeout(initWebSocket, RECONNECT_DELAY);
-        } else {
-            logger('ERROR', 'network', 'WebSocketService', 'Max reconnection attempts reached');
-        }
+        logger('INFO', 'network', 'WebSocketService', 'WebSocket connection closed. No automatic reconnection will be attempted.');
     };
     
     webSocket.onerror = (error) => {
@@ -88,8 +77,36 @@ function initWebSocket() {
     };
 }
 
+// Function to attempt reconnection
+export function reconnectWebSocket(): void {
+    logger('INFO', 'network', 'WebSocketService', 'Attempting to reconnect WebSocket');
+    
+    // Close existing socket if it exists
+    if (webSocket) {
+        webSocket.close(1000, 'Manual reconnection');
+        webSocket = null;
+    }
+    
+    // Reset connecting flag to allow new connection
+    isConnecting = false;
+    
+    // Initialize a new connection
+    initWebSocket();
+    
+    // Update connection status for all sessions
+    activeSessions.forEach(sessionId => {
+        const store = getChatStore(sessionId);
+        if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+            store.wsConnected.set(true);
+        } else {
+            store.wsConnected.set(false);
+        }
+    });
+}
+
 // Register a session with the WebSocket service
-export function registerSession(sessionId: string): void {
+export function registerSession(panelId: string): void {
+    const sessionId = panelId; // Explicit mapping between panel ID and session ID
     logger('DEBUG', 'network', 'WebSocketService', `Registering session: ${sessionId}`);
     activeSessions.add(sessionId);
     
@@ -106,7 +123,8 @@ export function registerSession(sessionId: string): void {
 }
 
 // Unregister a session when it's no longer needed
-export function unregisterSession(sessionId: string): void {
+export function unregisterSession(panelId: string): void {
+    const sessionId = panelId; // Explicit mapping between panel ID and session ID
     logger('DEBUG', 'network', 'WebSocketService', `Unregistering session: ${sessionId}`);
     activeSessions.delete(sessionId);
     
@@ -173,7 +191,9 @@ function handleWebSocketMessage(sessionId: string, data: WebSocketMessage): void
 }
 
 // Send a message via the WebSocket
-export function sendMessage(sessionId: string, messageText: string): void {
+export function sendMessage(panelId: string, messageText: string): void {
+    const sessionId = panelId; // Explicit mapping between panel ID and session ID
+    
     if (!messageText.trim()) return;
     
     const store = getChatStore(sessionId);
@@ -183,15 +203,18 @@ export function sendMessage(sessionId: string, messageText: string): void {
         logger('ERROR', 'websocket', 'sendMessage', 'WebSocket is not connected');
         store.addSystemMessage('Error: Cannot send message, WebSocket is not connected.', true);
         
-        // Try to reconnect
-        initWebSocket();
+        // Removing auto reconnect attempt
         return;
     }
     
     const currentMessages = get(store.messages);
     const currentSettings = get(store.settings);
     
+    // Add the user message to the store
+    store.addUserMessage(messageText);
+    
     // Build conversation history for the API - without reasoning data
+    // Use only the previous messages (before adding the current one)
     const history = currentMessages.map(msg => ({
         role: msg.sender === 'user' ? 'user' : 'assistant',
         content: msg.text
@@ -203,8 +226,8 @@ export function sendMessage(sessionId: string, messageText: string): void {
         sessionId,
         type: 'message',
         payload: {
-            prompt: messageText,
-            history,
+            prompt: messageText, // Keep the prompt field with the current message
+            history, // History contains only previous messages
             system_prompt: currentSettings.systemPrompt,
             temperature: currentSettings.temperature,
             model_id: currentSettings.modelId

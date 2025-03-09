@@ -5,7 +5,7 @@ from utils.logging import log, LogLevel
 
 router = APIRouter()
 
-@router.get("/api/models", response_model=Dict[str, Any])
+@router.get("/models", response_model=Dict[str, Any])
 async def get_models():
     """
     Get all available models and their configurations.

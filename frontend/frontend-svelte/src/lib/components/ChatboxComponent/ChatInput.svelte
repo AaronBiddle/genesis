@@ -7,15 +7,13 @@
     
     // Get the store for this specific chat instance
     const chatStore = getChatStore(panelId);
-    const { newMessage, addUserMessage } = chatStore;
+    const { newMessage } = chatStore;
 
     function handleSend(): void {
         if (!$newMessage.trim()) return;
         
-        // Add user message to chat
-        addUserMessage($newMessage);
-        
         // Send message via WebSocket
+        // The WebSocketService will add the user message to the chat store
         sendMessage(panelId, $newMessage);
         
         // Clear the input

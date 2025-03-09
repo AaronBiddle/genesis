@@ -19,7 +19,6 @@ from utils.config import get_model_api_config
 # Get model configuration
 model_config = get_model_api_config()
 model_id = model_config.get("model_id")
-model_id = "deepseek-reasoner"  # Using the reasoning model
 api_key = model_config.get("api_key")
 base_url = model_config.get("base_url")
 

@@ -1,5 +1,7 @@
-import { writable, get } from 'svelte/store';
+import { writable, get, derived } from 'svelte/store';
 import type { Message, ChatSettings } from './types';
+import { saveChat, loadChat, deleteChat } from './FileOperationsService';
+import { logger } from '$lib/components/LogControlPanel/logger';
 
 // Default settings values
 const DEFAULT_SETTINGS: ChatSettings = {
@@ -20,6 +22,15 @@ export function createChatStore(id: string) {
     const settingsApplied = writable<boolean>(false);
     const showSettings = writable<boolean>(false);
     const wsConnected = writable<boolean>(false);
+    const isLoading = writable<boolean>(false);
+    const currentFilename = writable<string>('');
+    
+    // Derived store for displaying the filename without path
+    const displayFilename = derived(currentFilename, $currentFilename => {
+        if (!$currentFilename) return '';
+        const parts = $currentFilename.split('/');
+        return parts[parts.length - 1];
+    });
 
     // Helper functions for message management
     function addUserMessage(text: string): void {
@@ -104,6 +115,78 @@ export function createChatStore(id: string) {
 
     function clearMessages(): void {
         messages.set([]);
+        currentFilename.set('');
+    }
+
+    // File operations functions
+    async function saveCurrentChat(filename: string): Promise<void> {
+        try {
+            isLoading.set(true);
+            const currentMessages = get(messages);
+            const currentSettings = get(settings);
+            
+            await saveChat(filename, currentMessages, currentSettings);
+            currentFilename.set(filename);
+            
+            logger('INFO', 'ui', 'ChatStore', `Chat saved to ${filename}`);
+        } catch (error) {
+            logger('ERROR', 'ui', 'ChatStore', `Failed to save chat: ${error}`);
+            throw error;
+        } finally {
+            isLoading.set(false);
+        }
+    }
+
+    async function loadChatFromFile(filename: string): Promise<void> {
+        try {
+            isLoading.set(true);
+            const chatData = await loadChat(filename);
+            
+            // Convert the loaded messages to our Message format
+            const loadedMessages: Message[] = chatData.messages.map((msg: any, index: number) => ({
+                id: index + 1,
+                text: msg.content,
+                sender: msg.role === 'user' ? 'user' : 'assistant',
+                timestamp: new Date(),
+                renderMarkdown: true,
+                showReasoning: false
+            }));
+            
+            // Update the stores
+            messages.set(loadedMessages);
+            settings.update(s => ({
+                ...s,
+                systemPrompt: chatData.system_prompt,
+                temperature: chatData.temperature
+            }));
+            currentFilename.set(filename);
+            
+            logger('INFO', 'ui', 'ChatStore', `Chat loaded from ${filename}`);
+        } catch (error) {
+            logger('ERROR', 'ui', 'ChatStore', `Failed to load chat: ${error}`);
+            throw error;
+        } finally {
+            isLoading.set(false);
+        }
+    }
+
+    async function deleteChatFile(filename: string): Promise<void> {
+        try {
+            isLoading.set(true);
+            await deleteChat(filename);
+            
+            // If the deleted file was the current one, clear the current filename
+            if (get(currentFilename) === filename) {
+                currentFilename.set('');
+            }
+            
+            logger('INFO', 'ui', 'ChatStore', `Chat deleted: ${filename}`);
+        } catch (error) {
+            logger('ERROR', 'ui', 'ChatStore', `Failed to delete chat: ${error}`);
+            throw error;
+        } finally {
+            isLoading.set(false);
+        }
     }
 
     return {
@@ -115,6 +198,9 @@ export function createChatStore(id: string) {
         settingsApplied,
         showSettings,
         wsConnected,
+        isLoading,
+        currentFilename,
+        displayFilename,
         
         // Functions
         addUserMessage,
@@ -125,7 +211,12 @@ export function createChatStore(id: string) {
         applySettings,
         resetSettings,
         toggleSettingsView,
-        clearMessages
+        clearMessages,
+        
+        // File operations
+        saveCurrentChat,
+        loadChatFromFile,
+        deleteChatFile
     };
 }
 
