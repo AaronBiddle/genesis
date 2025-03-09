@@ -191,7 +191,11 @@ export function sendMessage(sessionId: string, messageText: string): void {
     const currentMessages = get(store.messages);
     const currentSettings = get(store.settings);
     
+    // Add the user message to the store
+    store.addUserMessage(messageText);
+    
     // Build conversation history for the API - without reasoning data
+    // Use only the previous messages (before adding the current one)
     const history = currentMessages.map(msg => ({
         role: msg.sender === 'user' ? 'user' : 'assistant',
         content: msg.text
@@ -203,8 +207,8 @@ export function sendMessage(sessionId: string, messageText: string): void {
         sessionId,
         type: 'message',
         payload: {
-            prompt: messageText,
-            history,
+            prompt: messageText, // Keep the prompt field with the current message
+            history, // History contains only previous messages
             system_prompt: currentSettings.systemPrompt,
             temperature: currentSettings.temperature,
             model_id: currentSettings.modelId
