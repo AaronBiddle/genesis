@@ -5,6 +5,7 @@ import os
 import json
 from pathlib import Path
 from utils.logging import log, LogLevel
+from services.file_services import CHATS_DIR, DOCUMENTS_DIR, PROMPTS_DIR
 
 router = APIRouter(prefix="/files", tags=["files"])
 
@@ -17,19 +18,20 @@ class FileContent(BaseModel):
     file_type: str
     content: Union[str, Dict[str, Any]]  # String for documents, Dict for chats
 
+# Map file types to their base directories
+TYPE_TO_DIR = {
+    'chat': CHATS_DIR,
+    'document': DOCUMENTS_DIR,
+    'prompt': PROMPTS_DIR
+}
+
 # Helper functions
 def get_base_directory(file_type: str) -> Path:
     """Get the base directory for a specific file type"""
-    base_dir = Path(os.environ.get("DATA_DIR", "./data"))
-    
-    if file_type == "document":
-        return base_dir / "documents"
-    elif file_type == "chat":
-        return base_dir / "chats"
-    elif file_type == "prompt":
-        return base_dir / "prompts"
-    else:
+    base_dir = TYPE_TO_DIR.get(file_type)
+    if not base_dir:
         raise ValueError(f"Unsupported file type: {file_type}")
+    return base_dir
 
 def is_safe_path(path: Path, base_dir: Path) -> bool:
     """Check if a path is safe (doesn't escape the base directory)"""
@@ -58,6 +60,8 @@ async def save_file(
     try:
         base_dir = get_base_directory(file_type)
         file_path = base_dir / file_content.filename
+        
+        log(LogLevel.DEBUGGING, f"DEBUG - save_file - base_dir: {base_dir}, file_path: {file_path}")
         
         # Create directory if it doesn't exist
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -96,6 +100,8 @@ async def list_files(file_type: str = FastAPIPath(..., regex="^(document|chat|pr
     """List all files of the specified type"""
     try:
         base_dir = get_base_directory(file_type)
+        
+        log(LogLevel.DEBUGGING, f"DEBUG - list_files - base_dir: {base_dir}")
         
         if not os.path.exists(base_dir):
             os.makedirs(base_dir, exist_ok=True)
@@ -179,6 +185,8 @@ async def delete_file(
     try:
         base_dir = get_base_directory(file_type)
         file_path = base_dir / filename
+        
+        log(LogLevel.DEBUGGING, f"DEBUG - delete_file - base_dir: {base_dir}, file_path: {file_path}")
         
         # Ensure the path is safe
         if not is_safe_path(file_path, base_dir):
