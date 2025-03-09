@@ -51,6 +51,9 @@ async def list_directory(
         # Construct full path
         full_path = base_dir / path if base_dir else None
         
+        # DEBUG: Print the full path for debugging
+        log(LogLevel.DEBUGGING, f"DEBUG - list_directory - base_dir: {base_dir}, path: {path}, full_path: {full_path}")
+        
         if not full_path:
             raise ValueError(f"Could not construct path from base_dir: {base_dir} and path: {path}")
             

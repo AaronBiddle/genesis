@@ -153,10 +153,23 @@ export async function getDirectoryContents(path: string = ''): Promise<{files: s
         }
         
         const data = await response.json();
-        return {
-            files: data.files || [],
-            directories: data.directories || []
-        };
+        
+        // Extract files and directories from the items array
+        const files: string[] = [];
+        const directories: string[] = [];
+        
+        // The API returns 'items' array with objects that have 'name', 'type', and 'path' properties
+        if (data.items && Array.isArray(data.items)) {
+            data.items.forEach((item: any) => {
+                if (item.type === 'file') {
+                    files.push(item.path);
+                } else if (item.type === 'directory') {
+                    directories.push(item.name);
+                }
+            });
+        }
+        
+        return { files, directories };
     } catch (error) {
         logger('ERROR', 'ui', 'FileOperationsService', `Error getting directory contents: ${error}`);
         throw error;
