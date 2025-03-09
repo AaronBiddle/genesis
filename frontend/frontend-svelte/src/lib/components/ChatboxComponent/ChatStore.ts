@@ -1,4 +1,4 @@
-import { writable, get } from 'svelte/store';
+import { writable, get, derived } from 'svelte/store';
 import type { Message, ChatSettings } from './types';
 import { saveChat, loadChat, deleteChat } from './FileOperationsService';
 import { logger } from '$lib/components/LogControlPanel/logger';
@@ -24,6 +24,13 @@ export function createChatStore(id: string) {
     const wsConnected = writable<boolean>(false);
     const isLoading = writable<boolean>(false);
     const currentFilename = writable<string>('');
+    
+    // Derived store for displaying the filename without path
+    const displayFilename = derived(currentFilename, $currentFilename => {
+        if (!$currentFilename) return '';
+        const parts = $currentFilename.split('/');
+        return parts[parts.length - 1];
+    });
 
     // Helper functions for message management
     function addUserMessage(text: string): void {
@@ -193,6 +200,7 @@ export function createChatStore(id: string) {
         wsConnected,
         isLoading,
         currentFilename,
+        displayFilename,
         
         // Functions
         addUserMessage,

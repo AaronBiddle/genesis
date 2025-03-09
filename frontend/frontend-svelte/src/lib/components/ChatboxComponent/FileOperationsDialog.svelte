@@ -24,7 +24,9 @@
     }
     
     $: if (isOpen && mode === 'save' && currentFilename) {
-        filename = currentFilename.split('/').pop() || '';
+        // Extract just the filename without path
+        const parts = currentFilename.split('/');
+        filename = parts[parts.length - 1];
     }
     
     async function loadFileList() {
@@ -110,8 +112,17 @@
         close();
     }
     
-    function handleFileSelect(selectedFilename: string) {
-        filename = selectedFilename;
+    function handleFileSelect(file: string) {
+        // Extract just the filename without path
+        const parts = file.split('/');
+        filename = parts[parts.length - 1];
+        
+        // If the file has a path, update currentPath
+        if (parts.length > 1) {
+            // Remove the filename to get the path
+            parts.pop();
+            currentPath = parts.join('/');
+        }
     }
     
     function toggleNewDirInput() {
@@ -129,6 +140,12 @@
         showNewDirInput = false;
         newDirectoryName = '';
         dispatch('close');
+    }
+    
+    // Helper function to extract just the filename from a path
+    function getFilenameFromPath(path: string): string {
+        const parts = path.split('/');
+        return parts[parts.length - 1];
     }
 </script>
 
@@ -255,11 +272,11 @@
                         <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-md">
                             {#each availableFiles as file}
                                 <button 
-                                    class="w-full text-left px-3 py-2 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 {filename === file ? 'bg-blue-50' : ''} flex items-center"
+                                    class="w-full text-left px-3 py-2 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 {filename === getFilenameFromPath(file) ? 'bg-blue-50' : ''} flex items-center"
                                     on:click={() => handleFileSelect(file)}
                                 >
                                     <span class="material-symbols-outlined text-base mr-2 text-blue-600">description</span>
-                                    {file}
+                                    {getFilenameFromPath(file)}
                                 </button>
                             {/each}
                         </div>
