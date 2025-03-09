@@ -8,9 +8,6 @@ import { logger } from '$lib/components/LogControlPanel/logger';
 // Single WebSocket connection for all chat instances
 let webSocket: WebSocket | null = null;
 let isConnecting = false;
-let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 5;
-const RECONNECT_DELAY = 2000; // 2 seconds
 
 // Track active sessions
 const activeSessions = new Set<string>();
@@ -37,7 +34,6 @@ function initWebSocket() {
         logger('DEBUG', 'network', 'WebSocketService', 'WebSocket connected');
         connectionStatus.set(true);
         isConnecting = false;
-        reconnectAttempts = 0;
         
         // Update connection status for all active sessions
         activeSessions.forEach(sessionId => {
@@ -57,14 +53,7 @@ function initWebSocket() {
             store.wsConnected.set(false);
         });
         
-        // Attempt to reconnect
-        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-            reconnectAttempts++;
-            logger('DEBUG', 'network', 'WebSocketService', `Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
-            setTimeout(initWebSocket, RECONNECT_DELAY);
-        } else {
-            logger('ERROR', 'network', 'WebSocketService', 'Max reconnection attempts reached');
-        }
+        logger('INFO', 'network', 'WebSocketService', 'WebSocket connection closed. No automatic reconnection will be attempted.');
     };
     
     webSocket.onerror = (error) => {
@@ -183,8 +172,7 @@ export function sendMessage(sessionId: string, messageText: string): void {
         logger('ERROR', 'websocket', 'sendMessage', 'WebSocket is not connected');
         store.addSystemMessage('Error: Cannot send message, WebSocket is not connected.', true);
         
-        // Try to reconnect
-        initWebSocket();
+        // Removing auto reconnect attempt
         return;
     }
     
