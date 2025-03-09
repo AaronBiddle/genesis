@@ -10,9 +10,8 @@ app/
 │   └── models.yaml         # Model configuration
 ├── routes/                 # API routes
 │   ├── ai_chat.py          # WebSocket endpoint for AI chat
-│   ├── chats.py            # Endpoints for chat history
+│   ├── file_operations.py  # Unified API for file operations
 │   ├── directory.py        # Endpoints for directory operations
-│   ├── documents.py        # Endpoints for document operations
 │   ├── models.py           # Endpoints for model information
 │   └── worker_connection.py # Endpoints for worker connections
 ├── services/               # Business logic services
@@ -41,8 +40,7 @@ app/
 ### Routes
 
 - `ai_chat.py`: WebSocket endpoint for real-time AI chat.
-- `chats.py`: REST endpoints for managing chat history.
-- `documents.py`: REST endpoints for document operations.
+- `file_operations.py`: Unified REST API for file operations (documents, chats, prompts).
 - `directory.py`: REST endpoints for directory operations.
 - `models.py`: REST endpoints for model information.
 - `worker_connection.py`: WebSocket endpoint for worker connections.
@@ -93,4 +91,200 @@ Where `log_level` is:
 When the application is running, you can access the API documentation at:
 
 - Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc` 
+- ReDoc: `http://localhost:8000/redoc`
+
+# Backend API Documentation
+
+## Unified File Operations API
+
+The backend implements a unified API for file operations that handles different types of content (documents, chats, prompts) through a consistent interface. This design reduces code duplication and provides a more maintainable codebase.
+
+### API Endpoints
+
+#### File Operations
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/files/{file_type}/save` | Save a file of the specified type |
+| GET | `/files/{file_type}/list` | List all files of the specified type |
+| POST | `/files/{file_type}/load` | Load a file of the specified type |
+| DELETE | `/files/{file_type}/delete/{filename}` | Delete a file of the specified type |
+
+Where `{file_type}` can be one of:
+- `document` - Plain text documents
+- `chat` - Chat history with messages, system prompt, and temperature
+- `prompt` - Prompt templates
+
+#### Directory Operations
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/directory/list` | List contents of a directory |
+| GET | `/directory/list/{path}` | List contents of a specific directory path |
+| POST | `/directory/create` | Create a new directory |
+
+#### AI Chat
+
+| Method | Path | Description |
+|--------|------|-------------|
+| WebSocket | `/ws/chat` | WebSocket endpoint for AI chat |
+
+#### Worker Connection
+
+| Method | Path | Description |
+|--------|------|-------------|
+| WebSocket | `/ws/worker-test` | Test WebSocket endpoint for worker connections |
+| WebSocket | `/ws/worker-connect` | WebSocket endpoint for worker to connect to the backend |
+| WebSocket | `/ws/frontend-requests` | WebSocket endpoint for frontend to send requests to the backend |
+| POST | `/send-to-frontend` | Send a message to the connected frontend client |
+
+#### Models
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/models` | Get all available models and their configurations |
+
+### Request/Response Examples
+
+#### Saving a Document
+
+```http
+POST /files/document/save
+Content-Type: application/json
+
+{
+  "filename": "example.txt",
+  "file_type": "document",
+  "content": "This is the content of the document."
+}
+```
+
+Response:
+```json
+{
+  "status": "success",
+  "message": "document saved successfully",
+  "filename": "example.txt"
+}
+```
+
+#### Saving a Chat
+
+```http
+POST /files/chat/save
+Content-Type: application/json
+
+{
+  "filename": "example_chat.json",
+  "file_type": "chat",
+  "content": {
+    "messages": [
+      {"role": "user", "content": "Hello"},
+      {"role": "assistant", "content": "Hi there! How can I help you today?"}
+    ],
+    "system_prompt": "You are a helpful assistant.",
+    "temperature": 0.7
+  }
+}
+```
+
+Response:
+```json
+{
+  "status": "success",
+  "message": "chat saved successfully",
+  "filename": "example_chat.json"
+}
+```
+
+#### Loading a Document
+
+```http
+POST /files/document/load
+Content-Type: application/json
+
+{
+  "filename": "example.txt"
+}
+```
+
+Response:
+```json
+{
+  "filename": "example.txt",
+  "content": "This is the content of the document."
+}
+```
+
+#### Loading a Chat
+
+```http
+POST /files/chat/load
+Content-Type: application/json
+
+{
+  "filename": "example_chat.json"
+}
+```
+
+Response:
+```json
+{
+  "filename": "example_chat.json",
+  "messages": [
+    {"role": "user", "content": "Hello"},
+    {"role": "assistant", "content": "Hi there! How can I help you today?"}
+  ],
+  "system_prompt": "You are a helpful assistant.",
+  "temperature": 0.7
+}
+```
+
+#### Listing Files
+
+```http
+GET /files/document/list
+```
+
+Response:
+```json
+{
+  "files": [
+    "example.txt",
+    "folder/another_example.txt"
+  ]
+}
+```
+
+#### Deleting a File
+
+```http
+DELETE /files/document/delete/example.txt
+```
+
+Response:
+```json
+{
+  "status": "success",
+  "message": "document deleted successfully"
+}
+```
+
+## Design Decisions
+
+### Unified API Approach
+
+The unified API approach was chosen to:
+
+1. **Reduce Code Duplication**: The implementation uses a single set of endpoints for different file types.
+2. **Provide Consistency**: A consistent API makes it easier for frontend developers to work with different file types.
+3. **Simplify Maintenance**: Changes to file handling logic only need to be made in one place.
+4. **Enable Future Extensions**: New file types can be added with minimal changes to the codebase.
+
+### File Type Validation
+
+The API validates that the file type in the request path matches the file type in the request body, ensuring that files are saved with the correct format and in the correct location.
+
+### Path Safety
+
+All file operations include path safety checks to prevent directory traversal attacks, ensuring that files can only be accessed within their designated base directories. 

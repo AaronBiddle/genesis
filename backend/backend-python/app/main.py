@@ -1,8 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.ai_chat import router as ai_chat_router
-from routes.chats import router as chats_router
-from routes.documents import router as documents_router
+from routes.file_operations import router as file_operations_router
 from routes.directory import router as directory_router
 from routes.worker_connection import router as worker_connection_router
 from routes.models import router as models_router
@@ -24,8 +23,7 @@ app.add_middleware(
 
 # Include the routers
 app.include_router(ai_chat_router)
-app.include_router(chats_router)
-app.include_router(documents_router)
+app.include_router(file_operations_router)
 app.include_router(directory_router)
 app.include_router(worker_connection_router)
 app.include_router(models_router)

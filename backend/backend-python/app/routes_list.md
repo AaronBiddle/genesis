@@ -8,18 +8,14 @@ This document provides a reference for all available API endpoints and WebSocket
 |--------|------|-------------|
 | WebSocket | `/ws/chat` | WebSocket endpoint for AI chat |
 
-## chats.py
+## file_operations.py (Unified File API)
 
-| Method | Path | Description | Request Body |
-|--------|------|-------------|-------------|
-| POST | `/chats/save` | Save chat history to a file | `{ "filename": "string", "messages": "list", "system_prompt": "string", "temperature": "float" }` |
-| GET | `/chats/list` | List all available chat files | - |
-| POST | `/chats/load` | Load a chat file | `{ "filename": "string" }` |
-| DELETE | `/chats/delete/{filename}` | Delete a chat file using standard DELETE method | - |
-| POST | `/chats/load_chat` | Load a chat file (legacy endpoint) | `{ "filename": "string" }` |
-| POST | `/chats/save_chat` | Save chat history (legacy endpoint) | `{ "filename": "string", "messages": "list", "system_prompt": "string", "temperature": "float" }` |
-| POST | `/chats/delete_chat/{filename}` | Delete a chat file (legacy endpoint) | - |
-| POST | `/chats/delete` | Delete a chat file (alternative endpoint) | `{ "filename": "string" }` |
+| Method | Path | Description | Request Body / Query Parameters |
+|--------|------|-------------|--------------------------------|
+| POST | `/files/{file_type}/save` | Save a file of the specified type | `{ "filename": "string", "file_type": "string", "content": "string or object" }` |
+| GET | `/files/{file_type}/list` | List all files of the specified type | `file_type` can be "document", "chat", or "prompt" |
+| POST | `/files/{file_type}/load` | Load a file of the specified type | `{ "filename": "string" }` |
+| DELETE | `/files/{file_type}/delete/{filename}` | Delete a file of the specified type | - |
 
 ## directory.py
 
@@ -28,15 +24,6 @@ This document provides a reference for all available API endpoints and WebSocket
 | GET | `/directory/list` | List contents of a directory | `file_type=chat|document|prompt` |
 | GET | `/directory/list/{path}` | List contents of a specific directory path | `file_type=chat|document|prompt` |
 | POST | `/directory/create` | Create a new directory | `path=string&file_type=chat|document|prompt` |
-
-## documents.py
-
-| Method | Path | Description | Request Body |
-|--------|------|-------------|-------------|
-| POST | `/documents/save` | Save a document to a file | `{ "filename": "string", "content": "string" }` |
-| GET | `/documents/list` | List all available document files | - |
-| POST | `/documents/load` | Load a document from a file | `{ "filename": "string" }` |
-| DELETE | `/documents/delete/{filename}` | Delete a document file | - |
 
 ## models.py
 
