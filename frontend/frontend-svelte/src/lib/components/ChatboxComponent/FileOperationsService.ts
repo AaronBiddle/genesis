@@ -1,5 +1,6 @@
 import { logger } from '$lib/components/LogControlPanel/logger';
 import type { Message, ChatSettings } from './types';
+import { API_URL } from '$lib/config';
 
 // Interface for chat data to be saved
 export interface ChatData {
@@ -9,12 +10,9 @@ export interface ChatData {
     temperature: number;
 }
 
-// Base URL for API requests
-const API_BASE_URL = '/api';
-
 /**
  * Save the current chat to a file
- * @param filename The name of the file to save
+ * @param filename The name of the file to save (can include path)
  * @param messages The chat messages
  * @param settings The chat settings
  * @returns Promise with the result of the operation
@@ -33,7 +31,7 @@ export async function saveChat(filename: string, messages: Message[], settings: 
             temperature: settings.temperature
         };
         
-        const response = await fetch(`${API_BASE_URL}/files/chat/save`, {
+        const response = await fetch(`${API_URL}/files/chat/save`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -59,14 +57,14 @@ export async function saveChat(filename: string, messages: Message[], settings: 
 
 /**
  * Load a chat from a file
- * @param filename The name of the file to load
+ * @param filename The name of the file to load (can include path)
  * @returns Promise with the loaded chat data
  */
 export async function loadChat(filename: string): Promise<any> {
     try {
         logger('INFO', 'ui', 'FileOperationsService', `Loading chat from ${filename}`);
         
-        const response = await fetch(`${API_BASE_URL}/files/chat/load`, {
+        const response = await fetch(`${API_URL}/files/chat/load`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -90,13 +88,14 @@ export async function loadChat(filename: string): Promise<any> {
 
 /**
  * List all available chat files
+ * @param path Optional directory path to list files from
  * @returns Promise with the list of chat files
  */
-export async function listChats(): Promise<string[]> {
+export async function listChats(path: string = ''): Promise<string[]> {
     try {
-        logger('INFO', 'ui', 'FileOperationsService', 'Listing chat files');
+        logger('INFO', 'ui', 'FileOperationsService', `Listing chat files in path: ${path || 'root'}`);
         
-        const response = await fetch(`${API_BASE_URL}/files/chat/list`);
+        const response = await fetch(`${API_URL}/files/chat/list`);
         
         if (!response.ok) {
             const errorData = await response.json();
@@ -113,14 +112,14 @@ export async function listChats(): Promise<string[]> {
 
 /**
  * Delete a chat file
- * @param filename The name of the file to delete
+ * @param filename The name of the file to delete (can include path)
  * @returns Promise with the result of the operation
  */
 export async function deleteChat(filename: string): Promise<any> {
     try {
         logger('INFO', 'ui', 'FileOperationsService', `Deleting chat ${filename}`);
         
-        const response = await fetch(`${API_BASE_URL}/files/chat/delete/${encodeURIComponent(filename)}`, {
+        const response = await fetch(`${API_URL}/files/chat/delete/${encodeURIComponent(filename)}`, {
             method: 'DELETE'
         });
         
@@ -132,6 +131,59 @@ export async function deleteChat(filename: string): Promise<any> {
         return await response.json();
     } catch (error) {
         logger('ERROR', 'ui', 'FileOperationsService', `Error deleting chat: ${error}`);
+        throw error;
+    }
+}
+
+/**
+ * Get directory contents
+ * @param path Directory path to list
+ * @returns Promise with directory contents
+ */
+export async function getDirectoryContents(path: string = ''): Promise<{files: string[], directories: string[]}> {
+    try {
+        logger('INFO', 'ui', 'FileOperationsService', `Getting directory contents for: ${path || 'root'}`);
+        
+        const encodedPath = path ? encodeURIComponent(path) : '';
+        const response = await fetch(`${API_URL}/directory/list/${encodedPath}?file_type=chat`);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Failed to get directory contents');
+        }
+        
+        const data = await response.json();
+        return {
+            files: data.files || [],
+            directories: data.directories || []
+        };
+    } catch (error) {
+        logger('ERROR', 'ui', 'FileOperationsService', `Error getting directory contents: ${error}`);
+        throw error;
+    }
+}
+
+/**
+ * Create a new directory
+ * @param path Path of the directory to create
+ * @returns Promise with the result of the operation
+ */
+export async function createDirectory(path: string): Promise<any> {
+    try {
+        logger('INFO', 'ui', 'FileOperationsService', `Creating directory: ${path}`);
+        
+        const response = await fetch(`${API_URL}/directory/create?path=${encodeURIComponent(path)}&file_type=chat`, {
+            method: 'POST'
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Failed to create directory');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        logger('ERROR', 'ui', 'FileOperationsService', `Error creating directory: ${error}`);
         throw error;
     }
 } 
