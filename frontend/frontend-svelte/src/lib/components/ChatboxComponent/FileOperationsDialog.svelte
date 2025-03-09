@@ -19,7 +19,8 @@
     
     const dispatch = createEventDispatcher();
     
-    $: if (isOpen && mode !== 'save') {
+    // Load directory contents whenever the dialog is opened, regardless of mode
+    $: if (isOpen) {
         loadFileList();
     }
     
@@ -27,6 +28,14 @@
         // Extract just the filename without path
         const parts = currentFilename.split('/');
         filename = parts[parts.length - 1];
+        
+        // If the current filename has a path, set the currentPath
+        if (parts.length > 1) {
+            parts.pop(); // Remove the filename
+            currentPath = parts.join('/');
+            // Reload the file list with the new path
+            loadFileList();
+        }
     }
     
     async function loadFileList() {
@@ -38,6 +47,9 @@
             const dirContents = await getDirectoryContents(currentPath);
             availableFiles = dirContents.files;
             directories = dirContents.directories;
+            
+            logger('INFO', 'ui', 'FileOperationsDialog', `Loaded directory contents for path: ${currentPath || 'root'}`);
+            logger('INFO', 'ui', 'FileOperationsDialog', `Found ${directories.length} directories and ${availableFiles.length} files`);
             
         } catch (error) {
             errorMessage = 'Failed to load directory contents';
@@ -250,6 +262,21 @@
                 {/if}
                 
                 {#if mode === 'save'}
+                    <!-- Show files in save mode too, for reference -->
+                    {#if availableFiles.length > 0}
+                        <div class="mb-3">
+                            <h3 class="text-sm font-medium text-gray-700 mb-1">Existing Files</h3>
+                            <div class="max-h-40 overflow-y-auto border border-gray-200 rounded-md">
+                                {#each availableFiles as file}
+                                    <div class="px-3 py-2 flex items-center text-gray-600">
+                                        <span class="material-symbols-outlined text-base mr-2 text-blue-600">description</span>
+                                        {getFilenameFromPath(file)}
+                                    </div>
+                                {/each}
+                            </div>
+                        </div>
+                    {/if}
+                    
                     <div class="mb-4">
                         <label for="filename" class="block text-sm font-medium text-gray-700 mb-1">Filename</label>
                         <input 
