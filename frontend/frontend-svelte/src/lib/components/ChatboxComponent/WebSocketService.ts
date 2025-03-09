@@ -78,7 +78,8 @@ function initWebSocket() {
 }
 
 // Register a session with the WebSocket service
-export function registerSession(sessionId: string): void {
+export function registerSession(panelId: string): void {
+    const sessionId = panelId; // Explicit mapping between panel ID and session ID
     logger('DEBUG', 'network', 'WebSocketService', `Registering session: ${sessionId}`);
     activeSessions.add(sessionId);
     
@@ -95,7 +96,8 @@ export function registerSession(sessionId: string): void {
 }
 
 // Unregister a session when it's no longer needed
-export function unregisterSession(sessionId: string): void {
+export function unregisterSession(panelId: string): void {
+    const sessionId = panelId; // Explicit mapping between panel ID and session ID
     logger('DEBUG', 'network', 'WebSocketService', `Unregistering session: ${sessionId}`);
     activeSessions.delete(sessionId);
     
@@ -162,7 +164,9 @@ function handleWebSocketMessage(sessionId: string, data: WebSocketMessage): void
 }
 
 // Send a message via the WebSocket
-export function sendMessage(sessionId: string, messageText: string): void {
+export function sendMessage(panelId: string, messageText: string): void {
+    const sessionId = panelId; // Explicit mapping between panel ID and session ID
+    
     if (!messageText.trim()) return;
     
     const store = getChatStore(sessionId);
