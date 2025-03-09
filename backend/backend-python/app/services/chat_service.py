@@ -4,7 +4,7 @@ import time
 from typing import Dict, Any
 from fastapi import WebSocket
 from utils.logging import LogLevel, log
-from services.model_service import get_model_temperature, select_best_model
+from services.model_service import get_model_temperature
 from services.openai_client import stream_chat_response
 from services.websocket_service import send_error, send_json
 
@@ -145,15 +145,16 @@ async def _stream_chat_response(websocket: WebSocket, prompt: str, history: list
     try:
         log(LogLevel.MINIMUM, f"🐍 Starting API stream for session {session_id}")
         
-        # Select the model to use (try to use a reasoner model if available)
-        model_to_use = select_best_model(model_id, session_id)
+        # Use the exact model provided by the frontend
+        log_prefix = f"(session: {session_id}) " if session_id else ""
+        log(LogLevel.MINIMUM, f"🐍 Using model {model_id} {log_prefix}")
         
         # Create a queue for stream chunks
         chunk_queue = asyncio.Queue()
         
         # Start filling the queue in a separate task
         fill_task = asyncio.create_task(_fill_stream_queue(
-            chunk_queue, prompt, history, temperature, model_to_use, session_id
+            chunk_queue, prompt, history, temperature, model_id, session_id
         ))
         
         # Track time for each chunk
