@@ -77,6 +77,33 @@ function initWebSocket() {
     };
 }
 
+// Function to attempt reconnection
+export function reconnectWebSocket(): void {
+    logger('INFO', 'network', 'WebSocketService', 'Attempting to reconnect WebSocket');
+    
+    // Close existing socket if it exists
+    if (webSocket) {
+        webSocket.close(1000, 'Manual reconnection');
+        webSocket = null;
+    }
+    
+    // Reset connecting flag to allow new connection
+    isConnecting = false;
+    
+    // Initialize a new connection
+    initWebSocket();
+    
+    // Update connection status for all sessions
+    activeSessions.forEach(sessionId => {
+        const store = getChatStore(sessionId);
+        if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+            store.wsConnected.set(true);
+        } else {
+            store.wsConnected.set(false);
+        }
+    });
+}
+
 // Register a session with the WebSocket service
 export function registerSession(panelId: string): void {
     const sessionId = panelId; // Explicit mapping between panel ID and session ID

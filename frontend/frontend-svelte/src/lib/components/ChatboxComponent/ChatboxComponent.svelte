@@ -4,7 +4,7 @@
     import ChatMessages from './ChatMessages.svelte';
     import SettingsPanel from './SettingsPanel.svelte';
     import { getChatStore } from './ChatStore';
-    import { registerSession, unregisterSession } from './WebSocketService';
+    import { registerSession, unregisterSession, reconnectWebSocket } from './WebSocketService';
     import { logger } from '$lib/components/LogControlPanel/logger';
     
     // Accept panel ID as a prop
@@ -36,6 +36,11 @@
 
     function handleClearChat(): void {
         clearMessages();
+    }
+    
+    function handleReconnect(): void {
+        logger('INFO', 'ui', 'ChatboxComponent', 'User initiated WebSocket reconnection');
+        reconnectWebSocket();
     }
 </script>
 
@@ -69,13 +74,25 @@
                     {$showSettings ? 'Back to Chat' : 'Settings'}
                 </span>
             </button>
-            <!-- Connection status indicator -->
-            <div class="w-3 h-3 rounded-full {$wsConnected ? 'bg-green-500' : 'bg-red-500'} relative group" 
-                 title={$wsConnected ? 'Connected' : 'Disconnected'}>
-                <span class="absolute right-0 transform translate-x-0 -bottom-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    {$wsConnected ? 'Connected' : 'Disconnected'}
-                </span>
-            </div>
+            <!-- Connection status indicator/button -->
+            {#if $wsConnected}
+                <div class="w-3 h-3 rounded-full bg-green-500 relative group" 
+                     title="Connected">
+                    <span class="absolute right-0 transform translate-x-0 -bottom-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                        Connected
+                    </span>
+                </div>
+            {:else}
+                <button 
+                    on:click={handleReconnect}
+                    class="p-1.5 bg-gray-100 rounded hover:bg-gray-300 transition-colors relative group" 
+                    title="Disconnected - Click to reconnect">
+                    <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                    <span class="absolute right-0 transform translate-x-0 -bottom-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                        Disconnected - Click to reconnect
+                    </span>
+                </button>
+            {/if}
         </div>
     </div>
     
