@@ -1,7 +1,8 @@
 import { writable, get, derived } from 'svelte/store';
 import type { Message, ChatSettings } from './types';
-import { saveChat, loadChat, deleteChat } from './FileOperationsService';
 import { logger } from '$lib/components/LogControlPanel/logger';
+// Import the chat adapter instead of the old FileOperationsService
+import { saveChat, loadChat, deleteChat } from '$lib/components/FileOperations/adapters/ChatAdapter';
 
 // Default settings values
 const DEFAULT_SETTINGS: ChatSettings = {
@@ -50,7 +51,7 @@ export function createChatStore(id: string) {
             ...msgs, 
             {
                 id: msgs.length + 1,
-                text,
+                text: text,
                 sender: 'assistant',
                 timestamp: new Date(),
                 renderMarkdown,
@@ -62,38 +63,31 @@ export function createChatStore(id: string) {
 
     function updateSystemMessage(id: number, text: string, reasoning?: string): void {
         messages.update(msgs => 
-            msgs.map(msg => {
-                if (msg.id === id) {
-                    return { 
-                        ...msg, 
-                        text,
-                        reasoning: reasoning || msg.reasoning 
-                    };
-                }
-                return msg;
-            })
+            msgs.map(msg => 
+                msg.id === id 
+                    ? { ...msg, text, reasoning: reasoning || msg.reasoning }
+                    : msg
+            )
         );
     }
 
     function toggleMarkdownRendering(id: number): void {
         messages.update(msgs => 
-            msgs.map(msg => {
-                if (msg.id === id) {
-                    return { ...msg, renderMarkdown: msg.renderMarkdown === false ? true : false };
-                }
-                return msg;
-            })
+            msgs.map(msg => 
+                msg.id === id 
+                    ? { ...msg, renderMarkdown: msg.renderMarkdown === false ? true : false }
+                    : msg
+            )
         );
     }
 
     function toggleReasoningDisplay(id: number): void {
         messages.update(msgs => 
-            msgs.map(msg => {
-                if (msg.id === id && msg.reasoning) {
-                    return { ...msg, showReasoning: !msg.showReasoning };
-                }
-                return msg;
-            })
+            msgs.map(msg => 
+                msg.id === id 
+                    ? { ...msg, showReasoning: !msg.showReasoning }
+                    : msg
+            )
         );
     }
 
@@ -125,10 +119,14 @@ export function createChatStore(id: string) {
             const currentMessages = get(messages);
             const currentSettings = get(settings);
             
-            await saveChat(filename, currentMessages, currentSettings);
-            currentFilename.set(filename);
+            const result = await saveChat(filename, currentMessages, currentSettings);
             
-            logger('INFO', 'ui', 'ChatStore', `Chat saved to ${filename}`);
+            if (result.success) {
+                currentFilename.set(filename);
+                logger('INFO', 'ui', 'ChatStore', `Chat saved to ${filename}`);
+            } else {
+                throw new Error(result.error || 'Failed to save chat');
+            }
         } catch (error) {
             logger('ERROR', 'ui', 'ChatStore', `Failed to save chat: ${error}`);
             throw error;
@@ -173,14 +171,18 @@ export function createChatStore(id: string) {
     async function deleteChatFile(filename: string): Promise<void> {
         try {
             isLoading.set(true);
-            await deleteChat(filename);
+            const result = await deleteChat(filename);
             
-            // If the deleted file was the current one, clear the current filename
-            if (get(currentFilename) === filename) {
-                currentFilename.set('');
+            if (result.success) {
+                // If the deleted file was the current one, clear the current filename
+                if (get(currentFilename) === filename) {
+                    currentFilename.set('');
+                }
+                
+                logger('INFO', 'ui', 'ChatStore', `Chat deleted: ${filename}`);
+            } else {
+                throw new Error(result.error || 'Failed to delete chat');
             }
-            
-            logger('INFO', 'ui', 'ChatStore', `Chat deleted: ${filename}`);
         } catch (error) {
             logger('ERROR', 'ui', 'ChatStore', `Failed to delete chat: ${error}`);
             throw error;
@@ -202,15 +204,19 @@ export function createChatStore(id: string) {
         currentFilename,
         displayFilename,
         
-        // Functions
+        // Message functions
         addUserMessage,
         addSystemMessage,
         updateSystemMessage,
         toggleMarkdownRendering,
         toggleReasoningDisplay,
+        
+        // Settings functions
         applySettings,
         resetSettings,
         toggleSettingsView,
+        
+        // Chat management
         clearMessages,
         
         // File operations
@@ -223,7 +229,7 @@ export function createChatStore(id: string) {
 // Store registry to keep track of all chat stores
 const chatStores: Record<string, ReturnType<typeof createChatStore>> = {};
 
-// Get or create a chat store for a specific ID
+// Function to get or create a chat store for a specific ID
 export function getChatStore(id: string) {
     if (!chatStores[id]) {
         chatStores[id] = createChatStore(id);

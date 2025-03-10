@@ -3,10 +3,13 @@
     import ChatInput from './ChatInput.svelte';
     import ChatMessages from './ChatMessages.svelte';
     import SettingsPanel from './SettingsPanel.svelte';
-    import FileOperationsDialog from './FileOperationsDialog.svelte';
     import { getChatStore } from './ChatStore';
     import { registerSession, unregisterSession, reconnectWebSocket } from './WebSocketService';
     import { logger } from '$lib/components/LogControlPanel/logger';
+    
+    // Import the new FileOperations components
+    import { FileOperationsDialog } from '$lib/components/FileOperations';
+    import { adapters } from '$lib/components/FileOperations';
     
     // Accept panel ID as a prop
     export let panelId: string;
@@ -24,6 +27,9 @@
         loadChatFromFile,
         deleteChatFile
     } = chatStore;
+    
+    // Extract chat adapter functions and config
+    const { CHAT_FILE_TYPE, chatFileConfig } = adapters;
     
     // File operations dialog state
     let showFileDialog = false;
@@ -206,11 +212,13 @@
         </div>
     {/if}
     
-    <!-- File operations dialog -->
+    <!-- File operations dialog using the new generic component -->
     <FileOperationsDialog 
         bind:isOpen={showFileDialog}
         bind:mode={fileDialogMode}
         currentFilename={$currentFilename}
+        fileType={CHAT_FILE_TYPE}
+        config={chatFileConfig}
         on:submit={handleFileOperation}
     />
 </div> 
