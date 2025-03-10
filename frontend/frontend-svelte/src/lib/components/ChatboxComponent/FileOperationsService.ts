@@ -147,7 +147,12 @@ export async function getDirectoryContents(path: string = ''): Promise<{files: s
         logger('INFO', 'ui', 'FileOperationsService', `Getting directory contents for: ${path || 'root'}`);
         
         const encodedPath = path ? encodeURIComponent(path) : '';
-        const response = await fetch(`${API_URL}/directory/list/${encodedPath}?file_type=chat`);
+        const fileType = 'chat'; // We're only dealing with chat files for now
+        const endpoint = encodedPath 
+            ? `${API_URL}/directory/${fileType}/list/${encodedPath}`
+            : `${API_URL}/directory/${fileType}/list`;
+            
+        const response = await fetch(endpoint);
         
         if (!response.ok) {
             const errorData = await response.json();
@@ -187,7 +192,8 @@ export async function createDirectory(path: string): Promise<any> {
     try {
         logger('INFO', 'ui', 'FileOperationsService', `Creating directory: ${path}`);
         
-        const response = await fetch(`${API_URL}/directory/create?path=${encodeURIComponent(path)}&file_type=chat`, {
+        const fileType = 'chat'; // We're only dealing with chat files for now
+        const response = await fetch(`${API_URL}/directory/${fileType}/create?path=${encodeURIComponent(path)}`, {
             method: 'POST'
         });
         
@@ -199,6 +205,33 @@ export async function createDirectory(path: string): Promise<any> {
         return await response.json();
     } catch (error) {
         logger('ERROR', 'ui', 'FileOperationsService', `Error creating directory: ${error}`);
+        throw error;
+    }
+}
+
+/**
+ * Delete a directory
+ * @param path Path of the directory to delete
+ * @returns Promise with the result of the operation
+ */
+export async function deleteDirectory(path: string): Promise<any> {
+    try {
+        logger('INFO', 'ui', 'FileOperationsService', `Deleting directory: ${path}`);
+        
+        const fileType = 'chat'; // We're only dealing with chat files for now
+        const encodedPath = encodeURIComponent(path);
+        const response = await fetch(`${API_URL}/directory/${fileType}/delete/${encodedPath}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Failed to delete directory');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        logger('ERROR', 'ui', 'FileOperationsService', `Error deleting directory: ${error}`);
         throw error;
     }
 } 

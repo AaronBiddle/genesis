@@ -1,10 +1,10 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Path as FastAPIPath
 from pathlib import Path
 import os
 from utils.logging import log, LogLevel
 from services.file_services import CHATS_DIR, DOCUMENTS_DIR, PROMPTS_DIR
 
-router = APIRouter(prefix="/directory")
+router = APIRouter(prefix="/directory", tags=["directory"])
 
 # Map file types to their base directories
 TYPE_TO_DIR = {
@@ -34,11 +34,11 @@ def is_safe_path(path: Path, base_dir: Path) -> bool:
         log(LogLevel.TEMPORARY, f"Path safety check failed with error: {e}")
         return False
 
-@router.get("/list", response_model=dict)
-@router.get("/list/{path:path}", response_model=dict)
+@router.get("/{file_type}/list", response_model=dict)
+@router.get("/{file_type}/list/{path:path}", response_model=dict)
 async def list_directory(
     path: str = "",
-    file_type: str = Query(..., regex="^(chat|document|prompt)$")
+    file_type: str = FastAPIPath(..., regex="^(chat|document|prompt)$")
 ):
     """List contents of a directory relative to type-specific base directory"""
     try:
@@ -94,10 +94,10 @@ async def list_directory(
         log(LogLevel.ERROR, f"Error listing directory - Class: {error_class}, Message: {error_msg}")
         raise HTTPException(status_code=500, detail=f"Failed to list directory: {error_class} - {error_msg}")
 
-@router.post("/create", response_model=dict)
+@router.post("/{file_type}/create", response_model=dict)
 async def create_directory(
     path: str = Query(...),
-    file_type: str = Query(..., regex="^(chat|document|prompt)$")
+    file_type: str = FastAPIPath(..., regex="^(chat|document|prompt)$")
 ):
     """Create a new directory relative to the type-specific base directory."""
     try:
@@ -113,10 +113,10 @@ async def create_directory(
         log(LogLevel.ERROR, f"Failed to create directory: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/delete/{path:path}", response_model=dict)
+@router.delete("/{file_type}/delete/{path:path}", response_model=dict)
 async def delete_directory(
     path: str,
-    file_type: str = Query(..., regex="^(chat|document|prompt)$")
+    file_type: str = FastAPIPath(..., regex="^(chat|document|prompt)$")
 ):
     """Delete an empty directory relative to the type-specific base directory."""
     try:

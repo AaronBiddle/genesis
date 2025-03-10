@@ -21,10 +21,10 @@ This document provides a reference for all available API endpoints and WebSocket
 
 | Method | Path | Description | Query Parameters |
 |--------|------|-------------|-----------------|
-| GET | `/directory/list` | List contents of a directory | `file_type=chat|document|prompt` |
-| GET | `/directory/list/{path}` | List contents of a specific directory path | `file_type=chat|document|prompt` |
-| POST | `/directory/create` | Create a new directory | `path=string&file_type=chat|document|prompt` |
-| DELETE | `/directory/delete/{path}` | Delete a specific empty directory path | `file_type=chat|document|prompt` |
+| GET | `/directory/{file_type}/list` | List contents of a directory | - |
+| GET | `/directory/{file_type}/list/{path}` | List contents of a specific directory path | - |
+| POST | `/directory/{file_type}/create` | Create a new directory | `path=string` |
+| DELETE | `/directory/{file_type}/delete/{path}` | Delete a specific empty directory path | - |
 
 ## models.py
 
