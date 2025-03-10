@@ -122,6 +122,8 @@ Where `{file_type}` can be one of:
 | GET | `/directory/list` | List contents of a directory |
 | GET | `/directory/list/{path}` | List contents of a specific directory path |
 | POST | `/directory/create` | Create a new directory |
+| DELETE | `/directory/delete` | Delete an empty directory |
+| DELETE | `/directory/delete/{path}` | Delete a specific empty directory path |
 
 #### AI Chat
 
@@ -270,21 +272,16 @@ Response:
 }
 ```
 
-## Design Decisions
+#### Deleting a Directory
 
-### Unified API Approach
+```http
+DELETE /directory/delete/example
+```
 
-The unified API approach was chosen to:
-
-1. **Reduce Code Duplication**: The implementation uses a single set of endpoints for different file types.
-2. **Provide Consistency**: A consistent API makes it easier for frontend developers to work with different file types.
-3. **Simplify Maintenance**: Changes to file handling logic only need to be made in one place.
-4. **Enable Future Extensions**: New file types can be added with minimal changes to the codebase.
-
-### File Type Validation
-
-The API validates that the file type in the request path matches the file type in the request body, ensuring that files are saved with the correct format and in the correct location.
-
-### Path Safety
-
-All file operations include path safety checks to prevent directory traversal attacks, ensuring that files can only be accessed within their designated base directories. 
+Response:
+```json
+{
+  "status": "success",
+  "message": "Directory deleted successfully"
+}
+```

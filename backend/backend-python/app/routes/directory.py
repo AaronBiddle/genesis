@@ -111,4 +111,55 @@ async def create_directory(
         return {"message": f"Created directory {str(new_dir)}"}
     except Exception as e:
         log(LogLevel.ERROR, f"Failed to create directory: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e)) 
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/delete", response_model=dict)
+@router.delete("/delete/{path:path}", response_model=dict)
+async def delete_directory(
+    path: str = "",
+    file_type: str = Query(..., regex="^(chat|document|prompt)$")
+):
+    """Delete an empty directory relative to the type-specific base directory."""
+    try:
+        # Get the appropriate base directory for the file type
+        base_dir = TYPE_TO_DIR.get(file_type)
+        if not base_dir:
+            log(LogLevel.ERROR, f"Invalid file type: {file_type}")
+            raise HTTPException(status_code=400, detail="Invalid file type")
+
+        # Construct full path
+        dir_path = base_dir / path if base_dir else None
+        
+        log(LogLevel.DEBUGGING, f"DEBUG - delete_directory - base_dir: {base_dir}, path: {path}, dir_path: {dir_path}")
+        
+        if not dir_path:
+            raise ValueError(f"Could not construct path from base_dir: {base_dir} and path: {path}")
+            
+        # Ensure path is within base directory
+        if not is_safe_path(dir_path, base_dir):
+            log(LogLevel.ERROR, f"Access denied for path: {dir_path}")
+            raise HTTPException(status_code=403, detail="Access denied")
+            
+        # Ensure directory exists
+        if not dir_path.exists() or not dir_path.is_dir():
+            log(LogLevel.ERROR, f"Directory not found: {dir_path}")
+            raise HTTPException(status_code=404, detail="Directory not found")
+        
+        # Check if directory is empty
+        if any(dir_path.iterdir()):
+            log(LogLevel.ERROR, f"Directory not empty: {dir_path}")
+            raise HTTPException(status_code=400, detail="Directory must be empty to delete")
+            
+        # Delete the directory
+        dir_path.rmdir()
+        
+        log(LogLevel.DEBUGGING, f"Directory deleted: {dir_path}")
+        return {"status": "success", "message": "Directory deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_class = e.__class__.__name__
+        error_msg = str(e)
+        log(LogLevel.ERROR, f"Error deleting directory - Class: {error_class}, Message: {error_msg}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete directory: {error_class} - {error_msg}") 
