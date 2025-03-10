@@ -213,6 +213,9 @@
                 errorMessage = `Failed to delete ${deleteType}: ${error.message || 'Unknown error'}`;
             }
             logger('ERROR', 'ui', 'FileOperationsDialog', `Error deleting ${deleteType}: ${error}`);
+            
+            // Close the confirmation dialog even when there's an error
+            showDeleteConfirmation = false;
         } finally {
             deleteInProgress = false;
         }
