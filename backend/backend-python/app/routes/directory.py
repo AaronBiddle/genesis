@@ -113,10 +113,9 @@ async def create_directory(
         log(LogLevel.ERROR, f"Failed to create directory: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/delete", response_model=dict)
 @router.delete("/delete/{path:path}", response_model=dict)
 async def delete_directory(
-    path: str = "",
+    path: str,
     file_type: str = Query(..., regex="^(chat|document|prompt)$")
 ):
     """Delete an empty directory relative to the type-specific base directory."""

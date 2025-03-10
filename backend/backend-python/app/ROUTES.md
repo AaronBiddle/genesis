@@ -24,7 +24,6 @@ This document provides a reference for all available API endpoints and WebSocket
 | GET | `/directory/list` | List contents of a directory | `file_type=chat|document|prompt` |
 | GET | `/directory/list/{path}` | List contents of a specific directory path | `file_type=chat|document|prompt` |
 | POST | `/directory/create` | Create a new directory | `path=string&file_type=chat|document|prompt` |
-| DELETE | `/directory/delete` | Delete an empty directory | `file_type=chat|document|prompt` |
 | DELETE | `/directory/delete/{path}` | Delete a specific empty directory path | `file_type=chat|document|prompt` |
 
 ## models.py
