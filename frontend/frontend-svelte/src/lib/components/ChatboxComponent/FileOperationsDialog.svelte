@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount, createEventDispatcher } from 'svelte';
-    import { getDirectoryContents, createDirectory } from './FileOperationsService';
+    import { getDirectoryContents, createDirectory, deleteDirectory, deleteChat } from './FileOperationsService';
     import { logger } from '$lib/components/LogControlPanel/logger';
     import { API_URL } from '$lib/config';
     
@@ -16,6 +16,10 @@
     let errorMessage = '';
     let showNewDirInput = false;
     let newDirectoryName = '';
+    let showDeleteConfirmation = false;
+    let deleteType: 'file' | 'directory' = 'file';
+    let itemToDelete = '';
+    let deleteInProgress = false;
     
     const dispatch = createEventDispatcher();
     
@@ -159,6 +163,60 @@
         const parts = path.split('/');
         return parts[parts.length - 1];
     }
+    
+    // Function to show confirmation dialog
+    function confirmDelete(type: 'file' | 'directory', item: string) {
+        deleteType = type;
+        itemToDelete = item;
+        showDeleteConfirmation = true;
+    }
+    
+    // Function to cancel delete
+    function cancelDelete() {
+        showDeleteConfirmation = false;
+        itemToDelete = '';
+    }
+    
+    // Function to execute delete
+    async function executeDelete() {
+        if (deleteInProgress) return;
+        
+        try {
+            deleteInProgress = true;
+            
+            if (deleteType === 'directory') {
+                // Construct the full path
+                const dirPath = currentPath 
+                    ? `${currentPath}/${itemToDelete}` 
+                    : itemToDelete;
+                    
+                await deleteDirectory(dirPath);
+                logger('INFO', 'ui', 'FileOperationsDialog', `Directory deleted: ${dirPath}`);
+            } else {
+                // For files, we already have the full path
+                await deleteChat(itemToDelete);
+                logger('INFO', 'ui', 'FileOperationsDialog', `File deleted: ${itemToDelete}`);
+            }
+            
+            // Refresh the file list
+            await loadFileList();
+            
+            // Close the confirmation dialog
+            showDeleteConfirmation = false;
+            itemToDelete = '';
+            
+        } catch (error: any) {
+            // Check for specific error messages from the backend
+            if (deleteType === 'directory' && error.message && error.message.includes('must be empty')) {
+                errorMessage = `Cannot delete directory "${itemToDelete}" because it is not empty. Please delete its contents first.`;
+            } else {
+                errorMessage = `Failed to delete ${deleteType}: ${error.message || 'Unknown error'}`;
+            }
+            logger('ERROR', 'ui', 'FileOperationsDialog', `Error deleting ${deleteType}: ${error}`);
+        } finally {
+            deleteInProgress = false;
+        }
+    }
 </script>
 
 {#if isOpen}
@@ -249,13 +307,24 @@
                         <h3 class="text-sm font-medium text-gray-700 mb-1">Directories</h3>
                         <div class="max-h-40 overflow-y-auto border border-gray-200 rounded-md">
                             {#each directories as dir}
-                                <button 
-                                    class="w-full text-left px-3 py-2 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 flex items-center"
-                                    on:click={() => navigateToDirectory(dir)}
+                                <div 
+                                    class="w-full text-left px-3 py-2 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 flex items-center justify-between group"
                                 >
-                                    <span class="material-symbols-outlined text-base mr-2 text-yellow-600">folder</span>
-                                    {dir}
-                                </button>
+                                    <button 
+                                        class="flex items-center flex-grow overflow-hidden text-ellipsis"
+                                        on:click={() => navigateToDirectory(dir)}
+                                    >
+                                        <span class="material-symbols-outlined text-base mr-2 text-yellow-600">folder</span>
+                                        <span class="truncate">{dir}</span>
+                                    </button>
+                                    <button 
+                                        class="text-transparent group-hover:text-red-500 hover:text-red-700 focus:text-red-500 focus:outline-none ml-2"
+                                        on:click|stopPropagation={() => confirmDelete('directory', dir)}
+                                        title="Delete directory"
+                                    >
+                                        <span class="material-symbols-outlined text-base">delete</span>
+                                    </button>
+                                </div>
                             {/each}
                         </div>
                     </div>
@@ -268,9 +337,18 @@
                             <h3 class="text-sm font-medium text-gray-700 mb-1">Existing Files</h3>
                             <div class="max-h-40 overflow-y-auto border border-gray-200 rounded-md">
                                 {#each availableFiles as file}
-                                    <div class="px-3 py-2 flex items-center text-gray-600">
-                                        <span class="material-symbols-outlined text-base mr-2 text-blue-600">description</span>
-                                        {getFilenameFromPath(file)}
+                                    <div class="px-3 py-2 flex items-center justify-between text-gray-600 group hover:bg-gray-100">
+                                        <div class="flex items-center flex-grow overflow-hidden">
+                                            <span class="material-symbols-outlined text-base mr-2 text-blue-600">description</span>
+                                            <span class="truncate">{getFilenameFromPath(file)}</span>
+                                        </div>
+                                        <button 
+                                            class="text-transparent group-hover:text-red-500 hover:text-red-700 focus:text-red-500 focus:outline-none ml-2"
+                                            on:click|stopPropagation={() => confirmDelete('file', file)}
+                                            title="Delete file"
+                                        >
+                                            <span class="material-symbols-outlined text-base">delete</span>
+                                        </button>
                                     </div>
                                 {/each}
                             </div>
@@ -298,13 +376,24 @@
                         <h3 class="text-sm font-medium text-gray-700 mb-1">Files</h3>
                         <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-md">
                             {#each availableFiles as file}
-                                <button 
-                                    class="w-full text-left px-3 py-2 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 {filename === getFilenameFromPath(file) ? 'bg-blue-50' : ''} flex items-center"
-                                    on:click={() => handleFileSelect(file)}
+                                <div 
+                                    class="w-full text-left px-3 py-2 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 {filename === getFilenameFromPath(file) ? 'bg-blue-50' : ''} flex items-center justify-between group"
                                 >
-                                    <span class="material-symbols-outlined text-base mr-2 text-blue-600">description</span>
-                                    {getFilenameFromPath(file)}
-                                </button>
+                                    <button 
+                                        class="flex items-center flex-grow overflow-hidden"
+                                        on:click={() => handleFileSelect(file)}
+                                    >
+                                        <span class="material-symbols-outlined text-base mr-2 text-blue-600">description</span>
+                                        <span class="truncate">{getFilenameFromPath(file)}</span>
+                                    </button>
+                                    <button 
+                                        class="text-transparent group-hover:text-red-500 hover:text-red-700 focus:text-red-500 focus:outline-none ml-2"
+                                        on:click|stopPropagation={() => confirmDelete('file', file)}
+                                        title="Delete file"
+                                    >
+                                        <span class="material-symbols-outlined text-base">delete</span>
+                                    </button>
+                                </div>
                             {/each}
                         </div>
                     {/if}
@@ -328,6 +417,44 @@
                     Save
                 {:else if mode === 'load'}
                     Load
+                {:else}
+                    Delete
+                {/if}
+            </button>
+        </div>
+    </div>
+</div>
+{/if}
+
+<!-- Add confirmation dialog -->
+{#if showDeleteConfirmation}
+<div class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Confirm Deletion</h3>
+        <p class="mb-6 text-gray-700">
+            {#if deleteType === 'directory'}
+                Are you sure you want to delete the directory "{itemToDelete}"?
+                <br><span class="text-gray-600 text-sm">Note: Only empty directories can be deleted.</span>
+            {:else}
+                Are you sure you want to delete the file "{getFilenameFromPath(itemToDelete)}"?
+            {/if}
+        </p>
+        
+        <div class="flex justify-end space-x-3">
+            <button 
+                class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                on:click={cancelDelete}
+            >
+                Cancel
+            </button>
+            <button 
+                class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
+                on:click={executeDelete}
+                disabled={deleteInProgress}
+            >
+                {#if deleteInProgress}
+                    <span class="inline-block animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-1"></span>
+                    Deleting...
                 {:else}
                     Delete
                 {/if}
