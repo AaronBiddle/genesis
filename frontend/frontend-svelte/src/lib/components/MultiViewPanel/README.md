@@ -9,26 +9,86 @@ The MultiViewPanel system allows you to create and manage multiple panels, each 
 ### Key Features:
 - **Draggable and Resizable Panels:** Easily move and resize panels.
 - **Stacking & Active Management:** Bring panels to the front when activated.
-- **Optional Suggested Dimensions:** The `createPanel` function accepts optional `suggestedWidth` and `suggestedHeight` parameters which serve as hints for a preferred size (they do not override the default width and height immediately).
+- **Suggested Dimensions:** Components can specify suggested dimensions, and users can apply these with the resize button.
+- **Dynamic App Loading:** Switch between different app components within the same panel.
 
 ## How to Use
 
+### Creating a New App Component
+
+Any Svelte component can be used as an app within a panel. The component will receive a `panelId` prop that can be used to identify which panel it's rendered in.
+
+**Example app component:**
+
+```svelte
+<script lang="ts">
+  // The panelId is automatically passed to your component
+  export let panelId: string;
+  
+  // Your component logic here
+</script>
+
+<div>
+  <h2>My App Component</h2>
+  <p>Panel ID: {panelId}</p>
+  <!-- Your component UI here -->
+</div>
+```
+
+### Registering Apps in +page.svelte
+
+To make your app available in panels, you need to register it in your page component:
+
+```svelte
+<script lang="ts">
+  import MultiViewPanel from '$lib/components/MultiViewPanel/MultiViewPanel.svelte';
+  import MultiViewBackground from '$lib/components/MultiViewPanel/MultiViewBackground.svelte';
+  import { panels } from '$lib/components/MultiViewPanel/panelStore';
+  import MyNewComponent from '$lib/components/MyNewComponent.svelte';
+  
+  // Register all available app components
+  const apps = [
+    {
+      id: 'my-app',           // Unique identifier
+      label: 'My App',        // Display name in dropdown
+      component: MyNewComponent,  // The Svelte component to render
+      suggestedWidth: 600,    // Optional preferred width
+      suggestedHeight: 400    // Optional preferred height
+    },
+    // Register other apps...
+  ];
+</script>
+
+<div class="flex flex-col h-screen w-screen">
+  <header>
+    <button on:click={() => panels.createPanel()}>Add Panel</button>
+  </header>
+  <main class="flex-1 w-full overflow-hidden">
+    <MultiViewBackground>
+      {#each $panels as panel (panel.id)}
+        <MultiViewPanel panel={panel} {apps} />
+      {/each}
+    </MultiViewBackground>
+  </main>
+</div>
+```
+
 ### Creating a Panel
 
-The panel store (`panelStore.ts`) provides a `createPanel` function that creates a new panel. It accepts optional parameters for `suggestedWidth` and `suggestedHeight`. These parameters are stored in the panel object but do not change the default width (`400`) or height (`500`). Future enhancements might use these values to adjust panel behavior.
+The panel store (`panelStore.ts`) provides a `createPanel` function that creates a new panel. It accepts optional parameters for `suggestedWidth` and `suggestedHeight`.
 
 **Example usage in a Svelte component:**
 
 ```svelte
 <script lang="ts">
-  import { panels } from '$lib/components/MultiViewPanel/stores/panelStore';
+  import { panels } from '$lib/components/MultiViewPanel/panelStore';
 
   // Create a new panel using default dimensions
   const addPanel = () => {
     panels.createPanel();
   };
 
-  // Create a new panel with suggested dimensions (these hints might be used later)
+  // Create a new panel with suggested dimensions
   // panels.createPanel(600, 400);
 </script>
 
@@ -51,22 +111,39 @@ Svelte automatically passes the click event to event handler functions. If you d
 
 This prevents the click event from being mistakenly interpreted as a suggested width.
 
-### App Registration Component
+### Applying Suggested Sizes
 
-The `AppRegistration.svelte` component is responsible for allowing users to choose which app to load in a panel. It has been updated to accept optional `suggestedWidth` and `suggestedHeight` props. These props currently serve as future hints for preferred panel sizes and can be utilized later for more dynamic behavior.
+Each panel has a resize button (icon with corners) in its header that applies the suggested dimensions of the current app. This allows users to quickly resize panels to dimensions that are appropriate for the specific app.
+
+The `applySuggestedSize` function in `panelStore.ts` is used to apply these dimensions:
+
+```typescript
+// This happens automatically when the user clicks the resize button
+applySuggestedSize(panelId, currentApp.suggestedWidth, currentApp.suggestedHeight);
+```
+
+## Panel Store Functions
+
+The `panelStore.ts` file provides several functions for managing panels:
+
+- `createPanel(suggestedWidth?, suggestedHeight?)`: Creates a new panel
+- `updatePanelsById(id, updater)`: Updates a specific panel by ID
+- `setActivePanel(id)`: Sets a panel as active
+- `bringToFront(id)`: Brings a panel to the front of the stack
+- `applySuggestedSize(id, width?, height?)`: Applies suggested dimensions to a panel
 
 ## Folder Structure
 
-- **stores/panelStore.ts:** Contains the panel store and the `createPanel` function. 
-- **MultiViewPanel.svelte:** The Svelte component representing an individual panel. 
-- **AppRegistration.svelte:** The component for selecting apps, now accepting optional suggested dimensions. 
-- **MultiViewBackground.svelte:** The container component managing multiple panels. 
-- **README.md:** This file.
+- **panelStore.ts:** Contains the panel store and panel management functions
+- **MultiViewPanel.svelte:** The Svelte component representing an individual panel
+- **ResizeHandles.svelte:** Component for panel resize handles
+- **AppRegistration.svelte:** Component for selecting apps in a panel
+- **MultiViewBackground.svelte:** The container component for multiple panels
+- **resizeManager.ts:** Logic for handling panel resizing
+- **types.ts:** TypeScript type definitions
+- **EmptyPanel.svelte:** Default empty panel component
+- **README.md:** This documentation file
 
 ## Summary
 
-- The `createPanel` function accepts optional `suggestedWidth` and `suggestedHeight` parameters without altering the panel's default dimensions.
-- Use an arrow function in event handlers (e.g. `on:click={() => panels.createPanel()}`) to avoid passing unintended parameters such as the click event.
-- This pattern keeps business logic (panel creation) separate from UI events, which is a clean and reusable approach.
-
-Feel free to extend and customize the MultiViewPanel system according to your application requirements. 
+The MultiViewPanel system provides a flexible way to create and manage multiple panels in your application. By following the patterns described in this README, you can easily integrate it into your Svelte application and create custom app components that work within the panel system. 
