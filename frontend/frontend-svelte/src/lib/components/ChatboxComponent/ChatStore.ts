@@ -147,6 +147,7 @@ export function createChatStore(id: string) {
                 sender: msg.role === 'user' ? 'user' : 'assistant',
                 timestamp: new Date(),
                 renderMarkdown: true,
+                reasoning: msg.reasoning,
                 showReasoning: false
             }));
             

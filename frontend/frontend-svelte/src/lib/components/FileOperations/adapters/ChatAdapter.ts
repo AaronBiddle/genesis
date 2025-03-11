@@ -39,7 +39,8 @@ export async function saveChat(filename: string, messages: Message[], settings: 
         const content = {
             messages: messages.map(msg => ({
                 role: msg.sender === 'user' ? 'user' : 'assistant',
-                content: msg.text
+                content: msg.text,
+                reasoning: msg.reasoning
             })),
             system_prompt: settings.systemPrompt,
             temperature: settings.temperature
