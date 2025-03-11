@@ -6,6 +6,7 @@
   import ChatboxComponent from '$lib/components/ChatboxComponent/ChatboxComponent.svelte';
   import WorkerRequestsTest from '$lib/components/WorkerRequestsTest.svelte';
   import LogControlPanel from '$lib/components/LogControlPanel/LogControlPanel.svelte';
+  import DocumentEditor from '$lib/components/DocumentEditor/DocumentEditor.svelte';
 
   // Register the app components to be available in the dropdown
   const apps = [
@@ -32,6 +33,13 @@
       component: LogControlPanel,
       suggestedWidth: 500,
       suggestedHeight: 700
+    },
+    {
+      id: 'document-editor',
+      label: 'Document Editor',
+      component: DocumentEditor,
+      suggestedWidth: 800,
+      suggestedHeight: 600
     }
   ];
 </script>

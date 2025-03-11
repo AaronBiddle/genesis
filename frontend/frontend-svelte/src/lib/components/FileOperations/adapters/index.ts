@@ -14,13 +14,13 @@ export {
     deleteChat
 } from './ChatAdapter';
 
-// Export project adapter
+// Export document adapter
 export {
-    PROJECT_FILE_TYPE,
-    projectFileConfig,
-    saveProject,
-    loadProject,
-    deleteProject,
-    createNewProject,
-    type ProjectData
-} from './ProjectAdapter'; 
+    DOCUMENT_FILE_TYPE,
+    documentFileConfig,
+    saveDocument,
+    loadDocument,
+    deleteDocument,
+    createNewDocument,
+    type DocumentData
+} from './DocumentAdapter'; 
