@@ -116,7 +116,8 @@ class FileManager:
             pattern = f"**/*{self.extension}"
             
             # Use rglob for recursive search and convert paths to relative paths
-            files = [str(f.relative_to(self.base_dir)) for f in self.base_dir.rglob(pattern)]
+            files = [str(f.relative_to(self.base_dir)) for f in self.base_dir.rglob(pattern) 
+                    if f.name != '.gitkeep']
             
             return sorted(files)
             
