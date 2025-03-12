@@ -4,6 +4,9 @@ import { logger } from '$lib/components/LogControlPanel/logger';
 // Import the chat adapter instead of the old FileOperationsService
 import { saveChat, loadChat, deleteChat } from '$lib/components/FileOperations/adapters/ChatAdapter';
 
+// Define namespace as a constant using path-like format
+const NAMESPACE = 'ChatboxComponent/ChatStore';
+
 // Default settings values
 const DEFAULT_SETTINGS: ChatSettings = {
     temperature: 0.7,
@@ -123,12 +126,12 @@ export function createChatStore(id: string) {
             
             if (result.success) {
                 currentFilename.set(filename);
-                logger('INFO', 'ui', 'ChatStore', `Chat saved to ${filename}`);
+                logger('INFO', 'ui', NAMESPACE, `Chat saved to ${filename}`);
             } else {
                 throw new Error(result.error || 'Failed to save chat');
             }
         } catch (error) {
-            logger('ERROR', 'ui', 'ChatStore', `Failed to save chat: ${error}`);
+            logger('ERROR', 'ui', NAMESPACE, `Failed to save chat: ${error}`);
             throw error;
         } finally {
             isLoading.set(false);
@@ -160,9 +163,9 @@ export function createChatStore(id: string) {
             }));
             currentFilename.set(filename);
             
-            logger('INFO', 'ui', 'ChatStore', `Chat loaded from ${filename}`);
+            logger('INFO', 'ui', NAMESPACE, `Chat loaded from ${filename}`);
         } catch (error) {
-            logger('ERROR', 'ui', 'ChatStore', `Failed to load chat: ${error}`);
+            logger('ERROR', 'ui', NAMESPACE, `Failed to load chat: ${error}`);
             throw error;
         } finally {
             isLoading.set(false);
@@ -180,12 +183,12 @@ export function createChatStore(id: string) {
                     currentFilename.set('');
                 }
                 
-                logger('INFO', 'ui', 'ChatStore', `Chat deleted: ${filename}`);
+                logger('INFO', 'ui', NAMESPACE, `Chat deleted: ${filename}`);
             } else {
                 throw new Error(result.error || 'Failed to delete chat');
             }
         } catch (error) {
-            logger('ERROR', 'ui', 'ChatStore', `Failed to delete chat: ${error}`);
+            logger('ERROR', 'ui', NAMESPACE, `Failed to delete chat: ${error}`);
             throw error;
         } finally {
             isLoading.set(false);

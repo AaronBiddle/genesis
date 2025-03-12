@@ -2,6 +2,9 @@ import { writable } from 'svelte/store';
 import { API_URL } from '$lib/config.js';
 import { logger } from '$lib/components/LogControlPanel/logger';
 
+// Define namespace as a constant using path-like format
+const NAMESPACE = 'ChatboxComponent/ModelService';
+
 export interface Model {
     id: string;
     name: string;
@@ -19,7 +22,7 @@ export async function fetchAvailableModels(): Promise<void> {
     modelError.set(null);
     
     try {
-        logger('INFO', 'network', 'ModelService', 'Fetching available models');
+        logger('INFO', 'network', NAMESPACE, 'Fetching available models');
         const response = await fetch(`${API_URL}/models`);
         
         if (!response.ok) {
@@ -35,14 +38,14 @@ export async function fetchAvailableModels(): Promise<void> {
                 description: modelData.description || ''
             }));
             
-            logger('INFO', 'network', 'ModelService', `Fetched ${modelsList.length} models`);
+            logger('INFO', 'network', NAMESPACE, `Fetched ${modelsList.length} models`);
             availableModels.set(modelsList);
         } else {
             throw new Error('Invalid response format from models API');
         }
     } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-        logger('ERROR', 'network', 'ModelService', `Error fetching models: ${errorMessage}`);
+        logger('ERROR', 'network', NAMESPACE, `Error fetching models: ${errorMessage}`);
         modelError.set(errorMessage);
         availableModels.set([]);
     } finally {
