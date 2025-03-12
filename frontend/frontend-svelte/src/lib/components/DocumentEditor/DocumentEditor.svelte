@@ -106,6 +106,8 @@
         tags: []
       };
       filename = targetFilename;
+      // Start in preview mode when opening a document
+      isEditing = false;
       logger('INFO', 'ui', 'DocumentEditor', `Document loaded successfully: ${targetFilename}`);
     } catch (error: any) {
       const errorMsg = error.message || 'Unknown error';
@@ -128,6 +130,8 @@
       tags: []
     };
     filename = '';
+    // Start in edit mode for new documents
+    isEditing = true;
     logger('INFO', 'ui', 'DocumentEditor', 'New document created');
   }
 
