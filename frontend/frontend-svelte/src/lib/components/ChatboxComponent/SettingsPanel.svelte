@@ -4,6 +4,9 @@
     import { logger } from '$lib/components/LogControlPanel/logger';
     import { availableModels, fetchAvailableModels, isLoadingModels, modelError } from './ModelService';
     
+    // Define namespace as a constant using path-like format
+    const NAMESPACE = 'ChatboxComponent/SettingsPanel';
+    
     // Accept panel ID as a prop
     export let panelId: string;
     
@@ -17,6 +20,19 @@
     // Local copy of settings for editing
     let localSettings = { ...$settings };
     
+    // Update local settings when store settings change
+    $: {
+        localSettings = { ...$settings };
+    }
+    
+    // Auto-save settings when they change
+    $: {
+        if (localSettings !== $settings) {
+            settings.set(localSettings);
+            logger('INFO', 'ui', NAMESPACE, `Automatically saving settings for panel ${panelId}:`, localSettings);
+        }
+    }
+    
     // Fetch available models on component mount
     onMount(() => {
         fetchAvailableModels();
@@ -29,7 +45,7 @@
     
     // Update settings automatically when leaving the panel
     function saveSettings(): void {
-        logger('INFO', 'ui', 'SettingsPanel', `Automatically saving settings for panel ${panelId}:`, localSettings);
+        logger('INFO', 'ui', NAMESPACE, `Automatically saving settings for panel ${panelId}:`, localSettings);
         $settings = { ...localSettings };
         applySettings();
     }

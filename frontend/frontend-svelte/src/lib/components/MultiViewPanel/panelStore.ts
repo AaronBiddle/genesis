@@ -4,7 +4,7 @@ import { logger } from '$lib/components/LogControlPanel/logger';
 const DEFAULT_WIDTH = 400;
 const DEFAULT_HEIGHT = 500;
 
-const NAMESPACE = 'MultiViewPanel';
+const NAMESPACE = 'MultiViewPanel/panelStore';
 
 export type Panel = {
   id: string;

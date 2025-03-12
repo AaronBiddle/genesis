@@ -3,10 +3,16 @@
     import ChatInput from './ChatInput.svelte';
     import ChatMessages from './ChatMessages.svelte';
     import SettingsPanel from './SettingsPanel.svelte';
-    import FileOperationsDialog from './FileOperationsDialog.svelte';
     import { getChatStore } from './ChatStore';
-    import { registerSession, unregisterSession, reconnectWebSocket } from './WebSocketService';
+    import { registerSession, unregisterSession, reconnectWebSocket, connectionStatus } from './WebSocketService';
     import { logger } from '$lib/components/LogControlPanel/logger';
+    
+    // Import the new FileOperations components
+    import { FileOperationsDialog } from '$lib/components/FileOperations';
+    import { adapters } from '$lib/components/FileOperations';
+    
+    // Define namespace as a constant using path-like format
+    const NAMESPACE = 'ChatboxComponent/ChatboxComponent';
     
     // Accept panel ID as a prop
     export let panelId: string;
@@ -25,19 +31,22 @@
         deleteChatFile
     } = chatStore;
     
+    // Extract chat adapter functions and config
+    const { CHAT_FILE_TYPE, chatFileConfig } = adapters;
+    
     // File operations dialog state
     let showFileDialog = false;
     let fileDialogMode: 'save' | 'load' | 'delete' = 'save';
     
     // Register this session with the WebSocket service on mount
     onMount(() => {
-        logger('INFO', 'ui', 'ChatboxComponent', `ChatboxComponent mounted with panelId: ${panelId}`);
+        logger('INFO', 'ui', NAMESPACE, `ChatboxComponent mounted with panelId: ${panelId}`);
         registerSession(panelId);
     });
     
     // Unregister this session when the component is destroyed
     onDestroy(() => {
-        logger('INFO', 'ui', 'ChatboxComponent', `ChatboxComponent destroyed with panelId: ${panelId}`);
+        logger('INFO', 'ui', NAMESPACE, `ChatboxComponent destroyed with panelId: ${panelId}`);
         unregisterSession(panelId);
     });
     
@@ -54,7 +63,7 @@
     }
     
     function handleReconnect(): void {
-        logger('INFO', 'ui', 'ChatboxComponent', 'User initiated WebSocket reconnection');
+        logger('INFO', 'ui', NAMESPACE, 'User initiated WebSocket reconnection');
         reconnectWebSocket();
     }
     
@@ -86,7 +95,7 @@
                 await deleteChatFile(filename);
             }
         } catch (error) {
-            logger('ERROR', 'ui', 'ChatboxComponent', `File operation failed: ${error}`);
+            logger('ERROR', 'ui', NAMESPACE, `File operation failed: ${error}`);
             // In a real app, you would show an error message to the user
         }
     }
@@ -206,11 +215,13 @@
         </div>
     {/if}
     
-    <!-- File operations dialog -->
+    <!-- File operations dialog using the new generic component -->
     <FileOperationsDialog 
         bind:isOpen={showFileDialog}
         bind:mode={fileDialogMode}
         currentFilename={$currentFilename}
-        on:submit={handleFileOperation}
+        fileType={CHAT_FILE_TYPE}
+        config={chatFileConfig}
+        on:fileOperation={handleFileOperation}
     />
 </div> 

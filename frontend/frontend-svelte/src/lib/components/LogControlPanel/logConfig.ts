@@ -178,10 +178,13 @@ export function shouldLog(
         return false;
     }
     
+    // Extract the base namespace (before the first slash)
+    const baseNamespace = namespace.split('/')[0];
+    
     // Apply namespace filtering
     if (config.namespaceFilters.length > 0) {
         const isNamespaceIncluded = config.namespaceFilters.some(filter => 
-            namespace.startsWith(filter)
+            baseNamespace.startsWith(filter)
         );
         
         if ((config.namespaceFilterType === 'include' && !isNamespaceIncluded) ||
@@ -214,25 +217,31 @@ export function log(
 
     const timestamp = new Date().toISOString();
     const domainStr = domain ? `[${domain}] ` : '';
+    
+    // Extract the base namespace (before the first slash)
+    const baseNamespace = namespace.split('/')[0];
+    
+    // Add a visual indicator for invalid namespaces
+    const namespaceStr = NAMESPACES.includes(baseNamespace) ? namespace : `⚠️ ${namespace}`;
 
     switch (level) {
         case 'TRACE':
-            console.debug(`${timestamp} TRACE ${domainStr}${namespace}:`, message, ...args);
+            console.debug(`${timestamp} TRACE ${domainStr}${namespaceStr}:`, message, ...args);
             break;
         case 'DEBUG':
-            console.debug(`${timestamp} DEBUG ${domainStr}${namespace}:`, message, ...args);
+            console.debug(`${timestamp} DEBUG ${domainStr}${namespaceStr}:`, message, ...args);
             break;
         case 'INFO':
-            console.info(`${timestamp} INFO ${domainStr}${namespace}:`, message, ...args);
+            console.info(`${timestamp} INFO ${domainStr}${namespaceStr}:`, message, ...args);
             break;
         case 'WARN':
-            console.warn(`${timestamp} WARN ${domainStr}${namespace}:`, message, ...args);
+            console.warn(`${timestamp} WARN ${domainStr}${namespaceStr}:`, message, ...args);
             break;
         case 'ERROR':
-            console.error(`${timestamp} ERROR ${domainStr}${namespace}:`, message, ...args);
+            console.error(`${timestamp} ERROR ${domainStr}${namespaceStr}:`, message, ...args);
             break;
         case 'FATAL':
-            console.error(`${timestamp} FATAL ${domainStr}${namespace}:`, message, ...args);
+            console.error(`${timestamp} FATAL ${domainStr}${namespaceStr}:`, message, ...args);
             break;
     }
 }
