@@ -5,7 +5,7 @@ import { logger } from '$lib/components/LogControlPanel/logger';
 import { saveChat, loadChat, deleteChat } from '$lib/components/FileOperations/adapters/ChatAdapter';
 
 // Define namespace as a constant using path-like format
-const NAMESPACE = 'ChatboxComponent/ChatStore';
+const NAMESPACE = 'Chatbox/ChatStore';
 
 // Default settings values
 const DEFAULT_SETTINGS: ChatSettings = {

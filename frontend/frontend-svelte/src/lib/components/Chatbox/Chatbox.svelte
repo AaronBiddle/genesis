@@ -12,7 +12,7 @@
     import { adapters } from '$lib/components/FileOperations';
     
     // Define namespace as a constant using path-like format
-    const NAMESPACE = 'ChatboxComponent/ChatboxComponent';
+    const NAMESPACE = 'Chatbox/Chatbox';
     
     // Accept panel ID as a prop
     export let panelId: string;
@@ -40,13 +40,13 @@
     
     // Register this session with the WebSocket service on mount
     onMount(() => {
-        logger('INFO', 'ui', NAMESPACE, `ChatboxComponent mounted with panelId: ${panelId}`);
+        logger('INFO', 'ui', NAMESPACE, `Chatbox mounted with panelId: ${panelId}`);
         registerSession(panelId);
     });
     
     // Unregister this session when the component is destroyed
     onDestroy(() => {
-        logger('INFO', 'ui', NAMESPACE, `ChatboxComponent destroyed with panelId: ${panelId}`);
+        logger('INFO', 'ui', NAMESPACE, `Chatbox destroyed with panelId: ${panelId}`);
         unregisterSession(panelId);
     });
     

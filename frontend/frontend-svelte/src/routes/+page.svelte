@@ -2,7 +2,7 @@
   import MultiViewPanel from '$lib/components/MultiViewPanel/MultiViewPanel.svelte';
   import MultiViewBackground from '$lib/components/MultiViewPanel/MultiViewBackground.svelte';
   import { panels } from '$lib/components/MultiViewPanel/panelStore';
-  import ChatboxComponent from '$lib/components/ChatboxComponent/ChatboxComponent.svelte';
+  import Chatbox from '$lib/components/Chatbox/Chatbox.svelte';
   import WorkerRequestsTest from '$lib/components/WorkerRequestsTest.svelte';
   import LogControlPanel from '$lib/components/LogControlPanel/LogControlPanel.svelte';
   import DocumentEditor from '$lib/components/DocumentEditor/DocumentEditor.svelte';
@@ -12,7 +12,7 @@
     {
       id: 'chatbox',
       label: 'Chatbox',
-      component: ChatboxComponent,
+      component: Chatbox,
       suggestedWidth: 600,
       suggestedHeight: 840
     },

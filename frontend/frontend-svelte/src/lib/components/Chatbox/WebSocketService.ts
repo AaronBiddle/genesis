@@ -6,7 +6,7 @@ import { writable } from 'svelte/store';
 import { logger } from '$lib/components/LogControlPanel/logger';
 
 // Define namespace as a constant using path-like format
-const NAMESPACE = 'ChatboxComponent/WebSocketService';
+const NAMESPACE = 'Chatbox/WebSocketService';
 
 // Single WebSocket connection for all chat instances
 let webSocket: WebSocket | null = null;

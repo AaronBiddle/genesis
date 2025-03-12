@@ -5,7 +5,7 @@
     import { availableModels, fetchAvailableModels, isLoadingModels, modelError } from './ModelService';
     
     // Define namespace as a constant using path-like format
-    const NAMESPACE = 'ChatboxComponent/SettingsPanel';
+    const NAMESPACE = 'Chatbox/SettingsPanel';
     
     // Accept panel ID as a prop
     export let panelId: string;
