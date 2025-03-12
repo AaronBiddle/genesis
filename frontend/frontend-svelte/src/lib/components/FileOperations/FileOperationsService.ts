@@ -55,10 +55,9 @@ export async function saveFile(fileType: string, filename: string, content: any)
 export async function loadFile(fileType: string, filename: string): Promise<FileOperationResult> {
     try {
         logger('INFO', 'ui', NAMESPACE, `Loading ${fileType} file from ${filename}`);
-        console.log(`FileOperationsService: Loading ${fileType} file from ${filename}`);
         
         const endpoint = `${API_URL}/files/${fileType}/load`;
-        console.log('FileOperationsService: Endpoint:', endpoint);
+        logger('DEBUG', 'ui', NAMESPACE, `Endpoint: ${endpoint}`);
         
         const response = await fetch(endpoint, {
             method: 'POST',
@@ -70,7 +69,7 @@ export async function loadFile(fileType: string, filename: string): Promise<File
             })
         });
         
-        console.log('FileOperationsService: Response status:', response.status);
+        logger('DEBUG', 'ui', NAMESPACE, `Response status: ${response.status}`);
         
         if (!response.ok) {
             let errorMessage = `Failed to load ${fileType} file`;
@@ -86,7 +85,7 @@ export async function loadFile(fileType: string, filename: string): Promise<File
         }
         
         const data = await response.json();
-        console.log('FileOperationsService: Data loaded successfully');
+        logger('DEBUG', 'ui', NAMESPACE, `Data loaded successfully`);
         
         return {
             success: true,
@@ -95,7 +94,6 @@ export async function loadFile(fileType: string, filename: string): Promise<File
     } catch (error: any) {
         const errorMsg = error.message || `Failed to load ${fileType} file`;
         logger('ERROR', 'ui', NAMESPACE, `Error loading ${fileType} file: ${errorMsg}`);
-        console.error(`FileOperationsService: Error loading ${fileType} file:`, error);
         
         return {
             success: false,
