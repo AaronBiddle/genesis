@@ -27,11 +27,11 @@ function initWebSocket() {
     
     isConnecting = true;
     
-    logger('DEBUG', 'network', 'WebSocketService', 'Initializing WebSocket connection');
+    logger('DEBUG', 'network', 'ChatboxComponent', 'Initializing WebSocket connection');
     webSocket = new WebSocket(`${WS_URL}/ws/chat`);
     
     webSocket.onopen = () => {
-        logger('DEBUG', 'network', 'WebSocketService', 'WebSocket connected');
+        logger('DEBUG', 'network', 'ChatboxComponent', 'WebSocket connected');
         connectionStatus.set(true);
         isConnecting = false;
         
@@ -43,7 +43,7 @@ function initWebSocket() {
     };
     
     webSocket.onclose = (event) => {
-        logger('DEBUG', 'network', 'WebSocketService', `WebSocket closed: ${event.code} - ${event.reason}`);
+        logger('DEBUG', 'network', 'ChatboxComponent', `WebSocket closed: ${event.code} - ${event.reason}`);
         connectionStatus.set(false);
         isConnecting = false;
         
@@ -53,11 +53,11 @@ function initWebSocket() {
             store.wsConnected.set(false);
         });
         
-        logger('INFO', 'network', 'WebSocketService', 'WebSocket connection closed. No automatic reconnection will be attempted.');
+        logger('INFO', 'network', 'ChatboxComponent', 'WebSocket connection closed. No automatic reconnection will be attempted.');
     };
     
     webSocket.onerror = (error) => {
-        logger('ERROR', 'network', 'WebSocketService', 'WebSocket error:', error);
+        logger('ERROR', 'network', 'ChatboxComponent', 'WebSocket error:', error);
         connectionStatus.set(false);
     };
     
@@ -69,17 +69,17 @@ function initWebSocket() {
             if (data.sessionId) {
                 handleWebSocketMessage(data.sessionId, data);
             } else {
-                logger('ERROR', 'network', 'WebSocketService', 'Received message without sessionId:', data);
+                logger('ERROR', 'network', 'ChatboxComponent', 'Received message without sessionId:', data);
             }
         } catch (e) {
-            logger('ERROR', 'network', 'WebSocketService', 'Error parsing websocket message:', e);
+            logger('ERROR', 'network', 'ChatboxComponent', 'Error parsing websocket message:', e);
         }
     };
 }
 
 // Function to attempt reconnection
 export function reconnectWebSocket(): void {
-    logger('INFO', 'network', 'WebSocketService', 'Attempting to reconnect WebSocket');
+    logger('INFO', 'network', 'ChatboxComponent', 'Attempting to reconnect WebSocket');
     
     // Close existing socket if it exists
     if (webSocket) {
@@ -107,7 +107,7 @@ export function reconnectWebSocket(): void {
 // Register a session with the WebSocket service
 export function registerSession(panelId: string): void {
     const sessionId = panelId; // Explicit mapping between panel ID and session ID
-    logger('DEBUG', 'network', 'WebSocketService', `Registering session: ${sessionId}`);
+    logger('DEBUG', 'network', 'ChatboxComponent', `Registering session: ${sessionId}`);
     activeSessions.add(sessionId);
     
     // Initialize WebSocket if not already connected
@@ -125,13 +125,12 @@ export function registerSession(panelId: string): void {
 // Unregister a session when it's no longer needed
 export function unregisterSession(panelId: string): void {
     const sessionId = panelId; // Explicit mapping between panel ID and session ID
-    logger('DEBUG', 'network', 'WebSocketService', `Unregistering session: ${sessionId}`);
+    logger('DEBUG', 'network', 'ChatboxComponent', `Unregistering session: ${sessionId}`);
     activeSessions.delete(sessionId);
     
     // If no more active sessions, close the WebSocket
     if (activeSessions.size === 0 && webSocket) {
-        logger('DEBUG', 'network', 'WebSocketService', 'No active sessions, closing WebSocket');
-        webSocket.close(1000, 'No active sessions');
+        logger('DEBUG', 'network', 'ChatboxComponent', 'No active sessions, closing WebSocket');
         webSocket = null;
     }
 }
@@ -142,7 +141,7 @@ function handleWebSocketMessage(sessionId: string, data: WebSocketMessage): void
     
     // Handle error messages
     if (data.error) {
-        logger('ERROR', 'websocket', 'handleWebSocketMessage', `Received error: ${data.error}`, data.details);
+        logger('ERROR', 'network', 'ChatboxComponent', `Received error: ${data.error}`, data.details);
         store.addSystemMessage(`Error: ${data.error}${data.details ? ` - ${data.details}` : ''}`, true);
         store.currentResponseId.set(null);
         return;
@@ -200,7 +199,7 @@ export function sendMessage(panelId: string, messageText: string): void {
     
     // Ensure WebSocket is connected
     if (!webSocket || webSocket.readyState !== WebSocket.OPEN) {
-        logger('ERROR', 'websocket', 'sendMessage', 'WebSocket is not connected');
+        logger('ERROR', 'network', 'ChatboxComponent', 'WebSocket is not connected');
         store.addSystemMessage('Error: Cannot send message, WebSocket is not connected.', true);
         
         // Removing auto reconnect attempt
@@ -236,8 +235,8 @@ export function sendMessage(panelId: string, messageText: string): void {
     };
     
     // Send payload
-    logger('INFO', 'websocket', 'sendMessage', `Sent message to WebSocket for session ${sessionId}`);
-    logger('TRACE', 'network', 'WebSocketService', `Message payload for session ${sessionId}:`, JSON.stringify(payload));
+    logger('INFO', 'network', 'ChatboxComponent', `Sent message to WebSocket for session ${sessionId}`);
+    logger('TRACE', 'network', 'ChatboxComponent', `Message payload for session ${sessionId}:`, JSON.stringify(payload));
     webSocket.send(JSON.stringify(payload));
     store.currentResponseId.set(null); // will be set on receiving first token
 }
