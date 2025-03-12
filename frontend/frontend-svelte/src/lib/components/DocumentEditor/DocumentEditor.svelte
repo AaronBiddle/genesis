@@ -202,15 +202,15 @@
   </div>
 
   <!-- Editor/Preview Area -->
-  <div class="flex-1 overflow-auto p-4">
+  <div class="flex-1 p-4">
     {#if isEditing}
       <textarea 
-        class="w-full h-full p-2 resize-none font-mono text-sm"
+        class="w-full h-full resize-none font-mono text-sm"
         bind:value={content}
         placeholder=""
       ></textarea>
     {:else}
-      <div class="markdown-preview bg-white p-4 h-full overflow-auto">
+      <div class="markdown-preview bg-white h-full">
         <MarkdownRenderer content={content} />
       </div>
     {/if}
@@ -238,5 +238,6 @@
   textarea {
     font-family: 'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace;
     line-height: 1.5;
+    overflow: visible;
   }
 </style> 
