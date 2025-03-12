@@ -50,23 +50,25 @@
                 Chat {panelId}
             {/if}
         </h2>
-        <button 
-            on:click={handleClearChat}
-            class="p-1.5 text-sm bg-gray-100 rounded hover:bg-gray-300 transition-colors flex items-center group relative"
-            title="New Chat"
-        >
-            <span class="material-symbols-outlined text-base">note_add</span>
-            <span class="absolute left-1/2 transform -translate-x-1/2 -bottom-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                New Chat
-            </span>
-        </button>
         
-        <!-- File operation buttons -->
-        <div class="flex ml-2">
+        <!-- Toolbar buttons with consistent spacing -->
+        <div class="flex space-x-0">
+            <!-- New Chat button -->
+            <button 
+                on:click={handleClearChat}
+                class="p-1.5 text-sm bg-gray-100 rounded hover:bg-gray-300 transition-colors flex items-center group relative"
+                title="New Chat"
+            >
+                <span class="material-symbols-outlined text-base">note_add</span>
+                <span class="absolute left-1/2 transform -translate-x-1/2 -bottom-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    New Chat
+                </span>
+            </button>
+            
             <!-- Save button -->
             <button 
                 on:click={openSaveDialog}
-                class="p-1.5 text-sm bg-gray-100 rounded hover:bg-gray-300 transition-colors flex items-center group relative ml-1"
+                class="p-1.5 text-sm bg-gray-100 rounded hover:bg-gray-300 transition-colors flex items-center group relative"
                 title="Save Chat"
                 disabled={isLoading}
             >
@@ -79,7 +81,7 @@
             <!-- Load button -->
             <button 
                 on:click={openLoadDialog}
-                class="p-1.5 text-sm bg-gray-100 rounded hover:bg-gray-300 transition-colors flex items-center group relative ml-1"
+                class="p-1.5 text-sm bg-gray-100 rounded hover:bg-gray-300 transition-colors flex items-center group relative"
                 title="Load Chat"
                 disabled={isLoading}
             >
