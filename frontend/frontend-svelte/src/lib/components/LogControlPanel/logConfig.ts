@@ -178,10 +178,13 @@ export function shouldLog(
         return false;
     }
     
+    // Extract the base namespace (before the first slash)
+    const baseNamespace = namespace.split('/')[0];
+    
     // Apply namespace filtering
     if (config.namespaceFilters.length > 0) {
         const isNamespaceIncluded = config.namespaceFilters.some(filter => 
-            namespace.startsWith(filter)
+            baseNamespace.startsWith(filter)
         );
         
         if ((config.namespaceFilterType === 'include' && !isNamespaceIncluded) ||
@@ -215,8 +218,11 @@ export function log(
     const timestamp = new Date().toISOString();
     const domainStr = domain ? `[${domain}] ` : '';
     
+    // Extract the base namespace (before the first slash)
+    const baseNamespace = namespace.split('/')[0];
+    
     // Add a visual indicator for invalid namespaces
-    const namespaceStr = NAMESPACES.includes(namespace) ? namespace : `⚠️ ${namespace}`;
+    const namespaceStr = NAMESPACES.includes(baseNamespace) ? namespace : `⚠️ ${namespace}`;
 
     switch (level) {
         case 'TRACE':
