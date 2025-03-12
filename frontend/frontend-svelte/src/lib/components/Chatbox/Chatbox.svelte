@@ -76,12 +76,7 @@
     function openLoadDialog(): void {
         fileDialogMode = 'load';
         showFileDialog = true;
-    }
-    
-    function openDeleteDialog(): void {
-        fileDialogMode = 'delete';
-        showFileDialog = true;
-    }
+    }    
     
     async function handleFileOperation(event: CustomEvent): Promise<void> {
         const { filename, mode } = event.detail;
@@ -151,19 +146,6 @@
                     <span class="material-symbols-outlined text-base">folder_open</span>
                     <span class="absolute left-1/2 transform -translate-x-1/2 -bottom-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                         Load Chat
-                    </span>
-                </button>
-                
-                <!-- Delete button -->
-                <button 
-                    on:click={openDeleteDialog}
-                    class="p-1.5 text-sm bg-gray-100 rounded hover:bg-gray-300 transition-colors flex items-center group relative ml-1"
-                    title="Delete Chat"
-                    disabled={$isLoading || !$currentFilename}
-                >
-                    <span class="material-symbols-outlined text-base">delete</span>
-                    <span class="absolute left-1/2 transform -translate-x-1/2 -bottom-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                        Delete Chat
                     </span>
                 </button>
             </div>
