@@ -205,12 +205,12 @@
   <div class="flex-1 overflow-auto p-4">
     {#if isEditing}
       <textarea 
-        class="w-full h-full p-2 border rounded resize-none font-mono text-sm"
+        class="w-full h-full p-2 resize-none font-mono text-sm"
         bind:value={content}
-        placeholder="Start writing your document here..."
+        placeholder=""
       ></textarea>
     {:else}
-      <div class="markdown-preview bg-white p-4 border rounded h-full overflow-auto">
+      <div class="markdown-preview bg-white p-4 h-full overflow-auto">
         <MarkdownRenderer content={content} />
       </div>
     {/if}
