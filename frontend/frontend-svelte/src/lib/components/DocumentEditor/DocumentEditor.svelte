@@ -13,6 +13,7 @@
     type DocumentData
   } from '$lib/components/FileOperations/adapters';
   import { logger } from '$lib/components/LogControlPanel/logger';
+  import DocumentEditorToolbar from './DocumentEditorToolbar.svelte';
 
   // The panel ID is passed from MultiViewPanel
   export let panelId: string;
@@ -144,62 +145,15 @@
 
 <div class="document-editor h-full flex flex-col border border-gray-300 rounded-lg overflow-hidden bg-white">
   <!-- Toolbar -->
-  <div class="flex justify-between items-center p-2 border-b border-gray-300 bg-gray-100">
-    <div class="flex items-center">
-      <h2 class="text-lg font-semibold mr-3">
-        {filename ? filename : `Document ${panelId}`}
-      </h2>
-      <button 
-        on:click={createNewDocumentFile}
-        class="p-1.5 text-sm bg-gray-100 rounded hover:bg-gray-300 transition-colors flex items-center group relative"
-        title="New Document"
-      >
-        <span class="material-symbols-outlined text-base">note_add</span>
-        <span class="absolute left-1/2 transform -translate-x-1/2 -bottom-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-          New Document
-        </span>
-      </button>
-      
-      <!-- File operation buttons -->
-      <div class="flex ml-2">
-        <!-- Save button -->
-        <button 
-          on:click={openSaveDialog}
-          class="p-1.5 text-sm bg-gray-100 rounded hover:bg-gray-300 transition-colors flex items-center group relative ml-1"
-          title="Save Document"
-        >
-          <span class="material-symbols-outlined text-base">save</span>
-          <span class="absolute left-1/2 transform -translate-x-1/2 -bottom-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-            Save Document
-          </span>
-        </button>
-        
-        <!-- Open button -->
-        <button 
-          on:click={openLoadDialog}
-          class="p-1.5 text-sm bg-gray-100 rounded hover:bg-gray-300 transition-colors flex items-center group relative ml-1"
-          title="Open Document"
-        >
-          <span class="material-symbols-outlined text-base">folder_open</span>
-          <span class="absolute left-1/2 transform -translate-x-1/2 -bottom-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-            Open Document
-          </span>
-        </button>
-      </div>
-    </div>
-    <div class="flex items-center">
-      <button 
-        on:click={toggleMode}
-        class="p-1.5 text-sm bg-gray-100 rounded hover:bg-gray-300 transition-colors flex items-center group relative"
-        title={isEditing ? 'Preview' : 'Edit'}
-      >
-        <span class="material-symbols-outlined text-base">{isEditing ? 'visibility' : 'edit'}</span>
-        <span class="absolute right-0 transform translate-x-0 -bottom-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-          {isEditing ? 'Preview' : 'Edit'}
-        </span>
-      </button>
-    </div>
-  </div>
+  <DocumentEditorToolbar 
+    {panelId}
+    {filename}
+    {isEditing}
+    on:createNewDocument={createNewDocumentFile}
+    on:openSaveDialog={openSaveDialog}
+    on:openLoadDialog={openLoadDialog}
+    on:toggleMode={toggleMode}
+  />
 
   <!-- Editor/Preview Area -->
   <div class="flex-1 p-4 overflow-hidden">
