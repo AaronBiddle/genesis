@@ -2,6 +2,8 @@ import { logger } from '$lib/components/LogControlPanel/logger';
 import { API_URL } from '$lib/config';
 import type { DirectoryContents, FileData, FileOperationResult } from './types';
 
+const NAMESPACE = 'FileOperations/FileOperationsService';
+
 /**
  * Save data to a file
  * @param fileType The type of file (e.g., 'chat', 'project', etc.)
@@ -11,7 +13,7 @@ import type { DirectoryContents, FileData, FileOperationResult } from './types';
  */
 export async function saveFile(fileType: string, filename: string, content: any): Promise<FileOperationResult> {
     try {
-        logger('INFO', 'ui', 'FileOperations', `Saving ${fileType} file to ${filename}`);
+        logger('INFO', 'ui', NAMESPACE, `Saving ${fileType} file to ${filename}`);
         
         const response = await fetch(`${API_URL}/files/${fileType}/save`, {
             method: 'POST',
@@ -36,7 +38,7 @@ export async function saveFile(fileType: string, filename: string, content: any)
             data
         };
     } catch (error: any) {
-        logger('ERROR', 'ui', 'FileOperations', `Error saving ${fileType} file: ${error}`);
+        logger('ERROR', 'ui', NAMESPACE, `Error saving ${fileType} file: ${error}`);
         return {
             success: false,
             error: error.message || `Failed to save ${fileType} file`
@@ -52,7 +54,7 @@ export async function saveFile(fileType: string, filename: string, content: any)
  */
 export async function loadFile(fileType: string, filename: string): Promise<FileOperationResult> {
     try {
-        logger('INFO', 'ui', 'FileOperations', `Loading ${fileType} file from ${filename}`);
+        logger('INFO', 'ui', NAMESPACE, `Loading ${fileType} file from ${filename}`);
         console.log(`FileOperationsService: Loading ${fileType} file from ${filename}`);
         
         const endpoint = `${API_URL}/files/${fileType}/load`;
@@ -79,7 +81,7 @@ export async function loadFile(fileType: string, filename: string): Promise<File
                 // If we can't parse the error response, use the default message
             }
             
-            logger('ERROR', 'ui', 'FileOperations', `Error loading ${fileType} file: ${errorMessage}`);
+            logger('ERROR', 'ui', NAMESPACE, `Error loading ${fileType} file: ${errorMessage}`);
             throw new Error(errorMessage);
         }
         
@@ -92,7 +94,7 @@ export async function loadFile(fileType: string, filename: string): Promise<File
         };
     } catch (error: any) {
         const errorMsg = error.message || `Failed to load ${fileType} file`;
-        logger('ERROR', 'ui', 'FileOperations', `Error loading ${fileType} file: ${errorMsg}`);
+        logger('ERROR', 'ui', NAMESPACE, `Error loading ${fileType} file: ${errorMsg}`);
         console.error(`FileOperationsService: Error loading ${fileType} file:`, error);
         
         return {
@@ -110,7 +112,7 @@ export async function loadFile(fileType: string, filename: string): Promise<File
  */
 export async function listFiles(fileType: string, path: string = ''): Promise<FileOperationResult> {
     try {
-        logger('INFO', 'ui', 'FileOperations', `Listing ${fileType} files in path: ${path || 'root'}`);
+        logger('INFO', 'ui', NAMESPACE, `Listing ${fileType} files in path: ${path || 'root'}`);
         
         const encodedPath = path ? encodeURIComponent(path) : '';
         const endpoint = encodedPath 
@@ -130,7 +132,7 @@ export async function listFiles(fileType: string, path: string = ''): Promise<Fi
             data: data.files
         };
     } catch (error: any) {
-        logger('ERROR', 'ui', 'FileOperations', `Error listing ${fileType} files: ${error}`);
+        logger('ERROR', 'ui', NAMESPACE, `Error listing ${fileType} files: ${error}`);
         return {
             success: false,
             error: error.message || `Failed to list ${fileType} files`
@@ -146,7 +148,7 @@ export async function listFiles(fileType: string, path: string = ''): Promise<Fi
  */
 export async function deleteFile(fileType: string, filename: string): Promise<FileOperationResult> {
     try {
-        logger('INFO', 'ui', 'FileOperations', `Deleting ${fileType} file ${filename}`);
+        logger('INFO', 'ui', NAMESPACE, `Deleting ${fileType} file ${filename}`);
         
         const response = await fetch(`${API_URL}/files/${fileType}/delete/${encodeURIComponent(filename)}`, {
             method: 'DELETE'
@@ -163,7 +165,7 @@ export async function deleteFile(fileType: string, filename: string): Promise<Fi
             data
         };
     } catch (error: any) {
-        logger('ERROR', 'ui', 'FileOperations', `Error deleting ${fileType} file: ${error}`);
+        logger('ERROR', 'ui', NAMESPACE, `Error deleting ${fileType} file: ${error}`);
         return {
             success: false,
             error: error.message || `Failed to delete ${fileType} file`
@@ -179,7 +181,7 @@ export async function deleteFile(fileType: string, filename: string): Promise<Fi
  */
 export async function getDirectoryContents(fileType: string, path: string = ''): Promise<FileOperationResult & { data?: DirectoryContents }> {
     try {
-        logger('INFO', 'ui', 'FileOperations', `Getting ${fileType} directory contents for: ${path || 'root'}`);
+        logger('INFO', 'ui', NAMESPACE, `Getting ${fileType} directory contents for: ${path || 'root'}`);
         
         const encodedPath = path ? encodeURIComponent(path) : '';
         const endpoint = encodedPath 
@@ -215,7 +217,7 @@ export async function getDirectoryContents(fileType: string, path: string = ''):
             data: { files, directories }
         };
     } catch (error: any) {
-        logger('ERROR', 'ui', 'FileOperations', `Error getting ${fileType} directory contents: ${error}`);
+        logger('ERROR', 'ui', NAMESPACE, `Error getting ${fileType} directory contents: ${error}`);
         return {
             success: false,
             error: error.message || 'Failed to get directory contents'
@@ -231,7 +233,7 @@ export async function getDirectoryContents(fileType: string, path: string = ''):
  */
 export async function createDirectory(fileType: string, path: string): Promise<FileOperationResult> {
     try {
-        logger('INFO', 'ui', 'FileOperations', `Creating ${fileType} directory: ${path}`);
+        logger('INFO', 'ui', NAMESPACE, `Creating ${fileType} directory: ${path}`);
         
         const response = await fetch(`${API_URL}/directory/${fileType}/create?path=${encodeURIComponent(path)}`, {
             method: 'POST'
@@ -248,7 +250,7 @@ export async function createDirectory(fileType: string, path: string): Promise<F
             data
         };
     } catch (error: any) {
-        logger('ERROR', 'ui', 'FileOperations', `Error creating ${fileType} directory: ${error}`);
+        logger('ERROR', 'ui', NAMESPACE, `Error creating ${fileType} directory: ${error}`);
         return {
             success: false,
             error: error.message || 'Failed to create directory'
@@ -264,7 +266,7 @@ export async function createDirectory(fileType: string, path: string): Promise<F
  */
 export async function deleteDirectory(fileType: string, path: string): Promise<FileOperationResult> {
     try {
-        logger('INFO', 'ui', 'FileOperations', `Deleting ${fileType} directory: ${path}`);
+        logger('INFO', 'ui', NAMESPACE, `Deleting ${fileType} directory: ${path}`);
         
         const encodedPath = encodeURIComponent(path);
         const response = await fetch(`${API_URL}/directory/${fileType}/delete/${encodedPath}`, {
@@ -282,7 +284,7 @@ export async function deleteDirectory(fileType: string, path: string): Promise<F
             data
         };
     } catch (error: any) {
-        logger('ERROR', 'ui', 'FileOperations', `Error deleting ${fileType} directory: ${error}`);
+        logger('ERROR', 'ui', NAMESPACE, `Error deleting ${fileType} directory: ${error}`);
         return {
             success: false,
             error: error.message || 'Failed to delete directory'

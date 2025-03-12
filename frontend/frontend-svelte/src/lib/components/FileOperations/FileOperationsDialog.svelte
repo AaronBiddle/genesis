@@ -4,6 +4,8 @@
     import { logger } from '$lib/components/LogControlPanel/logger';
     import type { FileOperationsConfig, FileOperationMode } from './types';
     
+    const NAMESPACE = 'FileOperations/FileOperationsDialog';
+    
     // Dialog configuration
     export let isOpen = false;
     export let mode: FileOperationMode = 'save';
@@ -70,18 +72,18 @@
             const result = await getDirectoryContents(fileType, currentPath);
             
             if (result.success && result.data) {
-                availableFiles = result.data.files;
                 directories = result.data.directories;
+                availableFiles = result.data.files;
                 
-                logger('INFO', 'ui', 'FileOperations', `FileOperationsDialog: Loaded directory contents for path: ${currentPath || 'root'}`);
-                logger('INFO', 'ui', 'FileOperations', `FileOperationsDialog: Found ${directories.length} directories and ${availableFiles.length} files`);
+                logger('INFO', 'ui', NAMESPACE, `FileOperationsDialog: Loaded directory contents for path: ${currentPath || 'root'}`);
+                logger('INFO', 'ui', NAMESPACE, `FileOperationsDialog: Found ${directories.length} directories and ${availableFiles.length} files`);
             } else {
                 errorMessage = result.error || 'Failed to load directory contents';
-                logger('ERROR', 'ui', 'FileOperations', `FileOperationsDialog: Error loading directory contents: ${result.error}`);
+                logger('ERROR', 'ui', NAMESPACE, `FileOperationsDialog: Error loading directory contents: ${result.error}`);
             }
         } catch (error) {
             errorMessage = 'Failed to load directory contents';
-            logger('ERROR', 'ui', 'FileOperations', `FileOperationsDialog: Error loading directory contents: ${error}`);
+            logger('ERROR', 'ui', NAMESPACE, `FileOperationsDialog: Error loading directory contents: ${error}`);
         } finally {
             isLoading = false;
         }
@@ -126,11 +128,11 @@
                 await loadFileList();
             } else {
                 errorMessage = result.error || 'Failed to create directory';
-                logger('ERROR', 'ui', 'FileOperations', `FileOperationsDialog: Error creating directory: ${result.error}`);
+                logger('ERROR', 'ui', NAMESPACE, `FileOperationsDialog: Error creating directory: ${result.error}`);
             }
         } catch (error) {
             errorMessage = 'Failed to create directory';
-            logger('ERROR', 'ui', 'FileOperations', `FileOperationsDialog: Error creating directory: ${error}`);
+            logger('ERROR', 'ui', NAMESPACE, `FileOperationsDialog: Error creating directory: ${error}`);
         } finally {
             isLoading = false;
         }
@@ -237,13 +239,13 @@
                     
                 result = await deleteDirectory(fileType, dirPath);
                 if (result.success) {
-                    logger('INFO', 'ui', 'FileOperations', `FileOperationsDialog: Directory deleted: ${dirPath}`);
+                    logger('INFO', 'ui', NAMESPACE, `FileOperationsDialog: Directory deleted: ${dirPath}`);
                 }
             } else {
                 // For files, we already have the full path
                 result = await deleteFile(fileType, itemToDelete);
                 if (result.success) {
-                    logger('INFO', 'ui', 'FileOperations', `FileOperationsDialog: File deleted: ${itemToDelete}`);
+                    logger('INFO', 'ui', NAMESPACE, `FileOperationsDialog: File deleted: ${itemToDelete}`);
                 }
             }
             
@@ -261,14 +263,14 @@
                 } else {
                     errorMessage = `Failed to delete ${deleteType}: ${result.error || 'Unknown error'}`;
                 }
-                logger('ERROR', 'ui', 'FileOperations', `FileOperationsDialog: Error deleting ${deleteType}: ${result.error}`);
+                logger('ERROR', 'ui', NAMESPACE, `FileOperationsDialog: Error deleting ${deleteType}: ${result.error}`);
                 
                 // Close the confirmation dialog even when there's an error
                 showDeleteConfirmation = false;
             }
         } catch (error: any) {
             errorMessage = `Failed to delete ${deleteType}: ${error.message || 'Unknown error'}`;
-            logger('ERROR', 'ui', 'FileOperations', `FileOperationsDialog: Error deleting ${deleteType}: ${error}`);
+            logger('ERROR', 'ui', NAMESPACE, `FileOperationsDialog: Error deleting ${deleteType}: ${error}`);
             
             // Close the confirmation dialog even when there's an error
             showDeleteConfirmation = false;

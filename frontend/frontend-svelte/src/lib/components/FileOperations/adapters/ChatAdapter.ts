@@ -10,6 +10,8 @@ import type { FileOperationsConfig } from '../types';
 import type { Message, ChatSettings } from '../../ChatboxComponent/types';
 import { logger } from '$lib/components/LogControlPanel/logger';
 
+const NAMESPACE = 'FileOperations/adapters/ChatAdapter';
+
 // File type for chat files
 export const CHAT_FILE_TYPE = 'chat';
 
@@ -33,7 +35,7 @@ export const chatFileConfig: FileOperationsConfig = {
  */
 export async function saveChat(filename: string, messages: Message[], settings: ChatSettings) {
     try {
-        logger('INFO', 'ui', 'FileOperations', `ChatAdapter: Saving chat to ${filename}`);
+        logger('INFO', 'ui', NAMESPACE, `ChatAdapter: Saving chat to ${filename}`);
         
         // Format the data for the API
         const content = {
@@ -48,7 +50,7 @@ export async function saveChat(filename: string, messages: Message[], settings: 
         
         return await saveFile(CHAT_FILE_TYPE, filename, content);
     } catch (error) {
-        logger('ERROR', 'ui', 'FileOperations', `ChatAdapter: Error saving chat: ${error}`);
+        logger('ERROR', 'ui', NAMESPACE, `ChatAdapter: Error saving chat: ${error}`);
         throw error;
     }
 }
@@ -60,7 +62,7 @@ export async function saveChat(filename: string, messages: Message[], settings: 
  */
 export async function loadChat(filename: string) {
     try {
-        logger('INFO', 'ui', 'FileOperations', `ChatAdapter: Loading chat from ${filename}`);
+        logger('INFO', 'ui', NAMESPACE, `ChatAdapter: Loading chat from ${filename}`);
         
         const result = await loadFile(CHAT_FILE_TYPE, filename);
         
@@ -70,7 +72,7 @@ export async function loadChat(filename: string) {
         
         return result.data;
     } catch (error) {
-        logger('ERROR', 'ui', 'FileOperations', `ChatAdapter: Error loading chat: ${error}`);
+        logger('ERROR', 'ui', NAMESPACE, `ChatAdapter: Error loading chat: ${error}`);
         throw error;
     }
 }
@@ -82,11 +84,11 @@ export async function loadChat(filename: string) {
  */
 export async function deleteChat(filename: string) {
     try {
-        logger('INFO', 'ui', 'FileOperations', `ChatAdapter: Deleting chat ${filename}`);
+        logger('INFO', 'ui', NAMESPACE, `ChatAdapter: Deleting chat ${filename}`);
         
         return await deleteFile(CHAT_FILE_TYPE, filename);
     } catch (error) {
-        logger('ERROR', 'ui', 'FileOperations', `ChatAdapter: Error deleting chat: ${error}`);
+        logger('ERROR', 'ui', NAMESPACE, `ChatAdapter: Error deleting chat: ${error}`);
         throw error;
     }
 } 
