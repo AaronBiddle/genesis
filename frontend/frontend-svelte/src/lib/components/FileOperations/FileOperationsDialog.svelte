@@ -143,11 +143,13 @@
             return;
         }
         
-        // Run custom validation if provided
-        const validation = mergedConfig.validateFilename?.(filename);
-        if (validation && !validation.valid) {
-            errorMessage = validation.message || 'Invalid filename';
-            return;
+        // Run custom validation if provided, but only in save mode
+        if (mode === 'save' && mergedConfig.validateFilename) {
+            const validation = mergedConfig.validateFilename(filename);
+            if (!validation.valid) {
+                errorMessage = validation.message || 'Invalid filename';
+                return;
+            }
         }
         
         // Add file extension if not present
@@ -161,7 +163,7 @@
             ? `${currentPath}/${filename}` 
             : filename;
             
-        dispatch('submit', { filename: fullPath, mode, fileType });
+        dispatch('fileOperation', { filename: fullPath, mode, fileType, success: true });
         close();
     }
     
@@ -175,6 +177,11 @@
             // Remove the filename to get the path
             parts.pop();
             currentPath = parts.join('/');
+        }
+        
+        // If in load mode, immediately submit the selection
+        if (mode === 'load') {
+            handleSubmit();
         }
     }
     

@@ -48,6 +48,7 @@
 
   // Handle file operation completion
   function handleFileOperation(event: CustomEvent) {
+    console.log('File operation event received:', event.detail);
     const { filename: selectedFilename, mode, success } = event.detail;
     
     if (success && selectedFilename) {
@@ -56,6 +57,8 @@
       } else if (mode === 'load') {
         loadDocumentFromFile(selectedFilename);
       }
+    } else {
+      console.warn('File operation not successful or missing filename', { success, selectedFilename, mode });
     }
     
     showFileDialog = false;
@@ -82,7 +85,9 @@
   // Load a document
   async function loadDocumentFromFile(targetFilename: string) {
     try {
+      console.log('Loading document from file:', targetFilename);
       const documentData = await loadDocument(targetFilename);
+      console.log('Document loaded successfully:', documentData);
       content = documentData.content;
       documentMetadata = documentData.metadata || {
         title: targetFilename.replace(/\.md$/, ''),
@@ -91,8 +96,10 @@
         tags: []
       };
       filename = targetFilename;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load document:', error);
+      // Display error to user
+      alert(`Failed to load document: ${error.message || 'Unknown error'}`);
     }
   }
 

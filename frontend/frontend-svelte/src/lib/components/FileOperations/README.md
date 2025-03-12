@@ -54,7 +54,7 @@ A reusable file operations system for Svelte applications that provides a consis
   bind:mode={dialogMode}
   {currentFilename}
   {fileType}
-  on:submit={handleFileOperation}
+  on:fileOperation={handleFileOperation}
 />
 
 <!-- Buttons to open dialog -->
@@ -108,7 +108,7 @@ For specific file types, you can use the provided adapters:
   {currentFilename}
   fileType={CHAT_FILE_TYPE}
   config={chatFileConfig}
-  on:submit={handleFileOperation}
+  on:fileOperation={handleFileOperation}
 />
 ```
 

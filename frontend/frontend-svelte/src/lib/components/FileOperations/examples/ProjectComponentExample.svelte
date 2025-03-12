@@ -252,6 +252,6 @@
         currentFilename={currentFilename}
         fileType={PROJECT_FILE_TYPE}
         config={projectFileConfig}
-        on:submit={handleFileOperation}
+        on:fileOperation={handleFileOperation}
     />
 </div> 

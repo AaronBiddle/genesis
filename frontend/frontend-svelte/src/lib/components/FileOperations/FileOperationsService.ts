@@ -53,8 +53,12 @@ export async function saveFile(fileType: string, filename: string, content: any)
 export async function loadFile(fileType: string, filename: string): Promise<FileOperationResult> {
     try {
         logger('INFO', 'ui', 'FileOperationsService', `Loading ${fileType} file from ${filename}`);
+        console.log(`FileOperationsService: Loading ${fileType} file from ${filename}`);
         
-        const response = await fetch(`${API_URL}/files/${fileType}/load`, {
+        const endpoint = `${API_URL}/files/${fileType}/load`;
+        console.log('FileOperationsService: Endpoint:', endpoint);
+        
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -64,21 +68,36 @@ export async function loadFile(fileType: string, filename: string): Promise<File
             })
         });
         
+        console.log('FileOperationsService: Response status:', response.status);
+        
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-            throw new Error(errorData.detail || `Failed to load ${fileType} file`);
+            let errorMessage = `Failed to load ${fileType} file`;
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.detail || errorMessage;
+            } catch (e) {
+                // If we can't parse the error response, use the default message
+            }
+            
+            logger('ERROR', 'ui', 'FileOperationsService', `Error loading ${fileType} file: ${errorMessage}`);
+            throw new Error(errorMessage);
         }
         
         const data = await response.json();
+        console.log('FileOperationsService: Data loaded successfully');
+        
         return {
             success: true,
             data
         };
     } catch (error: any) {
-        logger('ERROR', 'ui', 'FileOperationsService', `Error loading ${fileType} file: ${error}`);
+        const errorMsg = error.message || `Failed to load ${fileType} file`;
+        logger('ERROR', 'ui', 'FileOperationsService', `Error loading ${fileType} file: ${errorMsg}`);
+        console.error(`FileOperationsService: Error loading ${fileType} file:`, error);
+        
         return {
             success: false,
-            error: error.message || `Failed to load ${fileType} file`
+            error: errorMsg
         };
     }
 }

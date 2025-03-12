@@ -219,6 +219,6 @@
         currentFilename={$currentFilename}
         fileType={CHAT_FILE_TYPE}
         config={chatFileConfig}
-        on:submit={handleFileOperation}
+        on:fileOperation={handleFileOperation}
     />
 </div> 

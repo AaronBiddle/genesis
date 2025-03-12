@@ -83,11 +83,15 @@ export async function saveDocument(filename: string, content: string, metadata: 
 export async function loadDocument(filename: string): Promise<DocumentData> {
     try {
         logger('INFO', 'ui', 'DocumentAdapter', `Loading document from ${filename}`);
+        console.log('DocumentAdapter: Loading document from', filename);
         
         const result = await loadFile(DOCUMENT_FILE_TYPE, filename);
+        console.log('DocumentAdapter: Load file result:', result);
         
         if (!result.success) {
-            throw new Error(result.error || 'Failed to load document');
+            const errorMsg = result.error || 'Failed to load document';
+            logger('ERROR', 'ui', 'DocumentAdapter', `Load failed: ${errorMsg}`);
+            throw new Error(errorMsg);
         }
         
         // Ensure we have a valid document structure
@@ -96,9 +100,12 @@ export async function loadDocument(filename: string): Promise<DocumentData> {
             metadata: result.data.metadata || {}
         };
         
+        logger('INFO', 'ui', 'DocumentAdapter', `Document loaded successfully: ${filename}`);
         return documentData;
     } catch (error) {
-        logger('ERROR', 'ui', 'DocumentAdapter', `Error loading document: ${error}`);
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        logger('ERROR', 'ui', 'DocumentAdapter', `Error loading document: ${errorMsg}`);
+        console.error('DocumentAdapter: Error loading document:', error);
         throw error;
     }
 }

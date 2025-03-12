@@ -207,13 +207,13 @@
         </div>
     {/if}
     
-    <!-- File operations dialog using the new generic component -->
+    <!-- File operations dialog using the chat adapter -->
     <FileOperationsDialog 
         bind:isOpen={showFileDialog}
         bind:mode={fileDialogMode}
-        currentFilename={$currentFilename}
+        currentFilename={currentFilename}
         fileType={adapters.CHAT_FILE_TYPE}
         config={adapters.chatFileConfig}
-        on:submit={handleFileOperation}
+        on:fileOperation={handleFileOperation}
     />
 </div> 
