@@ -59,7 +59,7 @@
                 class="p-1.5 text-sm bg-gray-100 rounded hover:bg-gray-300 transition-colors flex items-center group relative"
                 title="New Chat"
             >
-                <span class="material-symbols-outlined text-base">note_add</span>
+                <span class="material-symbols-outlined text-base">insert_drive_file</span>
                 <span class="absolute left-1/2 transform -translate-x-1/2 -bottom-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                     New Chat
                 </span>
