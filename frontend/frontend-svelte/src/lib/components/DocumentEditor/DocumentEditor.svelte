@@ -12,6 +12,7 @@
     createNewDocument,
     type DocumentData
   } from '$lib/components/FileOperations/adapters';
+  import { logger } from '$lib/components/LogControlPanel/logger';
 
   // The panel ID is passed from MultiViewPanel
   export let panelId: string;
@@ -32,22 +33,26 @@
   // Toggle between edit and preview modes
   function toggleMode() {
     isEditing = !isEditing;
+    logger('INFO', 'ui', 'DocumentEditor', `Toggled to ${isEditing ? 'edit' : 'preview'} mode`);
   }
 
   // Open file dialog for saving
   function openSaveDialog() {
     fileDialogMode = 'save';
     showFileDialog = true;
+    logger('INFO', 'ui', 'DocumentEditor', 'Opened save document dialog');
   }
 
   // Open file dialog for loading
   function openLoadDialog() {
     fileDialogMode = 'load';
     showFileDialog = true;
+    logger('INFO', 'ui', 'DocumentEditor', 'Opened load document dialog');
   }
 
   // Handle file operation completion
   function handleFileOperation(event: CustomEvent) {
+    logger('INFO', 'ui', 'DocumentEditor', `File operation event received: ${JSON.stringify(event.detail)}`);
     console.log('File operation event received:', event.detail);
     const { filename: selectedFilename, mode, success } = event.detail;
     
@@ -58,6 +63,7 @@
         loadDocumentFromFile(selectedFilename);
       }
     } else {
+      logger('WARN', 'ui', 'DocumentEditor', `File operation not successful or missing filename: ${JSON.stringify({ success, selectedFilename, mode })}`);
       console.warn('File operation not successful or missing filename', { success, selectedFilename, mode });
     }
     
@@ -67,6 +73,7 @@
   // Save the current document
   async function saveDocumentToFile(targetFilename: string) {
     try {
+      logger('INFO', 'ui', 'DocumentEditor', `Saving document to file: ${targetFilename}`);
       // Update metadata
       documentMetadata.modified = new Date().toISOString();
       if (!documentMetadata.title) {
@@ -76,8 +83,10 @@
       const result = await saveDocument(targetFilename, content, documentMetadata);
       if (result.success) {
         filename = targetFilename;
+        logger('INFO', 'ui', 'DocumentEditor', `Document saved successfully: ${targetFilename}`);
       }
     } catch (error) {
+      logger('ERROR', 'ui', 'DocumentEditor', `Failed to save document: ${error}`);
       console.error('Failed to save document:', error);
     }
   }
@@ -85,6 +94,7 @@
   // Load a document
   async function loadDocumentFromFile(targetFilename: string) {
     try {
+      logger('INFO', 'ui', 'DocumentEditor', `Loading document from file: ${targetFilename}`);
       console.log('Loading document from file:', targetFilename);
       const documentData = await loadDocument(targetFilename);
       console.log('Document loaded successfully:', documentData);
@@ -96,15 +106,19 @@
         tags: []
       };
       filename = targetFilename;
+      logger('INFO', 'ui', 'DocumentEditor', `Document loaded successfully: ${targetFilename}`);
     } catch (error: any) {
+      const errorMsg = error.message || 'Unknown error';
+      logger('ERROR', 'ui', 'DocumentEditor', `Failed to load document: ${errorMsg}`);
       console.error('Failed to load document:', error);
       // Display error to user
-      alert(`Failed to load document: ${error.message || 'Unknown error'}`);
+      alert(`Failed to load document: ${errorMsg}`);
     }
   }
 
   // Create a new document
   function createNewDocumentFile() {
+    logger('INFO', 'ui', 'DocumentEditor', 'Creating new document');
     const newDoc = createNewDocument();
     content = newDoc.content;
     documentMetadata = newDoc.metadata || {
@@ -114,10 +128,12 @@
       tags: []
     };
     filename = '';
+    logger('INFO', 'ui', 'DocumentEditor', 'New document created');
   }
 
   // Initialize with a new document
   onMount(() => {
+    logger('INFO', 'ui', 'DocumentEditor', `DocumentEditor component mounted with panelId: ${panelId}`);
     createNewDocumentFile();
   });
 </script>

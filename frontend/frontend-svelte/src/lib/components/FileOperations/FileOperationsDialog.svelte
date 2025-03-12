@@ -73,15 +73,15 @@
                 availableFiles = result.data.files;
                 directories = result.data.directories;
                 
-                logger('INFO', 'ui', 'FileOperationsDialog', `Loaded directory contents for path: ${currentPath || 'root'}`);
-                logger('INFO', 'ui', 'FileOperationsDialog', `Found ${directories.length} directories and ${availableFiles.length} files`);
+                logger('INFO', 'ui', 'FileOperations', `FileOperationsDialog: Loaded directory contents for path: ${currentPath || 'root'}`);
+                logger('INFO', 'ui', 'FileOperations', `FileOperationsDialog: Found ${directories.length} directories and ${availableFiles.length} files`);
             } else {
                 errorMessage = result.error || 'Failed to load directory contents';
-                logger('ERROR', 'ui', 'FileOperationsDialog', `Error loading directory contents: ${result.error}`);
+                logger('ERROR', 'ui', 'FileOperations', `FileOperationsDialog: Error loading directory contents: ${result.error}`);
             }
         } catch (error) {
             errorMessage = 'Failed to load directory contents';
-            logger('ERROR', 'ui', 'FileOperationsDialog', `Error loading directory contents: ${error}`);
+            logger('ERROR', 'ui', 'FileOperations', `FileOperationsDialog: Error loading directory contents: ${error}`);
         } finally {
             isLoading = false;
         }
@@ -126,11 +126,11 @@
                 await loadFileList();
             } else {
                 errorMessage = result.error || 'Failed to create directory';
-                logger('ERROR', 'ui', 'FileOperationsDialog', `Error creating directory: ${result.error}`);
+                logger('ERROR', 'ui', 'FileOperations', `FileOperationsDialog: Error creating directory: ${result.error}`);
             }
         } catch (error) {
             errorMessage = 'Failed to create directory';
-            logger('ERROR', 'ui', 'FileOperationsDialog', `Error creating directory: ${error}`);
+            logger('ERROR', 'ui', 'FileOperations', `FileOperationsDialog: Error creating directory: ${error}`);
         } finally {
             isLoading = false;
         }
@@ -237,13 +237,13 @@
                     
                 result = await deleteDirectory(fileType, dirPath);
                 if (result.success) {
-                    logger('INFO', 'ui', 'FileOperationsDialog', `Directory deleted: ${dirPath}`);
+                    logger('INFO', 'ui', 'FileOperations', `FileOperationsDialog: Directory deleted: ${dirPath}`);
                 }
             } else {
                 // For files, we already have the full path
                 result = await deleteFile(fileType, itemToDelete);
                 if (result.success) {
-                    logger('INFO', 'ui', 'FileOperationsDialog', `File deleted: ${itemToDelete}`);
+                    logger('INFO', 'ui', 'FileOperations', `FileOperationsDialog: File deleted: ${itemToDelete}`);
                 }
             }
             
@@ -261,14 +261,14 @@
                 } else {
                     errorMessage = `Failed to delete ${deleteType}: ${result.error || 'Unknown error'}`;
                 }
-                logger('ERROR', 'ui', 'FileOperationsDialog', `Error deleting ${deleteType}: ${result.error}`);
+                logger('ERROR', 'ui', 'FileOperations', `FileOperationsDialog: Error deleting ${deleteType}: ${result.error}`);
                 
                 // Close the confirmation dialog even when there's an error
                 showDeleteConfirmation = false;
             }
         } catch (error: any) {
             errorMessage = `Failed to delete ${deleteType}: ${error.message || 'Unknown error'}`;
-            logger('ERROR', 'ui', 'FileOperationsDialog', `Error deleting ${deleteType}: ${error}`);
+            logger('ERROR', 'ui', 'FileOperations', `FileOperationsDialog: Error deleting ${deleteType}: ${error}`);
             
             // Close the confirmation dialog even when there's an error
             showDeleteConfirmation = false;

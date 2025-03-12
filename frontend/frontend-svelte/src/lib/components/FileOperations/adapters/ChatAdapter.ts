@@ -33,7 +33,7 @@ export const chatFileConfig: FileOperationsConfig = {
  */
 export async function saveChat(filename: string, messages: Message[], settings: ChatSettings) {
     try {
-        logger('INFO', 'ui', 'ChatAdapter', `Saving chat to ${filename}`);
+        logger('INFO', 'ui', 'FileOperations', `ChatAdapter: Saving chat to ${filename}`);
         
         // Format the data for the API
         const content = {
@@ -48,7 +48,7 @@ export async function saveChat(filename: string, messages: Message[], settings: 
         
         return await saveFile(CHAT_FILE_TYPE, filename, content);
     } catch (error) {
-        logger('ERROR', 'ui', 'ChatAdapter', `Error saving chat: ${error}`);
+        logger('ERROR', 'ui', 'FileOperations', `ChatAdapter: Error saving chat: ${error}`);
         throw error;
     }
 }
@@ -60,7 +60,7 @@ export async function saveChat(filename: string, messages: Message[], settings: 
  */
 export async function loadChat(filename: string) {
     try {
-        logger('INFO', 'ui', 'ChatAdapter', `Loading chat from ${filename}`);
+        logger('INFO', 'ui', 'FileOperations', `ChatAdapter: Loading chat from ${filename}`);
         
         const result = await loadFile(CHAT_FILE_TYPE, filename);
         
@@ -70,7 +70,7 @@ export async function loadChat(filename: string) {
         
         return result.data;
     } catch (error) {
-        logger('ERROR', 'ui', 'ChatAdapter', `Error loading chat: ${error}`);
+        logger('ERROR', 'ui', 'FileOperations', `ChatAdapter: Error loading chat: ${error}`);
         throw error;
     }
 }
@@ -82,11 +82,11 @@ export async function loadChat(filename: string) {
  */
 export async function deleteChat(filename: string) {
     try {
-        logger('INFO', 'ui', 'ChatAdapter', `Deleting chat ${filename}`);
+        logger('INFO', 'ui', 'FileOperations', `ChatAdapter: Deleting chat ${filename}`);
         
         return await deleteFile(CHAT_FILE_TYPE, filename);
     } catch (error) {
-        logger('ERROR', 'ui', 'ChatAdapter', `Error deleting chat: ${error}`);
+        logger('ERROR', 'ui', 'FileOperations', `ChatAdapter: Error deleting chat: ${error}`);
         throw error;
     }
 } 

@@ -52,7 +52,7 @@ export const documentFileConfig: FileOperationsConfig = {
  */
 export async function saveDocument(filename: string, content: string, metadata: DocumentData['metadata'] = {}) {
     try {
-        logger('INFO', 'ui', 'DocumentAdapter', `Saving document to ${filename}`);
+        logger('INFO', 'ui', 'DocumentEditor', `Saving document to ${filename}`);
         
         // Format the data for the API
         const documentData: DocumentData = {
@@ -70,7 +70,7 @@ export async function saveDocument(filename: string, content: string, metadata: 
         
         return await saveFile(DOCUMENT_FILE_TYPE, filename, documentData);
     } catch (error) {
-        logger('ERROR', 'ui', 'DocumentAdapter', `Error saving document: ${error}`);
+        logger('ERROR', 'ui', 'DocumentEditor', `Error saving document: ${error}`);
         throw error;
     }
 }
@@ -82,7 +82,7 @@ export async function saveDocument(filename: string, content: string, metadata: 
  */
 export async function loadDocument(filename: string): Promise<DocumentData> {
     try {
-        logger('INFO', 'ui', 'DocumentAdapter', `Loading document from ${filename}`);
+        logger('INFO', 'ui', 'DocumentEditor', `Loading document from ${filename}`);
         console.log('DocumentAdapter: Loading document from', filename);
         
         const result = await loadFile(DOCUMENT_FILE_TYPE, filename);
@@ -90,7 +90,7 @@ export async function loadDocument(filename: string): Promise<DocumentData> {
         
         if (!result.success) {
             const errorMsg = result.error || 'Failed to load document';
-            logger('ERROR', 'ui', 'DocumentAdapter', `Load failed: ${errorMsg}`);
+            logger('ERROR', 'ui', 'DocumentEditor', `Load failed: ${errorMsg}`);
             throw new Error(errorMsg);
         }
         
@@ -100,11 +100,11 @@ export async function loadDocument(filename: string): Promise<DocumentData> {
             metadata: result.data.metadata || {}
         };
         
-        logger('INFO', 'ui', 'DocumentAdapter', `Document loaded successfully: ${filename}`);
+        logger('INFO', 'ui', 'DocumentEditor', `Document loaded successfully: ${filename}`);
         return documentData;
     } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
-        logger('ERROR', 'ui', 'DocumentAdapter', `Error loading document: ${errorMsg}`);
+        logger('ERROR', 'ui', 'DocumentEditor', `Error loading document: ${errorMsg}`);
         console.error('DocumentAdapter: Error loading document:', error);
         throw error;
     }
@@ -117,11 +117,11 @@ export async function loadDocument(filename: string): Promise<DocumentData> {
  */
 export async function deleteDocument(filename: string) {
     try {
-        logger('INFO', 'ui', 'DocumentAdapter', `Deleting document ${filename}`);
+        logger('INFO', 'ui', 'DocumentEditor', `Deleting document ${filename}`);
         
         return await deleteFile(DOCUMENT_FILE_TYPE, filename);
     } catch (error) {
-        logger('ERROR', 'ui', 'DocumentAdapter', `Error deleting document: ${error}`);
+        logger('ERROR', 'ui', 'DocumentEditor', `Error deleting document: ${error}`);
         throw error;
     }
 }

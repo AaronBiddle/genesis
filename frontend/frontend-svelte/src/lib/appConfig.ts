@@ -1,9 +1,9 @@
 export const NAMESPACES: string[] = [
     'MultiViewPanel',
-    'ReverserForm',
-    'StreamDisplay',
     'Generate',
     'LogControlPanel',
+    'FileOperations',
+    'DocumentEditor',
     // Add other project-specific namespaces here
 ];
 export const LOG_LEVELS = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'] as const;
