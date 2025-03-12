@@ -2,7 +2,6 @@
   import MultiViewPanel from '$lib/components/MultiViewPanel/MultiViewPanel.svelte';
   import MultiViewBackground from '$lib/components/MultiViewPanel/MultiViewBackground.svelte';
   import { panels } from '$lib/components/MultiViewPanel/panelStore';
-  import NotesComponent from '$lib/components/NotesComponent.svelte';
   import ChatboxComponent from '$lib/components/ChatboxComponent/ChatboxComponent.svelte';
   import WorkerRequestsTest from '$lib/components/WorkerRequestsTest.svelte';
   import LogControlPanel from '$lib/components/LogControlPanel/LogControlPanel.svelte';
@@ -10,11 +9,6 @@
 
   // Register the app components to be available in the dropdown
   const apps = [
-    {
-      id: 'notes',
-      label: 'Notes',
-      component: NotesComponent
-    },
     {
       id: 'chatbox',
       label: 'Chatbox',
