@@ -86,10 +86,8 @@ export async function saveDocument(filename: string, content: string, metadata: 
 export async function loadDocument(filename: string): Promise<DocumentData> {
     try {
         logger('INFO', 'ui', NAMESPACE, `Loading document from ${filename}`);
-        console.log('DocumentAdapter: Loading document from', filename);
         
         const result = await loadFile(DOCUMENT_FILE_TYPE, filename);
-        console.log('DocumentAdapter: Load file result:', result);
         
         if (!result.success) {
             const errorMsg = result.error || 'Failed to load document';
@@ -108,7 +106,7 @@ export async function loadDocument(filename: string): Promise<DocumentData> {
     } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
         logger('ERROR', 'ui', NAMESPACE, `Error loading document: ${errorMsg}`);
-        console.error('DocumentAdapter: Error loading document:', error);
+        logger('ERROR', 'ui', NAMESPACE, `Error details: ${JSON.stringify(error)}`);
         throw error;
     }
 }
