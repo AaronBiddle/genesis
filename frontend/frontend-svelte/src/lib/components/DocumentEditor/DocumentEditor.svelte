@@ -147,7 +147,7 @@
   <div class="flex justify-between items-center p-2 border-b border-gray-300 bg-gray-100">
     <div class="flex items-center">
       <h2 class="text-lg font-semibold mr-3">
-        {filename ? filename : 'Untitled document'}
+        {filename ? filename : `Document ${panelId}`}
       </h2>
       <button 
         on:click={createNewDocumentFile}
