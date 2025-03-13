@@ -34,9 +34,12 @@ function createDocumentStore(panelId: string) {
   });
   
   // Derived stores
-  const displayFilename = derived(filename, $filename => 
-    $filename || `Document ${panelId}`
-  );
+  const displayFilename = derived(filename, $filename => {
+    if (!$filename) return `Document ${panelId}`;
+    // Extract just the filename without the path
+    const parts = $filename.split(/[\/\\]/);
+    return parts[parts.length - 1];
+  });
   
   // Initialize with a new document
   function createNewDocumentFile() {
