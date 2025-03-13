@@ -6,6 +6,7 @@
   import WorkerRequestsTest from '$lib/components/WorkerRequestsTest.svelte';
   import LogControlPanel from '$lib/components/LogControlPanel/LogControlPanel.svelte';
   import DocumentEditor from '$lib/components/DocumentEditor/DocumentEditor.svelte';
+  import MultiViewManager from '$lib/components/MultiViewPanel/MultiViewManager.svelte';
 
   // Register the app components to be available in the dropdown
   const apps = [
@@ -15,11 +16,13 @@
       component: Chatbox,
       suggestedWidth: 600,
       suggestedHeight: 840
-    },
+    },    
     {
-      id: 'worker-test',
-      label: 'Worker Test',
-      component: WorkerRequestsTest
+      id: 'document-editor',
+      label: 'Document Editor',
+      component: DocumentEditor,
+      suggestedWidth: 800,
+      suggestedHeight: 600
     },
     {
       id: 'logcontrol',
@@ -29,11 +32,16 @@
       suggestedHeight: 700
     },
     {
-      id: 'document-editor',
-      label: 'Document Editor',
-      component: DocumentEditor,
+      id: 'multiview-manager',
+      label: 'Window Manager',
+      component: MultiViewManager,
       suggestedWidth: 800,
       suggestedHeight: 600
+    },
+    {
+      id: 'worker-test',
+      label: 'Worker Test',
+      component: WorkerRequestsTest
     }
   ];
 </script>
