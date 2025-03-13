@@ -1,6 +1,6 @@
 import { writable, type Updater, get } from 'svelte/store';
-import { NAMESPACES, LOG_LEVELS, LOG_DOMAINS } from '../../appConfig';
-import type { LogLevel, LogDomain } from '../../appConfig';
+import { NAMESPACES, LOG_LEVELS, LOG_DOMAINS } from '../../logConfig';
+import type { LogLevel, LogDomain } from '../../logConfig';
 
 // Namespaces represent specific modules or components
 // Use project namespaces directly

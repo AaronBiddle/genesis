@@ -1,6 +1,6 @@
 import { log } from './logConfig';
-import type { LogLevel } from '$lib/appConfig';
-import { NAMESPACES } from '$lib/appConfig';
+import type { LogLevel } from '$lib/logConfig';
+import { NAMESPACES } from '$lib/logConfig';
 
 /**
  * Log a message with the given namespace, level, domain, and message.

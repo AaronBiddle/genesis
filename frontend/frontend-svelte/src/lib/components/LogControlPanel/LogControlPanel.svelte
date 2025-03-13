@@ -1,7 +1,7 @@
 <script lang="ts">
     import { logConfigStore } from './logConfig';
-    import { LOG_LEVELS, LOG_DOMAINS, NAMESPACES } from '$lib/appConfig';
-    import type { LogLevel } from '$lib/appConfig';
+    import { LOG_LEVELS, LOG_DOMAINS, NAMESPACES } from '$lib/logConfig';
+    import type { LogLevel } from '$lib/logConfig';
     import { onMount } from 'svelte';
     import { logger } from './logger';
     
