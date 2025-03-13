@@ -36,11 +36,12 @@ export const documentFileConfig: FileOperationsConfig = {
         delete: 'Delete Document'
     },
     validateFilename: (name) => {
-        // Only allow alphanumeric characters, hyphens, underscores, and spaces
-        const valid = /^[a-zA-Z0-9_\- ]+$/.test(name);
+        // Allow alphanumeric characters, hyphens, underscores, spaces, periods, and path separators
+        // This regex allows for file extensions and paths
+        const valid = /^[a-zA-Z0-9_\-\. /\\]+$/.test(name);
         return {
             valid,
-            message: valid ? '' : 'Document name can only contain letters, numbers, spaces, underscores, and hyphens'
+            message: valid ? '' : 'Document name can only contain letters, numbers, spaces, underscores, hyphens, periods, and path separators (/ or \\)'
         };
     }
 };
