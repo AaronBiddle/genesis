@@ -57,8 +57,8 @@
       <thead>
         <tr class="bg-gray-100">
           <th class="p-2 text-left" scope="col">ID</th>
-          <th class="p-2 text-left" scope="col">Title</th>
           <th class="p-2 text-left" scope="col">App</th>
+          <th class="p-2 text-left" scope="col">Z-Index</th>
           <th class="p-2 text-left" scope="col">Actions</th>
         </tr>
       </thead>
@@ -66,15 +66,15 @@
         {#each $panels as panel (panel.id)}
           <tr class="border-b border-gray-200 hover:bg-gray-50 {panel.active ? 'bg-blue-50' : ''}" aria-selected={panel.active}>
             <td class="p-2">{panel.id}</td>
-            <td class="p-2">{panel.title}</td>
             <td class="p-2">{getAppName(panel.appId)}</td>
+            <td class="p-2">{panel.zIndex}</td>
             <td class="p-2">
               <div class="flex space-x-2">
                 <button 
                   on:click={() => focusPanel(panel.id)}
                   class="p-1 hover:bg-blue-100 rounded-md transition-colors"
                   title="Focus window"
-                  aria-label="Focus on {panel.title}"
+                  aria-label="Focus on panel {panel.id}"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -87,7 +87,7 @@
                     on:click={() => closePanel(panel.id)}
                     class="p-1 hover:bg-red-100 rounded-md transition-colors"
                     title="Close window"
-                    aria-label="Close {panel.title}"
+                    aria-label="Close panel {panel.id}"
                   >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />

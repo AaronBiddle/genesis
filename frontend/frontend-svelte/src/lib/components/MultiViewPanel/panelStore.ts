@@ -13,7 +13,6 @@ export type Panel = {
   width: number;
   height: number;
   zIndex: number;
-  title: string;
   active: boolean;
   appId: string;
   suggestedWidth?: number;
@@ -32,7 +31,6 @@ function createPanelStore() {
       width: DEFAULT_WIDTH,
       height: DEFAULT_HEIGHT,
       zIndex: panelCount,
-      title: `Panel ${panelCount}`,
       active: false,
       appId: 'empty',
       suggestedWidth: suggestedWidth,
