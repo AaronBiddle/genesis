@@ -49,6 +49,21 @@
 
     const toolbarHeight = 0; // Adjust as necessary
 
+    // Function to activate the panel (set active and bring to front)
+    function activatePanel() {
+        setActivePanel(panel.id);
+        bringToFront(panel.id);
+    }
+
+    // Handle click anywhere on the panel
+    function handlePanelClick(e: MouseEvent) {
+        // Don't activate for resize handles
+        if ((e.target as HTMLElement).closest('.resize-handle')) {
+            return;
+        }
+        activatePanel();
+    }
+
     function handlePointerDown(e: PointerEvent) {
         // Ignore events on interactive elements
         const target = e.target as HTMLElement;
@@ -69,8 +84,7 @@
         startY = e.clientY;
         initialX = panel.x;
         initialY = panel.y;
-        setActivePanel(panel.id);
-        bringToFront(panel.id);
+        activatePanel();
 
         window.addEventListener('pointermove', handlePointerMove);
         window.addEventListener('pointerup', handlePointerUp);
@@ -106,6 +120,7 @@
     }
 
     function handleAppChange(detail: { selectedApp: string }) {
+        activatePanel(); // Activate panel when app changes
         updatePanelsById(panel.id, (p) => ({ ...p, appId: detail.selectedApp }));
     }
 
@@ -124,8 +139,10 @@
     }
 </script>
 
-<div bind:this={panelElement} class="absolute bg-white border-2 border-blue-500 rounded-lg transition-transform flex flex-col {isDragging ? 'cursor-grabbing' : ''}"
-     style={`pointer-events: ${resizing ? 'none' : 'auto'}; left: ${panel.x}px; top: ${panel.y}px; width: ${panel.width}px; height: ${panel.height}px; z-index: ${panel.zIndex};`}>
+<div bind:this={panelElement} 
+     class="absolute bg-white border-2 border-blue-500 rounded-lg transition-transform flex flex-col {isDragging ? 'cursor-grabbing' : ''}"
+     style={`pointer-events: ${resizing ? 'none' : 'auto'}; left: ${panel.x}px; top: ${panel.y}px; width: ${panel.width}px; height: ${panel.height}px; z-index: ${panel.zIndex};`}
+     on:click={handlePanelClick}>
 
     <ResizeHandles onResizeStart={handleResizeStart} />
 
@@ -140,9 +157,12 @@
             />
             <div class="flex space-x-2">
                 <!-- New button to apply suggested size -->
-                <button on:click={() => applySuggestedSize(panel.id, currentApp.suggestedWidth, currentApp.suggestedHeight)}
-                        class="p-1 hover:bg-gray-200 rounded-md transition-colors pointer-events-auto"
-                        title="Apply suggested size">
+                <button on:click={() => {
+                        activatePanel(); // Activate panel when button is clicked
+                        applySuggestedSize(panel.id, currentApp.suggestedWidth, currentApp.suggestedHeight);
+                    }}
+                    class="p-1 hover:bg-gray-200 rounded-md transition-colors pointer-events-auto"
+                    title="Apply suggested size">
                     <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                         <!-- Top Right Corner -->
                         <polyline points="16 4 20 4 20 8"></polyline>
@@ -150,10 +170,13 @@
                         <polyline points="4 16 4 20 8 20"></polyline>
                     </svg>
                 </button>
-                <button on:click={closePanel}
-                        class="p-1 hover:bg-gray-200 rounded-md transition-colors pointer-events-auto"
-                        title="Close window"
-                        aria-label="Close window">
+                <button on:click={() => {
+                        activatePanel(); // Activate panel when button is clicked
+                        closePanel();
+                    }}
+                    class="p-1 hover:bg-gray-200 rounded-md transition-colors pointer-events-auto"
+                    title="Close window"
+                    aria-label="Close window">
                     <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                         <path d="M6 18L18 6M6 6l12 12"/>
                     </svg>
