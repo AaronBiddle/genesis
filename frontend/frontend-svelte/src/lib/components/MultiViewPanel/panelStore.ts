@@ -62,12 +62,9 @@ export function updatePanels(newPanels: Panel[]): void {
 
 export function setActivePanel(id: string) {
   panels.update((current: Panel[]) => {
-    let maxZ = 0;
-    const updated = current.map((p: Panel) => {
-      if (p.zIndex > maxZ) maxZ = p.zIndex;
-      return p.id === id ? { ...p, active: true, zIndex: maxZ + 1 } : { ...p, active: false };
+    return current.map((p: Panel) => {
+      return p.id === id ? { ...p, active: true } : { ...p, active: false };
     });
-    return updated;
   });
 }
 
@@ -77,13 +74,26 @@ export function updatePanelsById(id: string, updater: (panel: Panel) => Panel) {
   );
 }
 
-// New function to bring panel to front
+// Modified function to bring panel to front only if not already at the top
 export function bringToFront(id: string) {
   panels.update((current: Panel[]) => {
-    let maxZ = Math.max(...current.map((p: Panel) => p.zIndex), 0);
-    return current.map((p: Panel) =>
-      p.id === id ? { ...p, zIndex: maxZ + 1 } : p
-    );
+    // Find the panel
+    const panel = current.find(p => p.id === id);
+    if (!panel) return current;
+    
+    // Find the maximum z-index
+    const maxZ = Math.max(...current.map(p => p.zIndex), 0);
+    
+    // Only update if this panel isn't already at the top
+    if (panel.zIndex < maxZ) {
+      logger('DEBUG', 'ui', NAMESPACE, `Bringing panel ${id} to front. Old z-index: ${panel.zIndex}, new z-index: ${maxZ + 1}`);
+      return current.map(p => 
+        p.id === id ? { ...p, zIndex: maxZ + 1 } : p
+      );
+    }
+    
+    // Panel is already at the top, no need to update
+    return current;
   });
 }
 
