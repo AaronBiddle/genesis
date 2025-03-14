@@ -5,39 +5,35 @@
     FileOperationsDialog
   } from '$lib/components/FileOperations';
   import {
-    documentFileConfig,
-    saveDocument,
-    loadDocument,
-    deleteDocument,
-    createNewDocument,
-    type DocumentData
+    documentFileConfig
   } from '$lib/components/FileOperations/adapters';
   import { logger } from '$lib/components/LogControlPanel/logger';
+  import DocumentEditorToolbar from './DocumentEditorToolbar.svelte';
+  import { getDocumentStore } from './DocumentStore';
 
   // The panel ID is passed from MultiViewPanel
   export let panelId: string;
 
   const NAMESPACE = 'DocumentEditor/DocumentEditor';
 
-  // Document state
-  let content = '';
-  let isEditing = true;
-  let filename = '';
+  // Get the store for this specific document instance
+  const documentStore = getDocumentStore(panelId);
+  const {
+    content,
+    isEditing,
+    filename,
+    displayFilename,
+    createNewDocumentFile,
+    toggleMode,
+    saveCurrentDocument,
+    loadDocumentFromFile,
+    deleteDocumentFile
+  } = documentStore;
+  
+  // File operations dialog state
   let showFileDialog = false;
   let fileDialogMode: 'save' | 'load' | 'delete' = 'save';
-  let documentMetadata: NonNullable<DocumentData['metadata']> = {
-    title: '',
-    created: new Date().toISOString(),
-    modified: new Date().toISOString(),
-    tags: []
-  };
-
-  // Toggle between edit and preview modes
-  function toggleMode() {
-    isEditing = !isEditing;
-    logger('INFO', 'ui', NAMESPACE, `Toggled to ${isEditing ? 'edit' : 'preview'} mode`);
-  }
-
+  
   // Open file dialog for saving
   function openSaveDialog() {
     fileDialogMode = 'save';
@@ -53,15 +49,23 @@
   }
 
   // Handle file operation completion
-  function handleFileOperation(event: CustomEvent) {
+  async function handleFileOperation(event: CustomEvent) {
     logger('INFO', 'ui', NAMESPACE, `File operation event received: ${JSON.stringify(event.detail)}`);
     const { filename: selectedFilename, mode, success } = event.detail;
     
     if (success && selectedFilename) {
-      if (mode === 'save') {
-        saveDocumentToFile(selectedFilename);
-      } else if (mode === 'load') {
-        loadDocumentFromFile(selectedFilename);
+      try {
+        if (mode === 'save') {
+          await saveCurrentDocument(selectedFilename);
+        } else if (mode === 'load') {
+          await loadDocumentFromFile(selectedFilename);
+        } else if (mode === 'delete') {
+          await deleteDocumentFile(selectedFilename);
+        }
+      } catch (error: any) {
+        const errorMsg = error.message || 'Unknown error';
+        logger('ERROR', 'ui', NAMESPACE, `File operation failed: ${errorMsg}`);
+        alert(`Operation failed: ${errorMsg}`);
       }
     } else {
       logger('WARN', 'ui', NAMESPACE, `File operation not successful or missing filename: ${JSON.stringify({ success, selectedFilename, mode })}`);
@@ -70,71 +74,10 @@
     showFileDialog = false;
   }
 
-  // Save the current document
-  async function saveDocumentToFile(targetFilename: string) {
-    try {
-      logger('INFO', 'ui', NAMESPACE, `Saving document to file: ${targetFilename}`);
-      // Update metadata
-      documentMetadata.modified = new Date().toISOString();
-      if (!documentMetadata.title) {
-        documentMetadata.title = targetFilename.replace(/\.md$/, '');
-      }
-      
-      const result = await saveDocument(targetFilename, content, documentMetadata);
-      if (result.success) {
-        filename = targetFilename;
-        logger('INFO', 'ui', NAMESPACE, `Document saved successfully: ${targetFilename}`);
-      }
-    } catch (error) {
-      logger('ERROR', 'ui', NAMESPACE, `Failed to save document: ${error}`);
-    }
-  }
-
-  // Load a document
-  async function loadDocumentFromFile(targetFilename: string) {
-    try {
-      logger('INFO', 'ui', NAMESPACE, `Loading document from file: ${targetFilename}`);
-      const documentData = await loadDocument(targetFilename);
-      content = documentData.content;
-      documentMetadata = documentData.metadata || {
-        title: targetFilename.replace(/\.md$/, ''),
-        created: new Date().toISOString(),
-        modified: new Date().toISOString(),
-        tags: []
-      };
-      filename = targetFilename;
-      // Start in preview mode when opening a document
-      isEditing = false;
-      logger('INFO', 'ui', NAMESPACE, `Document loaded successfully: ${targetFilename}`);
-    } catch (error: any) {
-      const errorMsg = error.message || 'Unknown error';
-      logger('ERROR', 'ui', NAMESPACE, `Failed to load document: ${errorMsg}`);
-      // Display error to user
-      alert(`Failed to load document: ${errorMsg}`);
-    }
-  }
-
-  // Create a new document
-  function createNewDocumentFile() {
-    logger('INFO', 'ui', NAMESPACE, 'Creating new document');
-    const newDoc = createNewDocument();
-    content = newDoc.content;
-    documentMetadata = newDoc.metadata || {
-      title: '',
-      created: new Date().toISOString(),
-      modified: new Date().toISOString(),
-      tags: []
-    };
-    filename = '';
-    // Start in edit mode for new documents
-    isEditing = true;
-    logger('INFO', 'ui', NAMESPACE, 'New document created');
-  }
-
   // Initialize with a new document
   onMount(() => {
     logger('INFO', 'ui', NAMESPACE, `DocumentEditor component mounted with panelId: ${panelId}`);
-    createNewDocumentFile();
+    // Note: Document is already initialized in the store
   });
 </script>
 
@@ -144,74 +87,27 @@
 
 <div class="document-editor h-full flex flex-col border border-gray-300 rounded-lg overflow-hidden bg-white">
   <!-- Toolbar -->
-  <div class="flex justify-between items-center p-2 border-b border-gray-300 bg-gray-100">
-    <div class="flex items-center">
-      <h2 class="text-lg font-semibold mr-3">
-        {filename ? filename : `Document ${panelId}`}
-      </h2>
-      <button 
-        on:click={createNewDocumentFile}
-        class="p-1.5 text-sm bg-gray-100 rounded hover:bg-gray-300 transition-colors flex items-center group relative"
-        title="New Document"
-      >
-        <span class="material-symbols-outlined text-base">note_add</span>
-        <span class="absolute left-1/2 transform -translate-x-1/2 -bottom-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-          New Document
-        </span>
-      </button>
-      
-      <!-- File operation buttons -->
-      <div class="flex ml-2">
-        <!-- Save button -->
-        <button 
-          on:click={openSaveDialog}
-          class="p-1.5 text-sm bg-gray-100 rounded hover:bg-gray-300 transition-colors flex items-center group relative ml-1"
-          title="Save Document"
-        >
-          <span class="material-symbols-outlined text-base">save</span>
-          <span class="absolute left-1/2 transform -translate-x-1/2 -bottom-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-            Save Document
-          </span>
-        </button>
-        
-        <!-- Open button -->
-        <button 
-          on:click={openLoadDialog}
-          class="p-1.5 text-sm bg-gray-100 rounded hover:bg-gray-300 transition-colors flex items-center group relative ml-1"
-          title="Open Document"
-        >
-          <span class="material-symbols-outlined text-base">folder_open</span>
-          <span class="absolute left-1/2 transform -translate-x-1/2 -bottom-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-            Open Document
-          </span>
-        </button>
-      </div>
-    </div>
-    <div class="flex items-center">
-      <button 
-        on:click={toggleMode}
-        class="p-1.5 text-sm bg-gray-100 rounded hover:bg-gray-300 transition-colors flex items-center group relative"
-        title={isEditing ? 'Preview' : 'Edit'}
-      >
-        <span class="material-symbols-outlined text-base">{isEditing ? 'visibility' : 'edit'}</span>
-        <span class="absolute right-0 transform translate-x-0 -bottom-8 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-          {isEditing ? 'Preview' : 'Edit'}
-        </span>
-      </button>
-    </div>
-  </div>
+  <DocumentEditorToolbar 
+    {panelId}
+    filename={$displayFilename}
+    isEditing={$isEditing}
+    on:createNewDocument={createNewDocumentFile}
+    on:openSaveDialog={openSaveDialog}
+    on:openLoadDialog={openLoadDialog}
+    on:toggleMode={toggleMode}
+  />
 
   <!-- Editor/Preview Area -->
   <div class="flex-1 p-4 overflow-hidden">
-    {#if isEditing}
+    {#if $isEditing}
       <textarea 
         class="w-full h-full resize-none font-mono text-sm overflow-auto"
-        bind:value={content}
+        bind:value={$content}
         placeholder=""
       ></textarea>
     {:else}
       <div class="markdown-preview bg-white h-full overflow-auto">
-        <MarkdownRenderer content={content} />
+        <MarkdownRenderer content={$content} />
       </div>
     {/if}
   </div>
@@ -223,7 +119,7 @@
       mode={fileDialogMode}
       fileType={documentFileConfig.fileType}
       config={documentFileConfig}
-      currentFilename={filename}
+      currentFilename={$filename}
       on:close={() => showFileDialog = false}
       on:fileOperation={handleFileOperation}
     />

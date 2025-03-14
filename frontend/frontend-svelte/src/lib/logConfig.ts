@@ -4,7 +4,7 @@ export const NAMESPACES: string[] = [
     'LogControlPanel',
     'FileOperations',
     'DocumentEditor',
-    'ChatboxComponent',
+    'Chatbox',
     // Add other project-specific namespaces here
 ];
 export const LOG_LEVELS = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'] as const;

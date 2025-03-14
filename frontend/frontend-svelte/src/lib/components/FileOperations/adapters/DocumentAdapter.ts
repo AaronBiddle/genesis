@@ -36,11 +36,12 @@ export const documentFileConfig: FileOperationsConfig = {
         delete: 'Delete Document'
     },
     validateFilename: (name) => {
-        // Only allow alphanumeric characters, hyphens, underscores, and spaces
-        const valid = /^[a-zA-Z0-9_\- ]+$/.test(name);
+        // Allow alphanumeric characters, hyphens, underscores, spaces, periods, and path separators
+        // This regex allows for file extensions and paths
+        const valid = /^[a-zA-Z0-9_\-\. /\\]+$/.test(name);
         return {
             valid,
-            message: valid ? '' : 'Document name can only contain letters, numbers, spaces, underscores, and hyphens'
+            message: valid ? '' : 'Document name can only contain letters, numbers, spaces, underscores, hyphens, periods, and path separators (/ or \\)'
         };
     }
 };
@@ -54,7 +55,7 @@ export const documentFileConfig: FileOperationsConfig = {
  */
 export async function saveDocument(filename: string, content: string, metadata: DocumentData['metadata'] = {}) {
     try {
-        // Prepare the document data
+        // Store metadata locally if needed for the frontend
         const documentData: DocumentData = {
             content,
             metadata: {
@@ -70,7 +71,8 @@ export async function saveDocument(filename: string, content: string, metadata: 
         
         logger('INFO', 'ui', NAMESPACE, `Saving document to ${filename}`);
         
-        return await saveFile(DOCUMENT_FILE_TYPE, filename, documentData);
+        // Send only the content string to the backend as it expects
+        return await saveFile(DOCUMENT_FILE_TYPE, filename, content);
     } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
         logger('ERROR', 'ui', NAMESPACE, `Error saving document: ${errorMsg}`);
@@ -95,10 +97,17 @@ export async function loadDocument(filename: string): Promise<DocumentData> {
             throw new Error(errorMsg);
         }
         
-        // Ensure we have a valid document structure
+        // The backend returns { filename, content } for documents
+        // Convert this to our DocumentData format
         const documentData: DocumentData = {
-            content: result.data.content || '',
-            metadata: result.data.metadata || {}
+            // If the backend returns content directly, use it, otherwise create an empty document
+            content: typeof result.data.content === 'string' ? result.data.content : '',
+            metadata: {
+                title: filename,
+                created: new Date().toISOString(),
+                modified: new Date().toISOString(),
+                tags: []
+            }
         };
         
         logger('INFO', 'ui', NAMESPACE, `Document loaded successfully: ${filename}`);

@@ -3,7 +3,7 @@ import { API_URL } from '$lib/config.js';
 import { logger } from '$lib/components/LogControlPanel/logger';
 
 // Define namespace as a constant using path-like format
-const NAMESPACE = 'ChatboxComponent/ModelService';
+const NAMESPACE = 'Chatbox/ModelService';
 
 export interface Model {
     id: string;

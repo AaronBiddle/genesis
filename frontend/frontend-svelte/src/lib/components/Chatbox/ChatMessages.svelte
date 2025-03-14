@@ -16,7 +16,7 @@
             {#if message.sender === 'assistant'}
                 <div class="relative inline-block max-w-[95%] px-4 rounded-lg bg-gray-200 text-gray-800 mr-auto group">
                     {#if message.renderMarkdown === false}
-                        <span>{message.text}</span>
+                        <pre class="whitespace-pre-wrap m-0 font-sans text-base">{message.text}</pre>
                     {:else}
                         <MarkdownRenderer content={message.text} />
                     {/if}

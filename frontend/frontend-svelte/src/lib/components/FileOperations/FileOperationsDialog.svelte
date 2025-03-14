@@ -473,19 +473,20 @@
             >
                 Cancel
             </button>
-            <button 
-                on:click={handleSubmit}
-                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isLoading || (!filename && mode !== 'save')}
-            >
-                {#if mode === 'save'}
-                    Save
-                {:else if mode === 'load'}
-                    Load
-                {:else}
-                    Delete
-                {/if}
-            </button>
+            <!-- Only show the action button in save mode or if no file is selected in load mode -->
+            {#if mode === 'save'}
+                <button 
+                    on:click={handleSubmit}
+                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isLoading || (!filename && mode !== 'save')}
+                >
+                    {#if mode === 'save'}
+                        Save
+                    {:else}
+                        Delete
+                    {/if}
+                </button>
+            {/if}
         </div>
     </div>
 </div>

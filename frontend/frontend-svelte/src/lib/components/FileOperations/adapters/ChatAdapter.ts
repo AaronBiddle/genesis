@@ -5,9 +5,9 @@
  * using the generic file operations system.
  */
 
-import { saveFile, loadFile, deleteFile } from '../FileOperationsService';
-import type { FileOperationsConfig } from '../types';
-import type { Message, ChatSettings } from '../../ChatboxComponent/types';
+import { saveFile, loadFile, deleteFile } from '$lib/components/FileOperations/FileOperationsService';
+import type { FileOperationsConfig } from '$lib/components/FileOperations/types';
+import type { Message, ChatSettings } from '$lib/components/Chatbox/types';
 import { logger } from '$lib/components/LogControlPanel/logger';
 
 const NAMESPACE = 'FileOperations/adapters/ChatAdapter';
