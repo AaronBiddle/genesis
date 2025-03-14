@@ -24,19 +24,29 @@ function createPanelStore() {
   let panelCount = 0;
 
   function createPanel(suggestedWidth: number = DEFAULT_WIDTH, suggestedHeight: number = DEFAULT_HEIGHT) {
+    // Get the current panels to find the maximum z-index
+    let maxZIndex = 0;
+    update(currentPanels => {
+      // Find the maximum z-index among existing panels
+      if (currentPanels.length > 0) {
+        maxZIndex = Math.max(...currentPanels.map(p => p.zIndex));
+      }
+      return currentPanels;
+    });
+
     const newPanel: Panel = {
       id: panelCount.toString(),
       x: 50,
       y: 50,
       width: DEFAULT_WIDTH,
       height: DEFAULT_HEIGHT,
-      zIndex: panelCount,
+      zIndex: maxZIndex + 1, // Set z-index higher than the current maximum
       active: false,
       appId: 'empty',
       suggestedWidth: suggestedWidth,
       suggestedHeight: suggestedHeight
     };
-    logger('DEBUG', 'ui', NAMESPACE, `Creating panel id: ${newPanel.id} with width: ${newPanel.width}, height: ${newPanel.height}, suggestedWidth: ${newPanel.suggestedWidth}, suggestedHeight: ${newPanel.suggestedHeight}`);
+    logger('DEBUG', 'ui', NAMESPACE, `Creating panel id: ${newPanel.id} with width: ${newPanel.width}, height: ${newPanel.height}, suggestedWidth: ${newPanel.suggestedWidth}, suggestedHeight: ${newPanel.suggestedHeight}, zIndex: ${newPanel.zIndex}`);
     panelCount += 1;
     update((panels: Panel[]) => [...panels, newPanel]);
   }
