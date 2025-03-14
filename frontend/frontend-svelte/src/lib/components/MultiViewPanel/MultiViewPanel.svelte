@@ -142,13 +142,15 @@
 <div bind:this={panelElement} 
      class="absolute bg-white border-2 border-blue-500 rounded-lg transition-transform flex flex-col {isDragging ? 'cursor-grabbing' : ''}"
      style={`pointer-events: ${resizing ? 'none' : 'auto'}; left: ${panel.x}px; top: ${panel.y}px; width: ${panel.width}px; height: ${panel.height}px; z-index: ${panel.zIndex};`}
-     on:click={handlePanelClick}>
+     on:click={handlePanelClick}
+     aria-hidden="true">
 
     <ResizeHandles onResizeStart={handleResizeStart} />
 
     <!-- Header Slot: Consumers can provide their own header.
          If not, a default header is shown with app registration and a close button. -->
-    <div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50 select-none rounded-t-lg" on:pointerdown={handlePointerDown}>
+    <div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50 select-none rounded-t-lg" 
+         on:pointerdown={handlePointerDown}>
         <slot name="header">
             <AppRegistration
                 apps={mergedApps}
@@ -162,7 +164,8 @@
                         applySuggestedSize(panel.id, currentApp.suggestedWidth, currentApp.suggestedHeight);
                     }}
                     class="p-1 hover:bg-gray-200 rounded-md transition-colors pointer-events-auto"
-                    title="Apply suggested size">
+                    title="Apply suggested size"
+                    aria-hidden="true">
                     <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                         <!-- Top Right Corner -->
                         <polyline points="16 4 20 4 20 8"></polyline>
@@ -176,7 +179,7 @@
                     }}
                     class="p-1 hover:bg-gray-200 rounded-md transition-colors pointer-events-auto"
                     title="Close window"
-                    aria-label="Close window">
+                    aria-hidden="true">
                     <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                         <path d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -186,7 +189,8 @@
     </div>
 
     <!-- Content Area: Render the component for the current app -->
-    <div class="flex-1 overflow-auto p-1" style={`height: ${panel.height - 40}px;`}>
+    <div class="flex-1 overflow-auto p-1" 
+         style={`height: ${panel.height - 40}px;`}>
         <svelte:component this={currentApp.component} panelId={panel.id} />
     </div>
 </div> 
