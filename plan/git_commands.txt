@@ -1,0 +1,9 @@
+git log --graph --oneline --decorate --all
+
+# To update main when development is ready
+git switch main
+git pull origin main    # good to do to make sure on the same page
+git merge --no-ff development
+git push origin main
+git switch development
+

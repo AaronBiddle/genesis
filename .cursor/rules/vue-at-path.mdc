@@ -1,0 +1,6 @@
+---
+description: 
+globs: *.ts,*.vue
+alwaysApply: false
+---
+When generating or modifying file paths within a Vue.js project, prefer using the `@` alias instead of either the `src` directory or relative paths between different components.
