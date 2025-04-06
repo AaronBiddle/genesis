@@ -9,8 +9,11 @@
       class="title-bar bg-blue-500 text-white flex justify-between items-center"
       @mousedown.prevent="startDrag"
     >
-      <span class="window-title pl-2 py-1">{{ windowData.title }}</span>
-      <div class="window-controls self-stretch">
+      <div class="flex items-center flex-grow min-w-0">
+        <span v-if="iconSvg" class="icon-container w-4 h-4 mr-2 flex-shrink-0" v-html="iconSvg"></span>
+        <span class="window-title pl-2 py-1">{{ windowData.title }}</span>
+      </div>
+      <div class="window-controls self-stretch flex-shrink-0">
         <button
           class="close-button pr-2 pl-2 h-full flex items-center"
           @click.stop="handleClose"
@@ -49,6 +52,7 @@ import {
   updateWindowBounds,
   closeWindow
 } from '@/components/WindowSystem/WindowManager';
+import { svgIcons } from '@/components/Icons/SvgIcons';
 
 // Type alias for resize handle directions
 type ResizeDirection = | 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
@@ -78,6 +82,11 @@ const windowStyle = computed(() => ({
   zIndex: props.windowData.zIndex,
   position: 'absolute' as const,
 }));
+
+// Get the SVG HTML for the window's icon
+const iconSvg = computed(() => {
+  return svgIcons.get(props.windowData.iconId);
+});
 
 // Start Dragging (Title Bar)
 function startDrag(event: MouseEvent) {
@@ -251,5 +260,12 @@ function handleClose() {
 
 /* Hide handles if window is not resizable (using v-if now, but class could be used too) */
 /* .window-container:not(.resizable) .resize-handle { display: none; } */
+
+.icon-container :deep(svg) {
+  width: 100%;
+  height: 100%;
+  display: block; /* Prevents potential small extra space below */
+  /* fill: currentColor; Removed - Let SVG elements control fill/stroke */
+}
 
 </style> 
