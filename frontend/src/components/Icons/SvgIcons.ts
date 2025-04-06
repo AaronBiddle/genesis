@@ -21,8 +21,10 @@ export const svgIcons: Map<string, string> = new Map([
   ],
   [
     "Icons",
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-purple-500">
-             <path fill-rule="evenodd" d="M3.75 4.5C3.336 4.5 3 4.836 3 5.25v13.5c0 .414.336.75.75.75h16.5a.75.75 0 00.75-.75V5.25a.75.75 0 00-.75-.75H3.75zM5.25 6h13.5v12H5.25V6zm2.25 2.25H9v1.5H7.5V8.25zm3 0h1.5v1.5H10.5V8.25zm3 0h1.5v1.5H13.5V8.25zm-6 3H9v1.5H7.5V11.25zm3 0h1.5v1.5H10.5V11.25zm3 0h1.5v1.5H13.5V11.25zm-6 3H9v1.5H7.5V14.25zm3 0h1.5v1.5H10.5V14.25zm3 0h1.5v1.5H13.5V14.25z" clip-rule="evenodd" />
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="w-5 h-5 text-purple-500">
+            <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="15.5" y1="15.5" x2="20.5" y2="20.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <rect x="7" y="7" width="6" height="6" fill="currentColor" rx="1"/>
            </svg>`,
   ],
 ]); 
