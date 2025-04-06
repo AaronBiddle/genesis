@@ -100,13 +100,23 @@ export function moveWindow(windowId: number, newX: number, newY: number): void {
   }
 }
 
-// Function to resize a window
-export function resizeWindow(windowId: number, newWidth: number, newHeight: number): void {
+// Function to update window bounds (position and size)
+export function updateWindowBounds(windowId: number, newX: number, newY: number, newWidth: number, newHeight: number): void {
   const windowIndex = windows.value.findIndex(w => w.id === windowId);
   if (windowIndex !== -1) {
     const windowToUpdate = windows.value[windowIndex];
-    windowToUpdate.width = Math.max(MIN_WIDTH, newWidth);
-    windowToUpdate.height = Math.max(MIN_HEIGHT, newHeight);
+
+    // Apply constraints
+    const finalWidth = Math.max(MIN_WIDTH, newWidth);
+    const finalHeight = Math.max(MIN_HEIGHT, newHeight);
+    const finalY = Math.max(0, newY); // Prevent moving above top edge
+    // No specific constraint for finalX currently, but could be added (e.g., prevent moving entirely off-screen left)
+    const finalX = newX;
+
+    windowToUpdate.x = finalX;
+    windowToUpdate.y = finalY;
+    windowToUpdate.width = finalWidth;
+    windowToUpdate.height = finalHeight;
   }
 }
 
