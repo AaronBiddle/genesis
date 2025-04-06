@@ -120,5 +120,21 @@ export function updateWindowBounds(windowId: number, newX: number, newY: number,
   }
 }
 
+// Function to close a window
+export function closeWindow(windowId: number): void {
+  const index = windows.value.findIndex(w => w.id === windowId);
+  if (index !== -1) {
+    windows.value.splice(index, 1);
+    // Optional: Re-evaluate highestZIndex if the closed window was on top
+    if (windows.value.length === 0) {
+      highestZIndex.value = 0;
+    } else if (highestZIndex.value === windows.value[index]?.zIndex) {
+        // This check is slightly complex as the removed window's zIndex is gone.
+        // A safer approach is to recalculate highestZIndex from the remaining windows.
+        highestZIndex.value = Math.max(0, ...windows.value.map(w => w.zIndex));
+    }
+  }
+}
+
 // Export the reactive state and actions
 export { windows, highestZIndex }; 

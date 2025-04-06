@@ -6,10 +6,20 @@
   >
     <!-- Title Bar -->
     <div
-      class="title-bar bg-blue-500 text-white px-2 py-1"
+      class="title-bar bg-blue-500 text-white px-2 py-1 flex justify-between items-center"
       @mousedown.prevent="startDrag"
     >
-      <span>{{ windowData.title }}</span>
+      <span class="window-title">{{ windowData.title }}</span>
+      <div class="window-controls">
+        <!-- Add minimize/maximize later -->
+        <button
+          class="close-button"
+          @click.stop="handleClose" 
+          title="Close"
+        >
+          &#x2715; <!-- Simple X character -->
+        </button>
+      </div>
     </div>
 
     <!-- Content Area -->
@@ -34,7 +44,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import type { ManagedWindow } from '@/components/WindowSystem/WindowManager';
-import { bringToFront, moveWindow, updateWindowBounds } from '@/components/WindowSystem/WindowManager';
+import {
+  bringToFront,
+  moveWindow,
+  updateWindowBounds,
+  closeWindow
+} from '@/components/WindowSystem/WindowManager';
 
 // Type alias for resize handle directions
 type ResizeDirection = | 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
@@ -149,6 +164,11 @@ function stopResize() {
   }
 }
 
+// Handle Closing the Window
+function handleClose() {
+  closeWindow(props.windowData.id);
+}
+
 </script>
 
 <style scoped>
@@ -164,6 +184,33 @@ function stopResize() {
 }
 .title-bar:active {
     cursor: grabbing;
+}
+
+.window-title {
+  flex-grow: 1; /* Allow title to take space */
+  text-overflow: ellipsis; /* Add ellipsis if title is too long */
+  white-space: nowrap;
+  overflow: hidden;
+  margin-right: 8px; /* Space between title and controls */
+}
+
+.window-controls {
+  /* Container for buttons if more are added */
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1rem; /* Adjust size */
+  padding: 0 4px; /* Small padding */
+  cursor: pointer;
+  line-height: 1; /* Align X better */
+}
+
+.close-button:hover {
+  background-color: rgba(255, 0, 0, 0.7); /* Reddish background on hover */
+  color: white;
 }
 
 .content-area {
