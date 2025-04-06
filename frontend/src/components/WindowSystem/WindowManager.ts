@@ -86,5 +86,15 @@ export function bringToFront(windowId: number): void {
     }
 }
 
+// Function to move a window
+export function moveWindow(windowId: number, newX: number, newY: number): void {
+  const windowIndex = windows.value.findIndex(w => w.id === windowId);
+  if (windowIndex !== -1) {
+    const windowToUpdate = windows.value[windowIndex];
+    windowToUpdate.x = newX;
+    windowToUpdate.y = Math.max(0, newY); // Prevent moving above the top edge
+  }
+}
+
 // Export the reactive state and actions
 export { windows, highestZIndex }; 
