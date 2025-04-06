@@ -82,7 +82,8 @@ const windowStyle = computed(() => ({
 
 // Start Dragging (Title Bar)
 function startDrag(event: MouseEvent) {
-  if (event.target !== event.currentTarget || isResizing.value) return; // Prevent drag if resizing or not clicking title bar directly
+  // Only check if resizing is in progress, allow clicking on title text/etc.
+  if (isResizing.value) return;
   bringToFront(props.windowData.id);
   isDragging.value = true;
   dragOffsetX.value = event.clientX - props.windowData.x;
@@ -192,10 +193,6 @@ function handleClose() {
   white-space: nowrap;
   overflow: hidden;
   margin-right: 8px; /* Space between title and controls */
-}
-
-.window-controls {
-  /* Container for buttons if more are added */
 }
 
 .close-button {
