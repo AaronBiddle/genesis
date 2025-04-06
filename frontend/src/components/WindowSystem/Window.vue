@@ -6,18 +6,17 @@
   >
     <!-- Title Bar -->
     <div
-      class="title-bar bg-blue-500 text-white px-2 py-1 flex justify-between items-center"
+      class="title-bar bg-blue-500 text-white flex justify-between items-center"
       @mousedown.prevent="startDrag"
     >
-      <span class="window-title">{{ windowData.title }}</span>
-      <div class="window-controls">
-        <!-- Add minimize/maximize later -->
+      <span class="window-title pl-2 py-1">{{ windowData.title }}</span>
+      <div class="window-controls self-stretch">
         <button
-          class="close-button"
-          @click.stop="handleClose" 
+          class="close-button pr-2 pl-2 h-full flex items-center"
+          @click.stop="handleClose"
           title="Close"
         >
-          &#x2715; <!-- Simple X character -->
+          &#x2715;
         </button>
       </div>
     </div>
@@ -181,10 +180,6 @@ function handleClose() {
 
 .title-bar {
   user-select: none;
-  cursor: grab;
-}
-.title-bar:active {
-    cursor: grabbing;
 }
 
 .window-title {
@@ -199,14 +194,12 @@ function handleClose() {
   background: none;
   border: none;
   color: white;
-  font-size: 1rem; /* Adjust size */
-  padding: 0 4px; /* Small padding */
-  cursor: pointer;
-  line-height: 1; /* Align X better */
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .close-button:hover {
-  background-color: rgba(255, 0, 0, 0.7); /* Reddish background on hover */
+  background-color: rgba(255, 0, 0, 0.7);
   color: white;
 }
 
