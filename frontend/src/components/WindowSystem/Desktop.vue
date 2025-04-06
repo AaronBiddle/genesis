@@ -37,7 +37,11 @@ function launchApp(app: App) {
          <li v-for="app in apps" :key="app.id" 
              @click="launchApp(app)"
              class="flex items-center px-3 py-1.5 hover:bg-gray-100 cursor-pointer">
-           <span class="mr-2" v-html="svgIcons.get(app.iconId) || ''"></span> <!-- Use iconId to look up icon -->
+           <span
+             class="mr-2"
+             :style="{ color: app.iconColor || '' }"
+             v-html="svgIcons.get(app.iconId) || ''"
+           ></span> <!-- Use iconId to look up icon -->
            <span>{{ app.title }}</span> <!-- Use title -->
          </li>
        </ul>
