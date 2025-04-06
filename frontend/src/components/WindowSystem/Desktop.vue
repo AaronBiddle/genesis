@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { apps, type App } from './apps'; // Updated import path
 import Window from './Window.vue'; // Import the Window component
 import { addWindow, windows } from './WindowManager'; // Import from WindowManager
+import { svgIcons } from "@/components/Icons/SvgIcons"; // Import the icons map
 
 const showAppDropdown = ref(false);
 // const openWindows = ref<App[]>([]); // Remove local state, use WindowManager's state
@@ -12,7 +13,7 @@ function toggleAppDropdown() {
 }
 
 function launchApp(app: App) {
-  console.log(`Launching ${app.name}`);
+  console.log(`Launching ${app.title}`); // Use title
   addWindow(app); // Use WindowManager to add the window
   showAppDropdown.value = false; // Close dropdown after selection
 }
@@ -33,11 +34,11 @@ function launchApp(app: App) {
     <!-- App Dropdown -->
     <div v-if="showAppDropdown" class="absolute top-8 left-0 w-48 bg-gray-200 z-10">
        <ul>
-         <li v-for="app in apps" :key="app.name"
+         <li v-for="app in apps" :key="app.id" 
              @click="launchApp(app)"
              class="flex items-center px-3 py-1.5 hover:bg-gray-100 cursor-pointer">
-           <span class="mr-2" v-html="app.icon"></span>
-           <span>{{ app.name }}</span>
+           <span class="mr-2" v-html="svgIcons.get(app.iconId) || ''"></span> <!-- Use iconId to look up icon -->
+           <span>{{ app.title }}</span> <!-- Use title -->
          </li>
        </ul>
     </div>
@@ -51,7 +52,7 @@ function launchApp(app: App) {
         :window-data="windowData"
       >
         <!-- Pass app-specific content or props here later -->
-        <p>Window for {{ windowData.app.name }} - ID: {{windowData.id}}</p> 
+        <p>Window for {{ windowData.title }} - ID: {{windowData.id}}</p> <!-- Use title -->
       </Window>
     </div>
   </div>

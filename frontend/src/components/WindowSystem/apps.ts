@@ -1,33 +1,44 @@
+import type { Component } from 'vue'; // Import Component type
+import IconViewer from '@/components/Icons/IconViewer.vue'; // Import IconViewer
+
 export interface App {
-    name: string;
-    icon: string; // SVG as a string
-  }
-  
-  export const apps: App[] = [
-    {
-      name: "Chat",
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-blue-500">
-               <path fill-rule="evenodd" d="M4.804 21.644A6.707 6.707 0 0 1 4.5 21.488V17.379a.75.75 0 0 1 .75-.75h13.5a.75.75 0 0 1 .75.75v4.109c0 .054-.016.106-.044.156a6.708 6.708 0 0 1-2.418 2.418.73.73 0 0 1-.156.044H5.554a6.73 6.73 0 0 1-.75-.044Zm.15-4.5v3.141c.021.02.042.04.064.06a5.208 5.208 0 0 0 1.912 1.445A5.226 5.226 0 0 0 9 22.5h9.75a5.25 5.25 0 0 0 5.25-5.25V7.5a5.25 5.25 0 0 0-5.25-5.25H9a5.25 5.25 0 0 0-5.25 5.25v9.64Z" clip-rule="evenodd" />
-             </svg>`,
-    },
-    {
-      name: "Settings",
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-gray-600">
-               <path fill-rule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 5.85C8.56 6.035 8.1 6.302 7.674 6.613l-2.623-.874a1.875 1.875 0 0 0-2.29.63L.76 8.41a1.875 1.875 0 0 0 .63 2.29l2.134 1.707a8.4 8.4 0 0 0-.05.659 8.4 8.4 0 0 0 .05.659l-2.133 1.707a1.875 1.875 0 0 0-.63 2.29l1.999 2.054a1.875 1.875 0 0 0 2.29.63l2.623-.874c.426.31 1.9 .578 2.37.763l.178 2.034c.15.904.933 1.567 1.85 1.567h1.844c.917 0 1.699-.663 1.85-1.567l.178-2.034c.47-.185.94-.453 1.366-.763l2.623.874a1.875 1.875 0 0 0 2.29-.63l1.999-2.054a1.875 1.875 0 0 0 .63-2.29l-2.133-1.707c.03-.217.05-.438.05-.659s-.02-.442-.05-.659l2.133-1.707a1.875 1.875 0 0 0 .63-2.29L21.24 3.98a1.875 1.875 0 0 0-2.29-.63l-2.623.874a8.91 8.91 0 0 0-2.37-.763L13.922 3.817c-.15-.904-.933-1.567-1.85-1.567h-1.844Zm-.19 4.064A6.917 6.917 0 0 1 12 6a6.917 6.917 0 0 1 1.112.314l.46.185.588-.491a7.42 7.42 0 0 1 1.968-.634l.6-.086.112-1.281A.375.375 0 0 1 16.932 3h1.844a.375.375 0 0 1 .372.326l.112 1.28.6.087a7.42 7.42 0 0 1 1.97.633l.587.491.46-.185A6.917 6.917 0 0 1 24 12a6.917 6.917 0 0 1-.314 1.112l-.185.46.491.588a7.42 7.42 0 0 1 .634 1.968l.086.6-.086.6a7.42 7.42 0 0 1-.634 1.968l-.491.588.185.46A6.917 6.917 0 0 1 24 18a6.917 6.917 0 0 1-1.112.314l-.46.185-.588-.491a7.42 7.42 0 0 1-1.968.634l-.6.086-.112 1.28A.375.375 0 0 1 18.776 21h-1.844a.375.375 0 0 1-.372-.326l-.112-1.28-.6-.087a7.42 7.42 0 0 1-1.97-.633l-.587-.491-.46.185A6.917 6.917 0 0 1 12 21a6.917 6.917 0 0 1-1.112-.314l-.46-.185-.588.491a7.42 7.42 0 0 1-1.968.634l-.6.086-.112 1.28A.375.375 0 0 1 7.068 21H5.224a.375.375 0 0 1-.372-.326l-.112-1.28-.6-.087a7.42 7.42 0 0 1-1.97-.633l-.587.491-.46-.185A6.917 6.917 0 0 1 0 18a6.917 6.917 0 0 1 .314-1.112l.185-.46-.491-.588a7.42 7.42 0 0 1-.634-1.968l-.086-.6.086-.6A7.42 7.42 0 0 1 .633 9.34l.491-.588-.185-.46A6.917 6.917 0 0 1 0 6a6.917 6.917 0 0 1 1.112-.314l.46-.185.588.491a7.42 7.42 0 0 1 1.968.634l.6.086.112-1.28A.375.375 0 0 1 5.224 3h1.844a.375.375 0 0 1 .372.326l.112 1.28.6.087a7.42 7.42 0 0 1 1.97.633l.587-.491.46.185A6.917 6.917 0 0 1 10.888 6.314Z" clip-rule="evenodd" />
-               <path d="M12 15.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z" />
-             </svg>`,
-    },
-    {
-      name: "Docs",
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-green-600">
-               <path fill-rule="evenodd" d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5H5.625Zm3.75 14.25a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75Zm0-2.25a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd" />
-               <path d="M14.25 5.25a5.23 5.23 0 0 0-1.279-3.434 9.768 9.768 0 0 1 6.963 6.963A5.23 5.23 0 0 0 14.25 5.25Z" />
-             </svg>`,
-    },
-    {
-      name: "Icons",
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-purple-500">
-               <path fill-rule="evenodd" d="M3.75 4.5C3.336 4.5 3 4.836 3 5.25v13.5c0 .414.336.75.75.75h16.5a.75.75 0 00.75-.75V5.25a.75.75 0 00-.75-.75H3.75zM5.25 6h13.5v12H5.25V6zm2.25 2.25H9v1.5H7.5V8.25zm3 0h1.5v1.5H10.5V8.25zm3 0h1.5v1.5H13.5V8.25zm-6 3H9v1.5H7.5V11.25zm3 0h1.5v1.5H10.5V11.25zm3 0h1.5v1.5H13.5V11.25zm-6 3H9v1.5H7.5V14.25zm3 0h1.5v1.5H10.5V14.25zm3 0h1.5v1.5H13.5V14.25z" clip-rule="evenodd" />
-             </svg>`,
-    },
-  ];
+  id: string; // Unique identifier (e.g., 'text-editor', 'web-browser') - Essential
+  title: string; // Human-readable name (e.g., 'Text Editor', 'Browser') - Essential
+  iconId: string; // ID to look up the icon in your svgIconsMap (e.g., 'Docs', 'Chat') - Essential
+  appComponent: Component; // The actual Vue component to render for this app - Essential
+  initialWidth?: number; // Optional starting width in pixels
+  initialHeight?: number; // Optional starting height in pixels
+  resizable?: boolean; // Can the window be resized? (Default: true)
+  maximizable?: boolean; // Can the window be maximized? (Default: true)
+  minimizable?: boolean; // Can the window be minimized? (Default: true)
+  allowMultipleInstances?: boolean; // Can multiple windows of this app be open? (Default: true)
+  category?: string; // For grouping (e.g., 'Utilities', 'Games', 'Development')
+  initialPosition?: { x: number; y: number }; // Specific starting position? (For relative window positions like file dialogues)
+}
+
+export const apps: App[] = [
+  {
+    id: "chat", // Using lowercase id based on title
+    title: "Chat",
+    iconId: "Chat", // Matches the key in svgIcons Map
+    appComponent: null as any, // TODO: Replace null with actual Chat component
+  },
+  {
+    id: "settings",
+    title: "Settings",
+    iconId: "Settings",
+    appComponent: null as any, // TODO: Replace null with actual Settings component
+  },
+  {
+    id: "docs",
+    title: "Docs",
+    iconId: "Docs",
+    appComponent: null as any, // TODO: Replace null with actual Docs component
+  },
+  {
+    id: "icons",
+    title: "Icons",
+    iconId: "Icons",
+    appComponent: IconViewer, // Use the imported IconViewer component
+  },
+];
