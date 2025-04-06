@@ -1,4 +1,5 @@
 import type { Component } from 'vue'; // Import Component type
+import IconViewer from '@/components/Icons/IconViewer.vue'; // Import IconViewer
 
 export interface App {
   id: string; // Unique identifier (e.g., 'text-editor', 'web-browser') - Essential
@@ -38,6 +39,6 @@ export const apps: App[] = [
     id: "icons",
     title: "Icons",
     iconId: "Icons",
-    appComponent: null as any, // TODO: Replace null with actual Icons component
+    appComponent: IconViewer, // Use the imported IconViewer component
   },
 ];

@@ -11,8 +11,8 @@
     </div>
 
     <!-- Content Area -->
-    <div class="content-area flex-grow bg-white p-2">
-      <slot></slot> <!-- Where the app content will be injected -->
+    <div class="content-area flex-grow bg-white p-2 overflow-auto">
+      <component :is="windowData.appComponent" />
     </div>
   </div>
 </template>
@@ -49,10 +49,15 @@ function onMouseDown() {
   min-height: 150px;
   position: absolute; /* Needed for dragging and stacking */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  overflow: hidden; /* Hide content overflow */
+  overflow: hidden; /* Hide content overflow initially, content area handles scroll */
 }
 
 .title-bar {
   user-select: none; /* Prevent text selection during drag */
+}
+
+.content-area {
+  /* Ensure content area can scroll if needed */
+  overflow: auto;
 }
 </style> 
