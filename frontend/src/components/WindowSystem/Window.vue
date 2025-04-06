@@ -6,16 +6,26 @@
   >
     <!-- Title Bar -->
     <div
-      class="title-bar bg-blue-500 text-white flex justify-between items-center"
+      class="title-bar bg-blue-500 text-white flex justify-between items-center border-b border-gray-300"
+      :style="{ backgroundColor: windowData.titleBarColor || '' }"
       @mousedown.prevent="startDrag"
     >
       <div class="flex items-center flex-grow min-w-0">
-        <span v-if="iconSvg" class="icon-container w-4 h-4 mr-2 flex-shrink-0" v-html="iconSvg"></span>
-        <span class="window-title pl-2 py-1">{{ windowData.title }}</span>
+        <span
+          v-if="iconSvg"
+          class="icon-container pl-2 w-7 h-6 mr-2 flex-shrink-0"
+          :style="{ color: windowData.iconColor || '' }"
+          v-html="iconSvg"
+        ></span>
+        <span
+          class="window-title pl-2 py-1"
+          :style="{ color: windowData.titleColor || '' }"
+        >{{ windowData.title }}</span>
       </div>
       <div class="window-controls self-stretch flex-shrink-0">
         <button
-          class="close-button pr-2 pl-2 h-full flex items-center"
+          class="close-button pr-3 pl-3 h-full flex items-center"
+          :style="{ color: windowData.titleColor || '' }"
           @click.stop="handleClose"
           title="Close"
         >

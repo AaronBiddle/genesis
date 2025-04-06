@@ -14,11 +14,3 @@
 import { svgIcons } from '@/components/Icons/SvgIcons';
 </script>
 
-<style scoped>
-
-.icon-preview :deep(svg) {
-  /* Ensure SVG inherits size if not explicitly set */
-  width: 1.25rem; /* Corresponds to w-5 */
-  height: 1.25rem; /* Corresponds to h-5 */
-}
-</style> 

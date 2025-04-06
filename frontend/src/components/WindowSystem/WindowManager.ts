@@ -18,6 +18,9 @@ export interface ManagedWindow {
   resizable: boolean;
   maximizable: boolean;
   minimizable: boolean;
+  iconColor?: string;
+  titleBarColor?: string;
+  titleColor?: string;
 }
 
 const windows = ref<ManagedWindow[]>([]);
@@ -59,6 +62,9 @@ export function addWindow(app: App, options?: { x?: number; y?: number }): void 
     resizable: app.resizable ?? true,
     maximizable: app.maximizable ?? true,
     minimizable: app.minimizable ?? true,
+    iconColor: app.iconColor,
+    titleBarColor: app.titleBarColor,
+    titleColor: app.titleColor,
   };
 
   windows.value.push(newWindow);
