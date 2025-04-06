@@ -6,6 +6,9 @@ export interface App {
   title: string; // Human-readable name (e.g., 'Text Editor', 'Browser') - Essential
   iconId: string; // ID to look up the icon in your svgIconsMap (e.g., 'Docs', 'Chat') - Essential
   appComponent: Component; // The actual Vue component to render for this app - Essential
+  iconColor?: string; // Optional color for the icon background/element
+  titleBarColor?: string; // Optional color for the window title bar
+  titleColor?: string; // Optional color for the window title text
   initialWidth?: number; // Optional starting width in pixels
   initialHeight?: number; // Optional starting height in pixels
   resizable?: boolean; // Can the window be resized? (Default: true)
@@ -16,29 +19,14 @@ export interface App {
   initialPosition?: { x: number; y: number }; // Specific starting position? (For relative window positions like file dialogues)
 }
 
-export const apps: App[] = [
-  {
-    id: "chat", // Using lowercase id based on title
-    title: "Chat",
-    iconId: "Chat", // Matches the key in svgIcons Map
-    appComponent: null as any, // TODO: Replace null with actual Chat component
-  },
-  {
-    id: "settings",
-    title: "Settings",
-    iconId: "Settings",
-    appComponent: null as any, // TODO: Replace null with actual Settings component
-  },
-  {
-    id: "docs",
-    title: "Docs",
-    iconId: "Docs",
-    appComponent: null as any, // TODO: Replace null with actual Docs component
-  },
+export const apps: App[] = [  
   {
     id: "icons",
     title: "Icons",
     iconId: "Icons",
     appComponent: IconViewer, // Use the imported IconViewer component
+    iconColor: '#4299E1', // Blue 500
+    titleBarColor: '#e3f2fd', // Blue 200
+    titleColor: '#1A202C', // Gray 800
   },
 ];
