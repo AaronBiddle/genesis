@@ -31,6 +31,10 @@ const START_X = 50;
 const START_Y = 50;
 const CASCADE_OFFSET = 20;
 
+// Minimum window dimensions
+const MIN_WIDTH = 200;
+const MIN_HEIGHT = 150;
+
 export function addWindow(app: App, options?: { x?: number; y?: number }): void {
   const initialWidth = app.initialWidth ?? DEFAULT_WIDTH;
   const initialHeight = app.initialHeight ?? DEFAULT_HEIGHT;
@@ -93,6 +97,16 @@ export function moveWindow(windowId: number, newX: number, newY: number): void {
     const windowToUpdate = windows.value[windowIndex];
     windowToUpdate.x = newX;
     windowToUpdate.y = Math.max(0, newY); // Prevent moving above the top edge
+  }
+}
+
+// Function to resize a window
+export function resizeWindow(windowId: number, newWidth: number, newHeight: number): void {
+  const windowIndex = windows.value.findIndex(w => w.id === windowId);
+  if (windowIndex !== -1) {
+    const windowToUpdate = windows.value[windowIndex];
+    windowToUpdate.width = Math.max(MIN_WIDTH, newWidth);
+    windowToUpdate.height = Math.max(MIN_HEIGHT, newHeight);
   }
 }
 
