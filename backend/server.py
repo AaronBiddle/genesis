@@ -21,9 +21,8 @@ if __name__ == "__main__":
     # Configuration for Uvicorn server
     # You can adjust host, port, log_level, etc. as needed
     uvicorn.run(
-        "server:app",  # Points to the 'app' instance in this 'server.py' file
+        "backend.server:app",  # Points to the 'app' instance in this 'server.py' file
         host="127.0.0.1",
         port=8000,
-        reload=True,  # Enable auto-reload for development
         log_level="info",
     ) 
