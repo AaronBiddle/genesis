@@ -5,6 +5,6 @@ from typing import Any
 router = APIRouter()
 
 @router.post("/echo")
-def echo_data(payload: Any):
-    """Receives any JSON payload and returns it unchanged."""
+def echo_data(payload: dict):
+    """Receives any JSON object (dictionary) and returns it unchanged."""
     return payload 
