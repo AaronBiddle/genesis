@@ -20,6 +20,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { sendEchoRequest as sendEchoRequestApi } from './HttpClient';
 
 const response = ref<any>(null);
 const error = ref<string | null>(null);
@@ -28,24 +29,11 @@ const sendEchoRequest = async () => {
   response.value = null; // Clear previous response
   error.value = null; // Clear previous error
   try {
-    const payload = { message: "Hello from HTTP Control Panel", timestamp: new Date().toISOString() };
-    const res = await fetch('http://127.0.0.1:8000/frontend/echo', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status} ${res.statusText}`);
-    }
-
-    const data = await res.json();
+    const data = await sendEchoRequestApi();
     response.value = data;
   } catch (err: any) {
-    console.error('Error sending echo request:', err);
-    error.value = err.message || 'Failed to send request. Is the backend server running?';
+    console.error('Error in component while sending echo request:', err);
+    error.value = err.message || 'Failed to send request.';
   }
 };
 </script>
