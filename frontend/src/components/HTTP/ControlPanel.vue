@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { sendEchoRequest as sendEchoRequestApi } from './HttpClient';
+import { sendEchoRequest as sendEchoRequestApi } from '@/services/HttpClient';
 
 const response = ref<any>(null);
 const error = ref<string | null>(null);
