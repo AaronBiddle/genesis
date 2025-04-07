@@ -5,6 +5,7 @@ Follow these steps to integrate a new Vue component as a windowed application:
 1.  **Create Your Application Component:**
 
     - Develop your application logic and UI within a standard Vue component (`.vue` file).
+    - **Note:** The window system automatically adds a title bar using the `title` specified in the app configuration (`apps.ts`). You generally **do not** need to include a redundant title heading within your component\'s template.
     - **Recommended:** Place this component file in its own dedicated folder within the `src/components/` directory (e.g., `src/components/DocumentEditor/DocumentEditor.vue`). This helps keep applications organized.
 
 2.  **Import the Component in `apps.ts`:**

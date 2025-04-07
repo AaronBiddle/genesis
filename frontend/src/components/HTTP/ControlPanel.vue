@@ -1,6 +1,5 @@
 <template>
   <div class="p-4 space-y-4 flex flex-col h-full">
-    <h2 class="text-lg font-semibold flex-shrink-0">HTTP Control Panel</h2>
     <button
       @click="sendEchoRequest"
       class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 flex-shrink-0"
