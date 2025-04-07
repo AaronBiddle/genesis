@@ -23,7 +23,7 @@ export const apps: App[] = [
   {
     id: "icons",
     title: "Icons",
-    iconId: "Icons",
+    iconId: "icons",
     appComponent: IconViewer, // Use the imported IconViewer component
     iconColor: 'text-blue-500', // Tailwind class
     titleBarColor: 'bg-blue-200', // Tailwind class
