@@ -6,26 +6,26 @@
   >
     <!-- Title Bar -->
     <div
-      class="title-bar bg-blue-500 text-white flex justify-between items-center border-b border-gray-300"
-      :style="{ backgroundColor: windowData.titleBarColor || '' }"
+      class="title-bar text-white flex justify-between items-center border-b border-gray-300"
+      :class="windowData.titleBarColor || 'bg-blue-500'"
       @mousedown.prevent="startDrag"
     >
       <div class="flex items-center flex-grow min-w-0">
         <span
           v-if="iconSvg"
           class="icon-container pl-2 w-7 h-6 mr-2 flex-shrink-0"
-          :style="{ color: windowData.iconColor || '' }"
+          :class="windowData.iconColor || ''"
           v-html="iconSvg"
         ></span>
         <span
           class="window-title pl-2 py-1"
-          :style="{ color: windowData.titleColor || '' }"
+          :class="windowData.titleColor || ''"
         >{{ windowData.title }}</span>
       </div>
       <div class="window-controls self-stretch flex-shrink-0">
         <button
           class="close-button pr-3 pl-3 h-full flex items-center"
-          :style="{ color: windowData.titleColor || '' }"
+          :class="windowData.titleColor || ''"
           @click.stop="handleClose"
           title="Close"
         >
@@ -212,14 +212,14 @@ function handleClose() {
 .close-button {
   background: none;
   border: none;
-  color: white;
+  /* color: white; */ /* Removed - Let Tailwind class control color */
   font-size: 1rem;
   line-height: 1;
 }
 
 .close-button:hover {
   background-color: rgba(255, 0, 0, 0.7);
-  color: white;
+  /* color: white; */ /* Removed - Let Tailwind class control color */
 }
 
 .content-area {
