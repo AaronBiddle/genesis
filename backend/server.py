@@ -1,13 +1,33 @@
 '''Main FastAPI server application.'''
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware # Import CORS middleware
 
 from backend.routers import http_frontend
+
+# List of allowed origins (clients that can make requests)
+# Add your frontend development server URL here
+origins = [
+    "http://localhost:5173", # Vite default
+    "http://127.0.0.1:5173", # Vite default
+    "http://localhost:8000", # Allow requests from the backend itself if needed
+    "http://127.0.0.1:8000",
+    # Add other origins if needed (e.g., production frontend URL)
+]
 
 app = FastAPI(
     title="Genesis Backend",
     description="Backend services for Genesis project.",
     version="0.1.0",
+)
+
+# Add CORS middleware to the application
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Allows specified origins
+    allow_credentials=True, # Allows cookies to be included in requests
+    allow_methods=["*"],    # Allows all methods (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],    # Allows all headers
 )
 
 # Include routers

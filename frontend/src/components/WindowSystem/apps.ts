@@ -1,6 +1,7 @@
 import type { Component } from 'vue'; // Import Component type
 import IconViewer from '@/components/Icons/IconViewer.vue'; // Import IconViewer
 import DocumentEditor from '@/components/DocumentEditor/DocumentEditor.vue'; // Import DocumentEditor
+import HttpControlPanel from '@/components/HTTP/ControlPanel.vue'; // Import HTTP Control Panel
 
 export interface App {
   id: string; // Unique identifier (e.g., 'text-editor', 'web-browser') - Essential
@@ -38,4 +39,15 @@ export const apps: App[] = [
     initialWidth: 450,
     initialHeight: 500,
   },
+  {
+    id: "http-control-panel",
+    title: "HTTP Control Panel",
+    iconId: "http", // Use the 'http' icon
+    appComponent: HttpControlPanel,
+    iconColor: 'text-teal-500', // Example color
+    titleBarColor: 'bg-teal-100', // Example color
+    titleColor: 'text-gray-800',
+    initialWidth: 500,
+    initialHeight: 350,
+  }
 ];
