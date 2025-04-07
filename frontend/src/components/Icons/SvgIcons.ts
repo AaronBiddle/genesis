@@ -16,4 +16,16 @@ export const svgIcons: Map<string, string> = new Map([
             <line x1="7.5" y1="14.5" x2="14.5" y2="14.5" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
            </svg>`,
   ],
+  [
+    "http",
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="w-5 h-5">
+                <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7 8.5H17M15 6.5L17 8.5L15 10.5M17 15.5H7M9 13.5L7 15.5L9 17.5"/>
+             </svg>`,
+  ],
+  [
+    "ws",
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="w-5 h-5">
+                <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M4 12H20M8 8L4 12L8 16M16 8L20 12L16 16"/>
+            </svg>`,
+  ],
 ]); 
