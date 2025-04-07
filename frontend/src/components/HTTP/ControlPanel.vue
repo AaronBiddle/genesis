@@ -45,7 +45,7 @@ const sendEchoRequest = async () => {
   const requestPath = '/frontend/echo'; // Assuming this path from HttpClient.ts
 
   // Add outgoing message with details
-  const outgoingMessageContent = `[${new Date().toLocaleTimeString()}] Sending POST request to ${requestPath}\nPayload:\n${JSON.stringify(payload, null, 2)}`;
+  const outgoingMessageContent = `[${new Date().toLocaleTimeString()}] Sending POST request to ${requestPath}\n${JSON.stringify(payload, null, 2)}`;
   const outgoingMessage = { id: Date.now(), type: 'outgoing' as const, content: outgoingMessageContent };
   messages.value.push(outgoingMessage);
 
