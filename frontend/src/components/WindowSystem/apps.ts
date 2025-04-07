@@ -1,5 +1,6 @@
 import type { Component } from 'vue'; // Import Component type
 import IconViewer from '@/components/Icons/IconViewer.vue'; // Import IconViewer
+import DocumentEditor from '@/components/DocumentEditor/DocumentEditor.vue'; // Import DocumentEditor
 
 export interface App {
   id: string; // Unique identifier (e.g., 'text-editor', 'web-browser') - Essential
@@ -28,5 +29,13 @@ export const apps: App[] = [
     iconColor: 'text-blue-500', // Tailwind class
     titleBarColor: 'bg-blue-200', // Tailwind class
     titleColor: 'text-gray-800', // Tailwind class
+  },
+  {
+    id: "document-editor",
+    title: "Document Editor",
+    iconId: "document", // Assuming 'docs' icon exists
+    appComponent: DocumentEditor,
+    initialWidth: 450,
+    initialHeight: 500,
   },
 ];
