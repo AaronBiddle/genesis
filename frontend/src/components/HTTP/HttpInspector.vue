@@ -1,16 +1,10 @@
 <template>
   <div class="http-inspector">
-    <h2>HTTP Inspector</h2>
-    
+        
     <!-- Controls -->
     <div class="controls">
       <div class="toggles">
-        <label class="toggle">
-          <input type="checkbox" v-model="logRequests" />
-          <span>Log Requests</span>
-        </label>
-        
-        <!-- Replace checkbox with segmented control -->
+        <!-- Mode selector -->
         <div class="mode-selector">
           <div class="mode-label"></div>
           <div class="mode-toggle">
@@ -99,7 +93,7 @@
               
               <div class="detail-row">
                 <div class="detail-key">Time:</div>
-                <div class="detail-value">{{ formatTime(new Date(entry.responseTime).toISOString()) }}</div>
+                <div class="detail-value">{{ entry.responseTime ? formatTime(new Date(entry.responseTime).toISOString()) : 'N/A' }}</div>
               </div>
               
               <div class="detail-row">
@@ -134,13 +128,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { logRequests as httpLogRequests, sendRequests as httpSendRequests, requestLog as httpRequestLog, post } from '@/services/HttpClient';
-
-// Two-way binding with HttpClient reactive variables
-const logRequests = computed({
-  get: () => httpLogRequests.value,
-  set: (value) => { httpLogRequests.value = value; }
-});
+import { sendRequests as httpSendRequests, requestLog as httpRequestLog, post } from '@/services/HttpClient';
 
 // Preview mode is the opposite of sendRequests
 const previewMode = computed({
@@ -194,22 +182,15 @@ const testEchoRequest = async () => {
       timestamp: new Date().toISOString()
     };
     
-    // Make sure logging is enabled for the test
-    const wasLoggingEnabled = logRequests.value;
-    if (!wasLoggingEnabled) {
-      logRequests.value = true;
-    }
-    
     // Send the request - target your actual echo endpoint
     await post('/frontend/echo', payload);
     
-    // Restore previous logging state if needed
-    if (!wasLoggingEnabled) {
-      logRequests.value = wasLoggingEnabled;
-    }
   } catch (err: any) {
     console.error('Echo test failed:', err.message);
-    alert(`Echo test failed: ${err.message}`);
+    // Avoid alert if request was blocked
+    if (err.message && !err.message.includes("Blocked by Client Control")) {
+        alert(`Echo test failed: ${err.message}`);
+    }
   }
 };
 

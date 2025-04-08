@@ -1,11 +1,12 @@
 import { ref } from 'vue';
 
 const BASE_URL = 'http://127.0.0.1:8000'; // Base URL for the backend
+const MAX_LOG_ENTRIES = 50; // Keep the last 50 log entries
 
 // --- Reactive Controls and Log ---
-export const logRequests = ref(false); // Enable/disable logging
+// Removed logRequests ref - logging is always active for the rolling log
 export const sendRequests = ref(true); // Enable/disable actually sending requests (when false = preview mode)
-export const requestLog = ref<any[]>([]); // Array to store logged request details
+export const requestLog = ref<RequestLogEntry[]>([]); // Array to store logged request details
 
 // --- Log Entry Structure ---
 interface RequestLogEntry {
@@ -25,43 +26,43 @@ interface RequestLogEntry {
   error?: string; // Error message if request failed
 }
 
+// Helper function to add entry to log and maintain size limit
+const addLogEntry = (entry: RequestLogEntry) => {
+  requestLog.value.push(entry);
+  // Trim the log if it exceeds the maximum size
+  if (requestLog.value.length > MAX_LOG_ENTRIES) {
+    requestLog.value.shift(); // Remove the oldest entry
+  }
+};
+
 // Generic function to handle HTTP requests
 const request = async (path: string, options: RequestInit = {}): Promise<Response> => {
   const url = `${BASE_URL}${path}`;
   const method = options.method || 'GET'; // Default to GET if not specified
-  let logEntry: Partial<RequestLogEntry> | null = null;
-
-  // Prepare log entry if logging is enabled
-  if (logRequests.value) {
-    // Check if the original body was passed for logging
-    const originalBody = (options as any)._originalBodyForLogging;
-
-    logEntry = {
-      id: Date.now(),
-      timestamp: new Date().toISOString(),
-      method: method,
-      path: path,
-      url: url,
-      options: { ...options }, // Clone options
-      // Log the original body if available, otherwise fallback to options.body (which might be stringified)
-      body: originalBody !== undefined ? originalBody : options.body,
-      status: sendRequests.value ? 'sent' : 'blocked', // Tentative status
-    };
-    // Clean up the temporary property from the options clone if it exists
-    if (logEntry.options && (logEntry.options as any)._originalBodyForLogging !== undefined) {
-      delete (logEntry.options as any)._originalBodyForLogging;
-    }
+  
+  // Prepare log entry - always prepare, logging is now always active
+  const originalBody = (options as any)._originalBodyForLogging;
+  let logEntry: Partial<RequestLogEntry> = {
+    id: Date.now() + Math.random(), // Add random element for higher uniqueness chance
+    timestamp: new Date().toISOString(),
+    method: method,
+    path: path,
+    url: url,
+    options: { ...options }, // Clone options
+    body: originalBody !== undefined ? originalBody : options.body,
+    status: sendRequests.value ? 'sent' : 'blocked',
+  };
+  // Clean up the temporary property from the options clone
+  if (logEntry.options && (logEntry.options as any)._originalBodyForLogging !== undefined) {
+    delete (logEntry.options as any)._originalBodyForLogging;
   }
 
   // Decide whether to actually send the request
   if (!sendRequests.value) {
     console.warn(`HTTP request blocked by client control: ${method} ${url}`);
-    if (logEntry) {
-        logEntry.status = 'blocked';
-        requestLog.value.push(logEntry as RequestLogEntry);
-    }
-    // Return a mock response to fulfill the promise type without hitting the network
-    // 418 I'm a teapot is a fun status for this
+    logEntry.status = 'blocked';
+    addLogEntry(logEntry as RequestLogEntry); // Add the blocked entry to the log
+    // Return a mock response
     return new Response(JSON.stringify({ message: "Request blocked by client-side control" }), {
       status: 418, // I'm a teapot
       statusText: "Blocked by Client Control",
@@ -70,7 +71,6 @@ const request = async (path: string, options: RequestInit = {}): Promise<Respons
   }
 
   // If we are sending, proceed with the actual fetch
-  // Default headers, can be overridden by options
   const defaultHeaders = {
     'Content-Type': 'application/json',
     ...options.headers,
@@ -83,65 +83,59 @@ const request = async (path: string, options: RequestInit = {}): Promise<Respons
     });
 
     // Capture response data for logging
-    if (logEntry) {      
-      
-      // Get response headers
-      const responseHeaders: Record<string, string> = {};
-      res.headers.forEach((value, key) => {
-        responseHeaders[key] = value;
-      });
-      
-      // Try to parse response based on content type
-      let responseBody: any = null;
-      try {
-        const contentType = res.headers.get('content-type');
-        // Clone the response before reading it
-        const resClone = res.clone();
-        
-        if (contentType && contentType.includes('application/json')) {
-          responseBody = await resClone.json();
-        } else if (contentType && contentType.includes('text/')) {
-          responseBody = await resClone.text();
-        } else {
-          // For binary responses, just note the size
-          const blob = await resClone.blob();
-          responseBody = `Binary data (${blob.size} bytes)`;
-        }
-      } catch (e) {
-        responseBody = "Could not parse response body";
+   
+    const responseHeaders: Record<string, string> = {};
+    res.headers.forEach((value, key) => { responseHeaders[key] = value; });
+
+    let responseBody: any = null;
+    try {
+      const contentType = res.headers.get('content-type');
+      const resClone = res.clone(); // Clone before reading
+      if (contentType && contentType.includes('application/json')) {
+        responseBody = await resClone.json();
+      } else if (contentType && contentType.includes('text/')) {
+        responseBody = await resClone.text();
+      } else {
+        const blob = await resClone.blob();
+        responseBody = `Binary data (${blob.size} bytes)`;
       }
-      
-      // Add response info to the log entry
-      logEntry.status = 'sent';
-      logEntry.responseStatus = res.status;
-      logEntry.responseStatusText = res.statusText;
-      logEntry.responseHeaders = responseHeaders;
-      logEntry.responseBody = responseBody;
-      logEntry.responseTime = Date.now();
-      
-      // Push the entry with response data
-      requestLog.value.push(logEntry as RequestLogEntry);
+    } catch (e) {
+      responseBody = "Could not parse response body";
     }
+
+    // Add response info to the log entry
+    logEntry.status = 'sent';
+    logEntry.responseStatus = res.status;
+    logEntry.responseStatusText = res.statusText;
+    logEntry.responseHeaders = responseHeaders;
+    logEntry.responseBody = responseBody;
+    logEntry.responseTime = Date.now();
+
+    addLogEntry(logEntry as RequestLogEntry); // Add the completed entry to the log
 
     if (!res.ok) {
       let errorBody = '';
       try {
         errorBody = await res.text();
       } catch (e) { /* Ignore */ }
+      // Update log entry with error status if available
+      if (logEntry.responseStatus) { // Check if it was added already
+         const existingEntryIndex = requestLog.value.findIndex(e => e.id === logEntry!.id);
+         if(existingEntryIndex !== -1) {
+           requestLog.value[existingEntryIndex].error = `HTTP error! status: ${res.status} ${res.statusText}. ${errorBody}`.trim();
+         }
+      }
       throw new Error(`HTTP error! status: ${res.status} ${res.statusText}. ${errorBody}`.trim());
     }
     return res; // Return the actual response
+
   } catch (err: any) {
     console.error(`Error making request to ${url}:`, err.message);
-    
-    // Log the error in the log entry if it exists
-    if (logEntry) {
-      logEntry.status = 'sent'; // We tried to send it
-      logEntry.error = err.message;
-      logEntry.responseTime = Date.now();
-      requestLog.value.push(logEntry as RequestLogEntry);
-    }
-    
+    // Log the error if it's a network error (before response handling)
+    logEntry.status = 'sent'; // Attempt was made
+    logEntry.error = err.message;
+    logEntry.responseTime = Date.now();
+    addLogEntry(logEntry as RequestLogEntry); // Add the error entry to the log
     throw new Error(err.message || 'Network request failed. Is the backend server running?');
   }
 };
@@ -153,16 +147,13 @@ export const get = async (path: string, options?: Omit<RequestInit, 'method'>): 
 };
 
 export const post = async (path: string, body: any, options?: Omit<RequestInit, 'method' | 'body'>): Promise<Response> => {
-  // Pass body separately to log the original object before stringification
   const requestOptions: RequestInit = {
     ...options,
     method: 'POST',
-    body: JSON.stringify(body), // Stringify here
+    body: JSON.stringify(body),
   };
-  // Add temporary property IF logging is enabled
-  if (logRequests.value) {
-    (requestOptions as any)._originalBodyForLogging = body;
-  }
+  // Add temporary property for logging original body
+  (requestOptions as any)._originalBodyForLogging = body;
   return request(path, requestOptions);
 };
 
@@ -172,10 +163,8 @@ export const put = async (path: string, body: any, options?: Omit<RequestInit, '
     method: 'PUT',
     body: JSON.stringify(body),
   };
-  // Add temporary property IF logging is enabled
-  if (logRequests.value) {
-    (requestOptions as any)._originalBodyForLogging = body;
-  }
+  // Add temporary property for logging original body
+  (requestOptions as any)._originalBodyForLogging = body;
   return request(path, requestOptions);
 };
 
