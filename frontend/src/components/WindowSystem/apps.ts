@@ -2,6 +2,7 @@ import type { Component } from 'vue'; // Import Component type
 import IconViewer from '@/components/Icons/IconViewer.vue'; // Import IconViewer
 import DocumentEditor from '@/components/DocumentEditor/DocumentEditor.vue'; // Import DocumentEditor
 import HttpInspector from '@/components/HTTP/HttpInspector.vue'; // Import HttpInspector
+import FileServiceTester from '@/components/FileService/FileServiceTester.vue'; // Import FileServiceTester
 
 export interface App {
   id: string; // Unique identifier (e.g., 'text-editor', 'web-browser') - Essential
@@ -50,5 +51,17 @@ export const apps: App[] = [
     initialWidth: 700, // A bit wider for the log display
     initialHeight: 600, // Taller to show more log entries
     category: 'Development' // Categorize as a development tool
+  },
+  {
+    id: "file-service-tester",
+    title: "File Service Tester",
+    iconId: "file", // Use 'file' icon
+    appComponent: FileServiceTester,
+    iconColor: 'text-green-600', // Green theme
+    titleBarColor: 'bg-green-200',
+    titleColor: 'text-green-900',
+    initialWidth: 500,
+    initialHeight: 550,
+    category: 'Development'
   }
 ];
