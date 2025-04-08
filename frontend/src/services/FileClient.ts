@@ -83,4 +83,22 @@ export const deleteDirectory = async (dirPath: string): Promise<any> => {
     console.error('FileClient: Error deleting directory:', err);
     throw new Error(err.message || 'Failed to delete directory. Is the backend server running?');
   }
+};
+
+// --- New Function for Getting Mounts ---
+
+export const getMounts = async (): Promise<string[]> => {
+  try {
+    // Assuming mounts endpoint is at FS_PATH/mounts
+    const response = await get(`${FS_PATH}/mounts`);
+    const data = await response.json(); // Assuming backend returns JSON list of strings
+    // Basic validation
+    if (!Array.isArray(data) || !data.every(item => typeof item === 'string')) {
+      throw new Error('Invalid mount data received from server');
+    }
+    return data;
+  } catch (err: any) {
+    console.error('FileClient: Error getting mounts:', err);
+    throw new Error(err.message || 'Failed to get mounts. Is the backend server running?');
+  }
 }; 
