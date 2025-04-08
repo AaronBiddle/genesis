@@ -1,7 +1,7 @@
 import type { Component } from 'vue'; // Import Component type
 import IconViewer from '@/components/Icons/IconViewer.vue'; // Import IconViewer
 import DocumentEditor from '@/components/DocumentEditor/DocumentEditor.vue'; // Import DocumentEditor
-import HttpControlPanel from '@/components/HTTP/ControlPanel.vue'; // Import HTTP Control Panel
+import HttpControlPanel from '@/components/HTTP/HTTPControlPanel.vue'; // Import HTTP Control Panel
 
 export interface App {
   id: string; // Unique identifier (e.g., 'text-editor', 'web-browser') - Essential

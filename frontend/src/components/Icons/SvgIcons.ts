@@ -28,4 +28,10 @@ export const svgIcons: Map<string, string> = new Map([
                 <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M4 12H20M8 8L4 12L8 16M16 8L20 12L16 16"/>
             </svg>`,
   ],
+  [
+    "file-manager",
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="w-5 h-5">
+        <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M3.75 17.25V6.75C3.75 6.19772 4.19772 5.75 4.75 5.75H9.75L11.25 7.75H19.25C19.8023 7.75 20.25 8.19772 20.25 8.75V17.25C20.25 17.8023 19.8023 18.25 19.25 18.25H4.75C4.19772 18.25 3.75 17.8023 3.75 17.25Z"/>
+     </svg>`
+  ]
 ]); 
