@@ -1,7 +1,7 @@
 import type { Component } from 'vue'; // Import Component type
 import IconViewer from '@/components/Icons/IconViewer.vue'; // Import IconViewer
 import DocumentEditor from '@/components/DocumentEditor/DocumentEditor.vue'; // Import DocumentEditor
-import HttpControlPanel from '@/components/HTTP/HTTPControlPanel.vue'; // Import HTTP Control Panel
+import HttpInspector from '@/components/HTTP/HttpInspector.vue'; // Import HttpInspector
 
 export interface App {
   id: string; // Unique identifier (e.g., 'text-editor', 'web-browser') - Essential
@@ -40,14 +40,15 @@ export const apps: App[] = [
     initialHeight: 500,
   },
   {
-    id: "http-control-panel",
-    title: "HTTP Control Panel",
-    iconId: "http", // Use the 'http' icon
-    appComponent: HttpControlPanel,
-    iconColor: 'text-teal-500', // Example color
-    titleBarColor: 'bg-teal-100', // Example color
-    titleColor: 'text-gray-800',
-    initialWidth: 500,
-    initialHeight: 350,
+    id: "http-inspector",
+    title: "HTTP Inspector",
+    iconId: "http", // Using 'http' icon as requested
+    appComponent: HttpInspector,
+    iconColor: 'text-purple-500', // Purple for the icon
+    titleBarColor: 'bg-purple-200', // Light purple for the title bar
+    titleColor: 'text-purple-900', // Dark purple for the title text
+    initialWidth: 700, // A bit wider for the log display
+    initialHeight: 600, // Taller to show more log entries
+    category: 'Development' // Categorize as a development tool
   }
 ];
