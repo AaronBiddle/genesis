@@ -10,15 +10,40 @@
           <span>Log Requests</span>
         </label>
         
-        <label class="toggle">
-          <input type="checkbox" v-model="sendRequests" />
-          <span>{{ sendRequests ? 'Requests Enabled' : 'Requests Paused' }}</span>
-        </label>
+        <!-- Replace checkbox with segmented control -->
+        <div class="mode-selector">
+          <div class="mode-label"></div>
+          <div class="mode-toggle">
+            <button
+              @click="previewMode = false"
+              :class="{ active: !previewMode }"
+              class="mode-button send-mode"
+            >
+              <span class="mode-icon">↗</span>
+              Send Requests
+            </button>
+            <button
+              @click="previewMode = true"
+              :class="{ active: previewMode }"
+              class="mode-button preview-mode"
+            >
+              <span class="mode-icon">👁️</span>
+              Preview Only
+            </button>
+          </div>
+        </div>
       </div>
       
       <div class="actions">
         <button @click="clearLog" class="btn-clear">Clear Log</button>
         <button @click="testEchoRequest" class="btn-test">Test Echo Request</button>
+      </div>
+    </div>
+    
+    <!-- Request Log Status Bar -->
+    <div class="status-bar">
+      <div class="status-indicator" :class="{ 'status-preview': previewMode, 'status-live': !previewMode }">
+        {{ previewMode ? 'PREVIEW MODE: Requests will not be sent to the server' : 'LIVE MODE: Requests will be sent to the server' }}
       </div>
     </div>
     
@@ -60,6 +85,46 @@
                 <pre>{{ formatJson(entry.options.headers || {}) }}</pre>
               </div>
             </div>
+            
+            <!-- Response section -->
+            <div v-if="entry.responseStatus !== undefined" class="response-section">
+              <h4>Response</h4>
+              
+              <div class="detail-row">
+                <div class="detail-key">Status:</div>
+                <div class="detail-value response-status" :class="getStatusClass(entry.responseStatus)">
+                  {{ entry.responseStatus }} {{ entry.responseStatusText }}
+                </div>
+              </div>
+              
+              <div class="detail-row">
+                <div class="detail-key">Time:</div>
+                <div class="detail-value">{{ formatTime(new Date(entry.responseTime).toISOString()) }}</div>
+              </div>
+              
+              <div class="detail-row">
+                <div class="detail-key">Headers:</div>
+                <div class="detail-value">
+                  <pre>{{ formatJson(entry.responseHeaders || {}) }}</pre>
+                </div>
+              </div>
+              
+              <div v-if="entry.responseBody" class="detail-row">
+                <div class="detail-key">Body:</div>
+                <div class="detail-value">
+                  <pre>{{ formatJson(entry.responseBody) }}</pre>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Error section -->
+            <div v-if="entry.error" class="error-section">
+              <h4>Error</h4>
+              <div class="detail-row">
+                <div class="detail-key">Message:</div>
+                <div class="detail-value error-message">{{ entry.error }}</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -77,9 +142,10 @@ const logRequests = computed({
   set: (value) => { httpLogRequests.value = value; }
 });
 
-const sendRequests = computed({
-  get: () => httpSendRequests.value,
-  set: (value) => { httpSendRequests.value = value; }
+// Preview mode is the opposite of sendRequests
+const previewMode = computed({
+  get: () => !httpSendRequests.value,
+  set: (value) => { httpSendRequests.value = !value; }
 });
 
 // Read-only computed property for the log
@@ -152,6 +218,15 @@ const displayedLog = computed(() => {
   // Return a reversed copy to show newest first
   return [...requestLog.value].reverse();
 });
+
+// Helper to determine status color class
+const getStatusClass = (status: number) => {
+  if (status >= 200 && status < 300) return 'status-success';
+  if (status >= 300 && status < 400) return 'status-redirect';
+  if (status >= 400 && status < 500) return 'status-client-error';
+  if (status >= 500) return 'status-server-error';
+  return '';
+};
 </script>
 
 <style scoped>
@@ -181,7 +256,8 @@ h2, h3 {
 
 .toggles {
   display: flex;
-  gap: 16px;
+  align-items: center;
+  gap: 20px;
 }
 
 .toggle {
@@ -337,5 +413,120 @@ pre {
   border-radius: 3px;
   color: #24292e;
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+.response-section, .error-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed #e1e4e8;
+}
+
+.response-section h4, .error-section h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #586069;
+}
+
+.response-status {
+  font-weight: 600;
+}
+
+.status-success {
+  color: #22863a;
+}
+
+.status-redirect {
+  color: #6f42c1;
+}
+
+.status-client-error {
+  color: #cb2431;
+}
+
+.status-server-error {
+  color: #d73a49;
+}
+
+.error-message {
+  color: #cb2431;
+  font-weight: 500;
+}
+
+/* New mode selector styles */
+.mode-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-label {
+  font-weight: 500;
+}
+
+.mode-toggle {
+  display: flex;
+  border-radius: 6px;
+  border: 1px solid #d1d5da;
+  overflow: hidden;
+}
+
+.mode-button {
+  border: none;
+  background-color: #fff;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 0.2s, color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mode-button:hover:not(.active) {
+  background-color: #f1f2f4;
+}
+
+.mode-button.active {
+  color: #fff;
+  cursor: default;
+}
+
+.mode-button.active.send-mode {
+  background-color: #2188ff;
+}
+
+.mode-button.active.preview-mode {
+  background-color: #e36209;
+}
+
+.mode-icon {
+  font-size: 14px;
+}
+
+/* Status bar styles */
+.status-bar {
+  margin: 16px 0 8px;
+}
+
+.status-indicator {
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  transition: background-color 0.3s;
+}
+
+.status-preview {
+  background-color: #fff8e1;
+  color: #b45309;
+}
+
+.status-live {
+  background-color: #e8f5e9;
+  color: #1b5e20;
 }
 </style> 
