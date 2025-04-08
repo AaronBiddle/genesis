@@ -238,6 +238,9 @@ const getStatusClass = (status: number) => {
   color: #333;
   max-width: 100%;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 h2, h3 {
@@ -295,6 +298,10 @@ button:hover {
 
 .request-log {
   margin-top: 16px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .no-requests {
@@ -310,8 +317,11 @@ button:hover {
   background-color: #fff;
   border-radius: 4px;
   border: 1px solid #e1e4e8;
-  max-height: 500px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .request-entry {
