@@ -171,5 +171,3 @@ export const put = async (path: string, body: any, options?: Omit<RequestInit, '
 export const del = async (path: string, options?: Omit<RequestInit, 'method'>): Promise<Response> => {
   return request(path, { ...options, method: 'DELETE' });
 };
-
-// --- Removed Echo Example --- 

@@ -16,6 +16,12 @@ export const readFile = async (filePath: string): Promise<string> => {
   try {
     const params = encodeParams({ path: filePath });
     const response = await get(`${FS_PATH}?${params}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error ${response.status} (${response.statusText}): ${errorText}`);
+    }
+
     const data = await response.text(); // Read response as text
     return data;
   } catch (err: any) {
@@ -28,6 +34,12 @@ export const writeFile = async (filePath: string, content: string): Promise<any>
   try {
     // Assuming the backend expects path and content in the JSON body for POST
     const response = await post(FS_PATH, { path: filePath, content });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error ${response.status} (${response.statusText}): ${errorText}`);
+    }
+
     return await response.json(); // Assuming backend confirms success with JSON
   } catch (err: any) {
     console.error('FileClient: Error writing file:', err);
@@ -39,6 +51,12 @@ export const deleteFile = async (filePath: string): Promise<any> => {
   try {
     const params = encodeParams({ path: filePath });
     const response = await del(`${FS_PATH}?${params}`); // Using path in query param for DELETE
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error ${response.status} (${response.statusText}): ${errorText}`);
+    }
+
     return await response.json(); // Assuming backend confirms success with JSON
   } catch (err: any) {
     console.error('FileClient: Error deleting file:', err);
@@ -51,6 +69,12 @@ export const createDirectory = async (dirPath: string): Promise<any> => {
     // Assuming backend expects path and type in JSON body for PUT/POST
     // Using PUT here, but could be POST depending on backend logic
     const response = await put(FS_PATH, { path: dirPath, type: 'directory' });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error ${response.status} (${response.statusText}): ${errorText}`);
+    }
+
     return await response.json(); // Assuming backend confirms success with JSON
   } catch (err: any) {
     console.error('FileClient: Error creating directory:', err);
@@ -64,6 +88,12 @@ export const listDirectory = async (dirPath: string): Promise<any> => {
     // Added a specific sub-path '/list' assuming backend routing
     const params = encodeParams({ path: dirPath });
     const response = await get(`${FS_PATH}/list?${params}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error ${response.status} (${response.statusText}): ${errorText}`);
+    }
+
     const data = await response.json(); // Assuming backend returns JSON list
     return data;
   } catch (err: any) {
@@ -78,6 +108,12 @@ export const deleteDirectory = async (dirPath: string): Promise<any> => {
     // Added a specific sub-path '/dir' assuming backend routing
     const params = encodeParams({ path: dirPath });
     const response = await del(`${FS_PATH}/dir?${params}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error ${response.status} (${response.statusText}): ${errorText}`);
+    }
+
     return await response.json(); // Assuming backend confirms success with JSON
   } catch (err: any) {
     console.error('FileClient: Error deleting directory:', err);
@@ -91,10 +127,18 @@ export const getMounts = async (): Promise<string[]> => {
   try {
     // Assuming mounts endpoint is at FS_PATH/mounts
     const response = await get(`${FS_PATH}/mounts`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP error ${response.status} (${response.statusText}): ${errorText}`);
+    }
+
     const data = await response.json(); // Assuming backend returns JSON list of strings
-    // Basic validation
+
+    // Basic validation (still useful for successful responses)
     if (!Array.isArray(data) || !data.every(item => typeof item === 'string')) {
-      throw new Error('Invalid mount data received from server');
+      // Keep this validation for the case where the server returns 200 OK but with wrong data format
+      throw new Error('Invalid mount data format received from server');
     }
     return data;
   } catch (err: any) {
