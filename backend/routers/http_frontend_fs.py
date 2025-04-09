@@ -60,7 +60,7 @@ async def create_directory_endpoint(payload: PathPayload = Body(...)):
 class FileSystemItem(BaseModel):
     name: str
     path: str # User-facing path
-    type: Literal['file', 'directory']
+    isDirectory: bool # <--- Changed to match the service layer output
 
 @router.get("/list_dir", response_model=List[FileSystemItem]) 
 async def list_directory_endpoint(

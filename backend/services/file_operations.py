@@ -233,13 +233,13 @@ def perform_list_directory(mount_name: str, user_path: str) -> List[Dict[str, st
         items = []
         for item_name in os.listdir(abs_path):
             item_abs_path = os.path.join(abs_path, item_name)
-            item_type = 'directory' if os.path.isdir(item_abs_path) else 'file'
+            is_dir = os.path.isdir(item_abs_path) # Check if it's a directory
             # Construct user-facing path relative to the mount point
-            item_user_path = mount_info['name'] + item_abs_path[len(mount_info['path']):].replace('\\', '/')
+            item_user_path = mount_info['name'] + item_abs_path[len(mount_info['path']):].replace('\\\\', '/')
             items.append({
-                "name": item_name, 
-                "path": item_user_path, # Return the user-resolvable path 
-                "type": item_type
+                "name": item_name,
+                "path": item_user_path, # Return the user-resolvable path
+                "isDirectory": is_dir # Changed from "type": item_type
             })
         logger.info(f"Successfully listed directory: {abs_path}")
         return items
