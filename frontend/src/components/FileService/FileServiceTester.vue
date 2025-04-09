@@ -38,9 +38,21 @@
 
     <!-- Preview Section -->
     <div v-if="selectedTestInfo" class="preview-section">
-      <h4>Preview of Parameters to be Sent</h4>
+      <h4>Parameters to be Sent</h4>
       <div class="preview-content">
-        <pre>{{ previewParameters }}</pre>
+        <div v-if="selectedTestInfo.requiresFilePath">
+          <strong>File Path:</strong> {{ filePathInput || '(empty)' }}
+        </div>
+        <div v-if="selectedTestInfo.requiresDirPath">
+          <strong>Directory Path:</strong> {{ dirPathInput || '(empty)' }}
+        </div>
+        <div v-if="selectedTestInfo.requiresContent">
+          <strong>Content:</strong>
+          <pre class="content-preview">{{ fileContentInput || '(empty)' }}</pre>
+        </div>
+        <div v-if="!selectedTestInfo.requiresFilePath && !selectedTestInfo.requiresDirPath && !selectedTestInfo.requiresContent">
+          No parameters required for {{ selectedTestInfo.name }}.
+        </div>
       </div>
       <button @click="executeTest" :disabled="!canExecuteTest" class="execute-button">
         Execute {{ selectedTestInfo.name }}
@@ -89,27 +101,6 @@ const isErrorResult = ref<boolean>(false);
 // Computed property to get info about the selected test
 const selectedTestInfo = computed(() => {
   return availableTests.find(test => test.value === selectedTest.value);
-});
-
-// Computed property to generate the preview text
-const previewParameters = computed(() => {
-  if (!selectedTestInfo.value) return 'Select a test to see parameters.';
-
-  const params: Record<string, any> = {
-    operation: selectedTestInfo.value.name,
-  };
-
-  if (selectedTestInfo.value.requiresFilePath) {
-    params.filePath = filePathInput.value;
-  }
-  if (selectedTestInfo.value.requiresDirPath) {
-    params.directoryPath = dirPathInput.value;
-  }
-  if (selectedTestInfo.value.requiresContent) {
-    params.content = fileContentInput.value;
-  }
-
-  return JSON.stringify(params, null, 2);
 });
 
 // Computed property to check if the execute button should be enabled
@@ -238,6 +229,7 @@ textarea {
   word-break: break-all; /* Break long words/paths */
   max-height: 200px;
   overflow-y: auto;
+  margin-top: 4px; /* Added margin for content preview */
 }
 
 .result-section pre.error-result {
