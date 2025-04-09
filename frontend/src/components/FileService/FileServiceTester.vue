@@ -18,7 +18,12 @@
 
     <!-- Input Fields based on selected test -->
     <div v-if="selectedTestInfo" class="inputs-section">      
-      
+      <!-- Mount Name Input (shown for tests that require it) -->
+      <div v-if="selectedTestInfo.requiresMount" class="control-group">
+        <label for="mount-name">Mount Name:</label>
+        <input type="text" id="mount-name" v-model="mountNameInput" placeholder="e.g., workspace" />
+      </div>
+
       <!-- File Path Input -->
       <div v-if="selectedTestInfo.requiresFilePath" class="control-group">
         <label for="file-path">File Path:</label>
@@ -56,24 +61,26 @@ import {
   listDirectory,
   createDirectory,
   deleteDirectory,
-  getMounts
+  getMounts,
+  type MountInfo // Changed to type-only import
 } from '@/services/FileClient';
 
-// Define available tests
+// Define available tests with mount requirement
 const availableTests = [
-  { name: 'Read File', value: 'readFile', requiresFilePath: true },
-  { name: 'Write File', value: 'writeFile', requiresFilePath: true, requiresContent: true },
-  { name: 'Delete File', value: 'deleteFile', requiresFilePath: true },
-  { name: 'List Directory', value: 'listDirectory', requiresDirPath: true },
-  { name: 'Create Directory', value: 'createDirectory', requiresDirPath: true },
-  { name: 'Delete Directory', value: 'deleteDirectory', requiresDirPath: true },
-  { name: 'Get Mounts', value: 'getMounts' },
+  { name: 'Read File', value: 'readFile', requiresMount: true, requiresFilePath: true },
+  { name: 'Write File', value: 'writeFile', requiresMount: true, requiresFilePath: true, requiresContent: true },
+  { name: 'Delete File', value: 'deleteFile', requiresMount: true, requiresFilePath: true },
+  { name: 'List Directory', value: 'listDirectory', requiresMount: true, requiresDirPath: true },
+  { name: 'Create Directory', value: 'createDirectory', requiresMount: true, requiresDirPath: true },
+  { name: 'Delete Directory', value: 'deleteDirectory', requiresMount: true, requiresDirPath: true },
+  { name: 'Get Mounts', value: 'getMounts', requiresMount: false }, // Explicitly state mount is not required
 ];
 
 // Reactive state
 const selectedTest = ref<string>('');
-const filePathInput = ref<string>('/home/user/test.txt'); // Default example
-const dirPathInput = ref<string>('/home/user/new_folder'); // Default example
+const mountNameInput = ref<string>('userdata/'); // Changed default from 'workspace' to 'userdata/'
+const filePathInput = ref<string>('test.txt'); // Default example path relative to mount
+const dirPathInput = ref<string>('new_folder'); // Default example path relative to mount
 const fileContentInput = ref<string>('This is the file content.\nHello World!'); // Default example
 const executionResult = ref<string | null>(null);
 const isErrorResult = ref<boolean>(false);
@@ -86,6 +93,8 @@ const selectedTestInfo = computed(() => {
 // Computed property to check if the execute button should be enabled
 const canExecuteTest = computed(() => {
   if (!selectedTestInfo.value) return false;
+  // Check mount requirement first
+  if (selectedTestInfo.value.requiresMount && !mountNameInput.value) return false;
   if (selectedTestInfo.value.requiresFilePath && !filePathInput.value) return false;
   if (selectedTestInfo.value.requiresDirPath && !dirPathInput.value) return false;
   // Content can technically be empty for writeFile, so we don't check it here
@@ -100,29 +109,37 @@ const executeTest = async () => {
   isErrorResult.value = false;
 
   const test = selectedTestInfo.value.value;
+  const mountName = mountNameInput.value; // Get the mount name
   let result: any;
 
   try {
     switch (test) {
       case 'readFile':
-        result = await readFile(filePathInput.value);
+        // Pass mountName as the first argument
+        result = await readFile(mountName, filePathInput.value);
         break;
       case 'writeFile':
-        result = await writeFile(filePathInput.value, fileContentInput.value);
+        // Pass mountName as the first argument
+        result = await writeFile(mountName, filePathInput.value, fileContentInput.value);
         break;
       case 'deleteFile':
-        result = await deleteFile(filePathInput.value);
+        // Pass mountName as the first argument
+        result = await deleteFile(mountName, filePathInput.value);
         break;
       case 'listDirectory':
-        result = await listDirectory(dirPathInput.value);
+        // Pass mountName as the first argument
+        result = await listDirectory(mountName, dirPathInput.value);
         break;
       case 'createDirectory':
-        result = await createDirectory(dirPathInput.value);
+        // Pass mountName as the first argument
+        result = await createDirectory(mountName, dirPathInput.value);
         break;
       case 'deleteDirectory':
-        result = await deleteDirectory(dirPathInput.value);
+        // Pass mountName as the first argument
+        result = await deleteDirectory(mountName, dirPathInput.value);
         break;
       case 'getMounts':
+        // getMounts does not require mountName
         result = await getMounts();
         break;
       default:
@@ -175,6 +192,10 @@ h4 {
   flex-shrink: 0; /* Prevent label from shrinking */
 }
 
+.control-group {
+  margin-bottom: 12px; /* Add some space between input groups */
+}
+
 .control-group label {
   display: block;
   margin-bottom: 4px;
@@ -209,15 +230,9 @@ textarea {
   flex-shrink: 0; /* Prevent shrinking */
 }
 
-.preview-section, .result-section {
-  margin-top: 20px;
-  background-color: #fff;
-  padding: 12px;
-  border: 1px solid #eee;
-  border-radius: 4px;
-}
+/* Removed preview-section styles as it's not present */
 
-.preview-content pre, .result-section pre {
+.result-section pre { /* Adjusted selector */
   background-color: #f0f0f0;
   padding: 10px;
   border-radius: 4px;

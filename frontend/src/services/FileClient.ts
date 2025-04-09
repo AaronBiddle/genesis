@@ -12,9 +12,9 @@ const encodeParams = (params: Record<string, string>): string => {
 
 // --- File System Operations ---
 
-export const readFile = async (filePath: string): Promise<string> => {
+export const readFile = async (mountName: string, filePath: string): Promise<string> => {
   try {
-    const params = encodeParams({ path: filePath });
+    const params = encodeParams({ mount: mountName, path: filePath });
     const response = await get(`${FS_PATH}/read?${params}`);
 
     if (!response.ok) {
@@ -30,10 +30,9 @@ export const readFile = async (filePath: string): Promise<string> => {
   }
 };
 
-export const writeFile = async (filePath: string, content: string): Promise<any> => {
+export const writeFile = async (mountName: string, filePath: string, content: string): Promise<any> => {
   try {
-    // Assuming the backend expects path and content in the JSON body for POST
-    const response = await post(`${FS_PATH}/write`, { path: filePath, content });
+    const response = await post(`${FS_PATH}/write`, { mount: mountName, path: filePath, content });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -47,9 +46,9 @@ export const writeFile = async (filePath: string, content: string): Promise<any>
   }
 };
 
-export const deleteFile = async (filePath: string): Promise<any> => {
+export const deleteFile = async (mountName: string, filePath: string): Promise<any> => {
   try {
-    const params = encodeParams({ path: filePath });
+    const params = encodeParams({ mount: mountName, path: filePath });
     const response = await del(`${FS_PATH}/delete?${params}`);
 
     if (!response.ok) {
@@ -64,10 +63,9 @@ export const deleteFile = async (filePath: string): Promise<any> => {
   }
 };
 
-export const createDirectory = async (dirPath: string): Promise<any> => {
+export const createDirectory = async (mountName: string, dirPath: string): Promise<any> => {
   try {
-    // Assuming backend expects path and type in JSON body for PUT/POST
-    const response = await put(`${FS_PATH}/create_dir`, { path: dirPath, type: 'directory' });
+    const response = await put(`${FS_PATH}/create_dir`, { mount: mountName, path: dirPath, type: 'directory' });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -81,10 +79,9 @@ export const createDirectory = async (dirPath: string): Promise<any> => {
   }
 };
 
-export const listDirectory = async (dirPath: string): Promise<any> => {
+export const listDirectory = async (mountName: string, dirPath: string): Promise<any> => {
   try {
-    // Assuming listing is GET with the directory path as a query parameter
-    const params = encodeParams({ path: dirPath });
+    const params = encodeParams({ mount: mountName, path: dirPath });
     const response = await get(`${FS_PATH}/list_dir?${params}`);
 
     if (!response.ok) {
@@ -100,10 +97,9 @@ export const listDirectory = async (dirPath: string): Promise<any> => {
   }
 };
 
-export const deleteDirectory = async (dirPath: string): Promise<any> => {
+export const deleteDirectory = async (mountName: string, dirPath: string): Promise<any> => {
   try {
-    // Assuming deleting a directory is DELETE with the path as a query parameter
-    const params = encodeParams({ path: dirPath });
+    const params = encodeParams({ mount: mountName, path: dirPath });
     const response = await del(`${FS_PATH}/delete_dir?${params}`);
 
     if (!response.ok) {
