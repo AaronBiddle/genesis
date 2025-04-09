@@ -41,10 +41,11 @@
       </button>
     </div>
 
-    <div v-if="executionResult" class="result-section">
+    <!-- Result Area (no longer in a separate bordered box) -->
+    <div v-if="executionResult" class="result-container">
        <h4>Execution Result/Status</h4>
-       <pre :class="{ 'error-result': isErrorResult }">{{ executionResult }}</pre>
-    </div>
+        <pre :class="{ 'error-result': isErrorResult }">{{ executionResult }}</pre>
+     </div>
 
   </div>
 </template>
@@ -191,8 +192,9 @@ textarea {
   min-height: 80px;
 }
 
-.inputs-section {
+.inputs-section { /* This section should not grow */
   margin-top: 16px;
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
 .preview-section, .result-section {
@@ -237,5 +239,34 @@ textarea {
 .execute-button:disabled {
   background-color: #b0bec5;
   cursor: not-allowed;
+}
+
+/* New container for results to manage flex growth */
+.result-container {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* Allow this container to fill remaining space */
+  min-height: 0; /* Crucial for flex-grow in column layout */
+}
+
+/* Style for the result <pre> block */
+.result-container pre {
+  background-color: #ffffff; /* White background */
+  padding: 10px;
+  border: 1px solid #eee; /* Add border */
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-y: auto; /* Scroll only if needed */
+  margin-top: 4px;
+  flex-grow: 1; /* Allow pre to fill the result-container */
+  min-height: 0; /* Prevent shrinking */
+}
+
+/* Error styling for the result <pre> block */
+.result-container pre.error-result {
+    background-color: #ffebee;
+    color: #c62828;
 }
 </style> 
