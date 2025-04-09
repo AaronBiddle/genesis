@@ -2,8 +2,8 @@
   <div class="file-service-tester">
     <h2>File Service Tester</h2>
 
-    <!-- Test Selection -->
-    <div class="control-group">
+    <!-- Test Selection & Execution Row -->
+    <div class="test-selection-row">
       <label for="test-select">Select Test:</label>
       <select id="test-select" v-model="selectedTest" class="test-select">
         <option disabled value="">Please select a test</option>
@@ -11,11 +11,13 @@
           {{ test.name }}
         </option>
       </select>
+      <button @click="executeTest" :disabled="!canExecuteTest" class="execute-button">
+        Test
+      </button>
     </div>
 
     <!-- Input Fields based on selected test -->
-    <div v-if="selectedTestInfo" class="inputs-section">
-      <h4>Parameters</h4>
+    <div v-if="selectedTestInfo" class="inputs-section">      
       
       <!-- File Path Input -->
       <div v-if="selectedTestInfo.requiresFilePath" class="control-group">
@@ -34,11 +36,6 @@
         <label for="file-content">File Content:</label>
         <textarea id="file-content" v-model="fileContentInput" rows="5"></textarea>
       </div>
-
-      <!-- Execute Button (moved here) -->
-      <button @click="executeTest" :disabled="!canExecuteTest" class="execute-button">
-        Execute {{ selectedTestInfo.name }}
-      </button>
     </div>
 
     <!-- Result Area (no longer in a separate bordered box) -->
@@ -165,8 +162,17 @@ h4 {
   color: #555;
 }
 
-.control-group {
+/* New style for the row containing dropdown and button */
+.test-selection-row {
+  display: flex;
+  align-items: center; /* Vertically align items */
+  gap: 8px; /* Space between dropdown and button */
   margin-bottom: 12px;
+}
+
+.test-selection-row label {
+  /* margin-bottom: 0; Remove bottom margin if label is in the row */
+  flex-shrink: 0; /* Prevent label from shrinking */
 }
 
 .control-group label {
@@ -185,6 +191,12 @@ textarea {
   border-radius: 4px;
   font-size: 14px;
   box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+/* Adjust test-select width to allow space for the button */
+.test-select {
+  flex-grow: 1; /* Allow dropdown to take available space */
+  /* Remove width: 100% if it was set previously */
 }
 
 textarea {
@@ -230,6 +242,7 @@ textarea {
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
+  flex-shrink: 0; /* Prevent button from shrinking */
 }
 
 .execute-button:hover {
