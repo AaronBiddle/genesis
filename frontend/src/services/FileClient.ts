@@ -120,7 +120,14 @@ export const deleteDirectory = async (dirPath: string): Promise<any> => {
 
 // --- New Function for Getting Mounts ---
 
-export const getMounts = async (): Promise<string[]> => {
+// Define the structure for mount information
+export interface MountInfo {
+  name: string;
+  path: string;
+  access: 'readonly' | 'readwrite'; // Assuming these are the possible values
+}
+
+export const getMounts = async (): Promise<MountInfo[]> => {
   try {
     // Assuming mounts endpoint is at FS_PATH/mounts
     const response = await get(`${FS_PATH}/mounts`);
@@ -130,14 +137,24 @@ export const getMounts = async (): Promise<string[]> => {
       throw new Error(`HTTP error ${response.status} (${response.statusText}): ${errorText}`);
     }
 
-    const data = await response.json(); // Assuming backend returns JSON list of strings
+    const data = await response.json(); // Assuming backend returns JSON list of mount objects
 
-    // Basic validation (still useful for successful responses)
-    if (!Array.isArray(data) || !data.every(item => typeof item === 'string')) {
-      // Keep this validation for the case where the server returns 200 OK but with wrong data format
+    // Updated validation for the MountInfo structure
+    if (
+      !Array.isArray(data) ||
+      !data.every(
+        (item) =>
+          typeof item === 'object' &&
+          item !== null &&
+          typeof item.name === 'string' &&
+          typeof item.path === 'string' &&
+          (item.access === 'readonly' || item.access === 'readwrite') // Check access validity
+      )
+    ) {
+      console.error('Invalid mount data format received:', data); // Log the problematic data
       throw new Error('Invalid mount data format received from server');
     }
-    return data;
+    return data as MountInfo[]; // Cast to the new type
   } catch (err: any) {
     console.error('FileClient: Error getting mounts:', err);
     throw new Error(err.message || 'Failed to get mounts. Is the backend server running?');
