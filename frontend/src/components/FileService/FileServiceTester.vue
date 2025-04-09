@@ -34,26 +34,8 @@
         <label for="file-content">File Content:</label>
         <textarea id="file-content" v-model="fileContentInput" rows="5"></textarea>
       </div>
-    </div>
 
-    <!-- Preview Section -->
-    <div v-if="selectedTestInfo" class="preview-section">
-      <h4>Parameters to be Sent</h4>
-      <div class="preview-content">
-        <div v-if="selectedTestInfo.requiresFilePath">
-          <strong>File Path:</strong> {{ filePathInput || '(empty)' }}
-        </div>
-        <div v-if="selectedTestInfo.requiresDirPath">
-          <strong>Directory Path:</strong> {{ dirPathInput || '(empty)' }}
-        </div>
-        <div v-if="selectedTestInfo.requiresContent">
-          <strong>Content:</strong>
-          <pre class="content-preview">{{ fileContentInput || '(empty)' }}</pre>
-        </div>
-        <div v-if="!selectedTestInfo.requiresFilePath && !selectedTestInfo.requiresDirPath && !selectedTestInfo.requiresContent">
-          No parameters required for {{ selectedTestInfo.name }}.
-        </div>
-      </div>
+      <!-- Execute Button (moved here) -->
       <button @click="executeTest" :disabled="!canExecuteTest" class="execute-button">
         Execute {{ selectedTestInfo.name }}
       </button>
@@ -238,7 +220,6 @@ textarea {
 }
 
 .execute-button {
-  margin-top: 12px;
   padding: 10px 15px;
   background-color: #2188ff;
   color: white;
