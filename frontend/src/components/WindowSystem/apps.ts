@@ -24,6 +24,14 @@ export interface App {
 
 export const apps: App[] = [  
   {
+    id: "document-editor",
+    title: "Document Editor",
+    iconId: "document", // Assuming 'docs' icon exists
+    appComponent: DocumentEditor,
+    initialWidth: 450,
+    initialHeight: 500,
+  },
+  {
     id: "icons",
     title: "Icons",
     iconId: "icons",
@@ -31,14 +39,7 @@ export const apps: App[] = [
     iconColor: 'text-blue-500', // Tailwind class
     titleBarColor: 'bg-blue-200', // Tailwind class
     titleColor: 'text-gray-800', // Tailwind class
-  },
-  {
-    id: "document-editor",
-    title: "Document Editor",
-    iconId: "document", // Assuming 'docs' icon exists
-    appComponent: DocumentEditor,
-    initialWidth: 450,
-    initialHeight: 500,
+    category: 'Utilities',
   },
   {
     id: "http-inspector",
@@ -50,7 +51,7 @@ export const apps: App[] = [
     titleColor: 'text-purple-900', // Dark purple for the title text
     initialWidth: 700, // A bit wider for the log display
     initialHeight: 600, // Taller to show more log entries
-    category: 'Development' // Categorize as a development tool
+    category: 'Utilities',
   },
   {
     id: "file-service-tester",
@@ -62,6 +63,6 @@ export const apps: App[] = [
     titleColor: 'text-green-900',
     initialWidth: 500,
     initialHeight: 550,
-    category: 'Development'
+    category: 'Utilities',
   }
 ];
