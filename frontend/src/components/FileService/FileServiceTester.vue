@@ -63,7 +63,8 @@ import {
   deleteFile,
   listDirectory,
   createDirectory,
-  deleteDirectory
+  deleteDirectory,
+  getMounts
 } from '@/services/FileClient';
 
 // Define available tests
@@ -74,6 +75,7 @@ const availableTests = [
   { name: 'List Directory', value: 'listDirectory', requiresDirPath: true },
   { name: 'Create Directory', value: 'createDirectory', requiresDirPath: true },
   { name: 'Delete Directory', value: 'deleteDirectory', requiresDirPath: true },
+  { name: 'Get Mounts', value: 'getMounts' },
 ];
 
 // Reactive state
@@ -148,6 +150,9 @@ const executeTest = async () => {
         break;
       case 'deleteDirectory':
         result = await deleteDirectory(dirPathInput.value);
+        break;
+      case 'getMounts':
+        result = await getMounts();
         break;
       default:
         throw new Error('Invalid test selected');
