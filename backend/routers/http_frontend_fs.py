@@ -24,11 +24,6 @@ class PathPayload(BaseModel):
 class WriteFilePayload(PathPayload):
     content: str = Field(..., description="The content to write to the file.")
 
-class CreateDirectoryPayload(BaseModel):
-    path: str = Field(..., description="The user-facing path (e.g., userdata/new_dir/) to create.")
-
-# --- Helper Functions Removed (moved to service) ---
-
 # --- API Endpoints (Simplified to call service layer) ---
 
 @router.get("/read", response_model=str)

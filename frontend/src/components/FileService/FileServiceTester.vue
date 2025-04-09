@@ -66,13 +66,13 @@ import {
 
 // Define available tests with mount requirement
 const availableTests = [
-  { name: 'Read File', value: 'readFile', requiresMount: true, requiresFilePath: true },
-  { name: 'Write File', value: 'writeFile', requiresMount: true, requiresFilePath: true, requiresContent: true },
+  { name: 'Get Mounts', value: 'getMounts', requiresMount: false },
+  { name: 'Write File', value: 'writeFile', requiresMount: true, requiresFilePath: true, requiresContent: true }, 
+  { name: 'Read File', value: 'readFile', requiresMount: true, requiresFilePath: true },  
   { name: 'Delete File', value: 'deleteFile', requiresMount: true, requiresFilePath: true },
   { name: 'List Directory', value: 'listDirectory', requiresMount: true, requiresDirPath: true },
   { name: 'Create Directory', value: 'createDirectory', requiresMount: true, requiresDirPath: true },
-  { name: 'Delete Directory', value: 'deleteDirectory', requiresMount: true, requiresDirPath: true },
-  { name: 'Get Mounts', value: 'getMounts', requiresMount: false }, // Explicitly state mount is not required
+  { name: 'Delete Directory', value: 'deleteDirectory', requiresMount: true, requiresDirPath: true },  
 ];
 
 // Reactive state
