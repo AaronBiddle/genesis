@@ -36,7 +36,10 @@
 
     <!-- Content Area -->
     <div class="content-area flex-grow bg-white p-2 overflow-auto">
-      <component :is="windowData.appComponent" />
+      <component 
+        :is="windowData.appComponent" 
+        @cancelled="handleClose" 
+      />
     </div>
 
     <!-- Resize Handles (only if resizable) -->
