@@ -33,8 +33,16 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(http_frontend_echo.router, prefix="/frontend", tags=["Frontend"])
-app.include_router(http_frontend_fs.router) # Include the filesystem router (prefix defined within router)
+app.include_router(
+    http_frontend_echo.router, 
+    prefix="/frontend/echo",  # Define full prefix here
+    tags=["Frontend Echo"]     # Update tag
+)
+app.include_router(
+    http_frontend_fs.router, 
+    prefix="/frontend/fs",    # Define full prefix here
+    tags=["Frontend File System"] # Ensure tag is set
+)
 
 @app.get("/", tags=["Root"])
 def read_root():

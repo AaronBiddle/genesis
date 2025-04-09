@@ -13,10 +13,7 @@ from backend.services import file_operations
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-router = APIRouter(
-    prefix="/frontend/fs",
-    tags=["Frontend File System"],
-)
+router = APIRouter()
 
 # --- Pydantic Models for Request Bodies (keep these for API contract) ---
 
