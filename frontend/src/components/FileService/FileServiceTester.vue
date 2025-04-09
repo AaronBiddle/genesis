@@ -62,7 +62,6 @@ import {
   createDirectory,
   deleteDirectory,
   getMounts,
-  type MountInfo // Changed to type-only import
 } from '@/services/FileClient';
 
 // Define available tests with mount requirement
