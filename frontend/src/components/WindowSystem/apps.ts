@@ -3,6 +3,7 @@ import IconViewer from '@/components/Icons/IconViewer.vue'; // Import IconViewer
 import DocumentEditor from '@/components/DocumentEditor/DocumentEditor.vue'; // Import DocumentEditor
 import HttpInspector from '@/components/HTTP/HttpInspector.vue'; // Import HttpInspector
 import FileServiceTester from '@/components/FileService/FileServiceTester.vue'; // Import FileServiceTester
+import FileManager from '@/components/FileService/FileManager.vue'; // Import FileManager
 
 export interface App {
   id: string; // Unique identifier (e.g., 'text-editor', 'web-browser') - Essential
@@ -63,6 +64,18 @@ export const apps: App[] = [
     titleColor: 'text-green-900',
     initialWidth: 500,
     initialHeight: 550,
+    category: 'Utilities',
+  },
+  {
+    id: "file-manager",
+    title: "File Manager",
+    iconId: "file", // Using file icon
+    appComponent: FileManager,
+    iconColor: 'text-blue-600', // Blue theme
+    titleBarColor: 'bg-blue-200',
+    titleColor: 'text-blue-900',
+    initialWidth: 600,
+    initialHeight: 500,
     category: 'Utilities',
   }
 ];
