@@ -50,7 +50,7 @@
       </div>
       
       <div v-else class="requests-container">
-        <div v-for="(entry, index) in displayedLog" :key="entry.id" class="request-entry" :class="{ 'blocked': entry.status === 'blocked' }">
+        <div v-for="(entry, index) in displayedLog" :key="entry.id" class="request-entry" :class="{ 'blocked': isUnsuccessfulRequest(entry) }">
           <div class="request-header" @click="toggleEntryExpanded(index)">
             <div class="method" :class="entry.method.toLowerCase()">{{ entry.method }}</div>
             <div class="path">{{ entry.path }}</div>
@@ -138,6 +138,12 @@ const previewMode = computed({
 
 // Read-only computed property for the log
 const requestLog = computed(() => httpRequestLog.value);
+
+// Add new computed property to check for unsuccessful requests
+const isUnsuccessfulRequest = (entry: any) => {
+  return entry.status === 'blocked' || 
+         (entry.responseStatus !== undefined && (entry.responseStatus >= 400 || entry.error));
+};
 
 // Track which entries are expanded
 const expandedEntries = ref<Record<number, boolean>>({});

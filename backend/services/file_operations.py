@@ -63,16 +63,44 @@ def resolve_path(mount_name: str, user_path: str) -> Tuple[str, Dict[str, str]]:
     mount_info = validate_mount(mount_name)
     user_path = validate_path(user_path)
     
-    # Construct absolute path
-    abs_path = os.path.abspath(os.path.join(mount_info['path'], user_path)).replace('\\', '/')
+    # If path is empty or just '/', use the mount point path directly
+    if not user_path or user_path == '/':
+        # Ensure the mount path itself ends with a slash for consistency downstream
+        mount_path = mount_info['path']
+        if not mount_path.endswith('/'):
+            mount_path += '/'
+        return mount_path, mount_info
     
-    # Security check: ensure the resolved path is within the mount point
-    if not abs_path.startswith(mount_info['path']):
+    # Construct absolute path and ensure it ends with a slash
+    abs_path = os.path.abspath(os.path.join(mount_info['path'], user_path)).replace('\\', '/')
+    if not abs_path.endswith('/'):
+        abs_path += '/'
+    
+    # Debug logging
+    logger.debug(f"Path resolution debug:")
+    logger.debug(f"  mount_name: {mount_name}")
+    logger.debug(f"  user_path: {user_path}")
+    logger.debug(f"  mount_info['path']: {mount_info['path']}")
+    logger.debug(f"  resolved abs_path: {abs_path}")
+    
+    # Security check: ensure the resolved path starts with the mount path
+    # Use os.path.normpath to handle potential differences like trailing slashes robustly
+    norm_abs_path = os.path.normpath(abs_path)
+    norm_mount_path = os.path.normpath(mount_info['path'])
+    if not norm_abs_path.startswith(norm_mount_path):
+    # Original check (keeping for reference, but normpath is better):
+    # if not abs_path.startswith(mount_info['path']):
+        logger.error(f"Path resolution failed security check:")
+        logger.error(f"  abs_path (norm): {norm_abs_path}")
+        logger.error(f"  mount_path (norm): {norm_mount_path}")
+        logger.error(f"  (Original abs_path: {abs_path})") # Log original for context
+        logger.error(f"  (Original mount_path: {mount_info['path']})") # Log original for context
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid path: Access denied"
         )
     
+    # Return the consistently slashed abs_path
     return abs_path, mount_info
 
 def check_permissions(mount_info: Dict[str, str], required_access: Literal['read', 'write']):

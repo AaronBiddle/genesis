@@ -79,7 +79,7 @@ const availableTests = [
 const selectedTest = ref<string>('');
 const mountNameInput = ref<string>('userdata/'); // Changed default from 'workspace' to 'userdata/'
 const filePathInput = ref<string>('test.txt'); // Default example path relative to mount
-const dirPathInput = ref<string>('new_folder'); // Default example path relative to mount
+const dirPathInput = ref<string>(''); // Changed default from 'new_folder' to empty string
 const fileContentInput = ref<string>('This is the file content.\nHello World!'); // Default example
 const executionResult = ref<string | null>(null);
 const isErrorResult = ref<boolean>(false);
@@ -95,7 +95,8 @@ const canExecuteTest = computed(() => {
   // Check mount requirement first
   if (selectedTestInfo.value.requiresMount && !mountNameInput.value) return false;
   if (selectedTestInfo.value.requiresFilePath && !filePathInput.value) return false;
-  if (selectedTestInfo.value.requiresDirPath && !dirPathInput.value) return false;
+  // Allow empty dirPath for listDirectory, but require it for other directory operations
+  if (selectedTestInfo.value.requiresDirPath && !dirPathInput.value && selectedTestInfo.value.value !== 'listDirectory') return false;
   // Content can technically be empty for writeFile, so we don't check it here
   return true;
 });
@@ -127,7 +128,7 @@ const executeTest = async () => {
         break;
       case 'listDirectory':
         // Pass mountName as the first argument
-        result = await listDirectory(mountName, dirPathInput.value);
+        result = await listDirectory(mountName, dirPathInput.value || ''); // Ensure empty string is passed for root
         break;
       case 'createDirectory':
         // Pass mountName as the first argument
