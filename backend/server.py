@@ -3,7 +3,9 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware # Import CORS middleware
 
-from backend.routers import http_frontend
+from backend.routers import http_frontend_echo
+# Import the new filesystem router
+from backend.routers import http_frontend_fs 
 
 # List of allowed origins (clients that can make requests)
 # Add your frontend development server URL here
@@ -31,7 +33,8 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(http_frontend.router, prefix="/frontend", tags=["Frontend"])
+app.include_router(http_frontend_echo.router, prefix="/frontend", tags=["Frontend"])
+app.include_router(http_frontend_fs.router) # Include the filesystem router (prefix defined within router)
 
 @app.get("/", tags=["Root"])
 def read_root():
