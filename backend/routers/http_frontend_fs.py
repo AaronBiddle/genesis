@@ -27,10 +27,13 @@ class WriteFilePayload(PathPayload):
 # --- API Endpoints (Simplified to call service layer) ---
 
 @router.get("/read", response_model=str)
-async def read_file_endpoint(payload: PathPayload = Body(...)):
+async def read_file_endpoint(
+    mount: str = Query(..., description="The mount point name"),
+    path: str = Query(..., description="The path relative to the mount point")
+):
     """Reads the content of a specified file via the service layer."""
-    logger.info(f"Router received request to read file: {payload.mount}{payload.path}")
-    return file_operations.perform_read_file(payload.mount, payload.path)
+    logger.info(f"Router received request to read file: {mount}{path}")
+    return file_operations.perform_read_file(mount, path)
 
 @router.post("/write", status_code=status.HTTP_201_CREATED)
 async def write_file_endpoint(payload: WriteFilePayload = Body(...)):
@@ -39,10 +42,13 @@ async def write_file_endpoint(payload: WriteFilePayload = Body(...)):
     return file_operations.perform_write_file(payload.mount, payload.path, payload.content)
 
 @router.delete("/delete", status_code=status.HTTP_200_OK)
-async def delete_file_endpoint(payload: PathPayload = Body(...)):
+async def delete_file_endpoint(
+    mount: str = Query(..., description="The mount point name"),
+    path: str = Query(..., description="The path relative to the mount point")
+):
     """Deletes a specified file via the service layer."""
-    logger.info(f"Router received request to delete file: {payload.mount}{payload.path}")
-    return file_operations.perform_delete_file(payload.mount, payload.path)
+    logger.info(f"Router received request to delete file: {mount}{path}")
+    return file_operations.perform_delete_file(mount, path)
 
 @router.put("/create_dir", status_code=status.HTTP_201_CREATED)
 async def create_directory_endpoint(payload: PathPayload = Body(...)):
@@ -57,16 +63,22 @@ class FileSystemItem(BaseModel):
     type: Literal['file', 'directory']
 
 @router.get("/list_dir", response_model=List[FileSystemItem]) 
-async def list_directory_endpoint(payload: PathPayload = Body(...)):
+async def list_directory_endpoint(
+    mount: str = Query(..., description="The mount point name"),
+    path: str = Query(..., description="The path relative to the mount point")
+):
     """Lists the contents of a specified directory via the service layer."""
-    logger.info(f"Router received request to list directory: {payload.mount}{payload.path}")
-    return file_operations.perform_list_directory(payload.mount, payload.path)
+    logger.info(f"Router received request to list directory: {mount}{path}")
+    return file_operations.perform_list_directory(mount, path)
 
 @router.delete("/delete_dir", status_code=status.HTTP_200_OK)
-async def delete_directory_endpoint(payload: PathPayload = Body(...)):
+async def delete_directory_endpoint(
+    mount: str = Query(..., description="The mount point name"),
+    path: str = Query(..., description="The path relative to the mount point")
+):
     """Deletes a specified empty directory via the service layer."""
-    logger.info(f"Router received request to delete directory: {payload.mount}{payload.path}")
-    return file_operations.perform_delete_directory(payload.mount, payload.path)
+    logger.info(f"Router received request to delete directory: {mount}{path}")
+    return file_operations.perform_delete_directory(mount, path)
 
 # Define the response model for mounts based on service output
 class MountPointInfo(BaseModel):
