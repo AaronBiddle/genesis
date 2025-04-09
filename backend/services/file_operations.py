@@ -49,13 +49,17 @@ def validate_mount(mount_name: str) -> Dict[str, str]:
     )
 
 def validate_path(path: str) -> str:
-    """Validates a path to prevent traversal attacks."""
+    """Validates a path to prevent traversal attacks and converts backslashes."""
+    # Removed the explicit rejection of backslashes
+    # if '\\' in path:
+    #     raise HTTPException(...)
+    
     if '..' in path:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Path traversal ('..') is not allowed in paths"
         )
-    # Normalize path separators
+    # Convert all backslashes to forward slashes
     return path.replace('\\', '/')
 
 def resolve_path(mount_name: str, user_path: str) -> Tuple[str, Dict[str, str]]:
@@ -71,10 +75,8 @@ def resolve_path(mount_name: str, user_path: str) -> Tuple[str, Dict[str, str]]:
             mount_path += '/'
         return mount_path, mount_info
     
-    # Construct absolute path and ensure it ends with a slash
-    abs_path = os.path.abspath(os.path.join(mount_info['path'], user_path)).replace('\\', '/')
-    if not abs_path.endswith('/'):
-        abs_path += '/'
+    # Construct absolute path
+    abs_path = os.path.abspath(os.path.join(mount_info['path'], user_path)).replace('\\\\', '/')
     
     # Debug logging
     logger.debug(f"Path resolution debug:")
@@ -100,7 +102,7 @@ def resolve_path(mount_name: str, user_path: str) -> Tuple[str, Dict[str, str]]:
             detail="Invalid path: Access denied"
         )
     
-    # Return the consistently slashed abs_path
+    # Return the absolute path (without forced trailing slash)
     return abs_path, mount_info
 
 def check_permissions(mount_info: Dict[str, str], required_access: Literal['read', 'write']):
@@ -167,6 +169,7 @@ def perform_write_file(mount_name: str, user_path: str, content: str) -> Dict[st
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid path: Parent is not a directory for {user_path}")
 
     try:
+        logger.info(f"Attempting to open file for writing: {abs_path}") # Log the path exactly as passed to open()
         with open(abs_path, 'w', encoding='utf-8') as f:
             f.write(content)
         logger.info(f"Successfully wrote file: {abs_path}")
