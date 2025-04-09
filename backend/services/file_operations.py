@@ -38,42 +38,42 @@ for mp in MOUNT_POINTS:
 
 # --- Helper Functions ---
 
-def resolve_path(user_path: str) -> Tuple[str, Dict[str, str], Literal['read', 'write']]:
-    """
-    Resolves a user-provided path (e.g., 'userdata/myfile.txt') to an absolute path,
-    validates it against MOUNT_POINTS, checks for path traversal, and determines access.
-
-    Returns:
-        Tuple[str, Dict[str, str], Literal['read', 'write']]: 
-            (absolute_resolved_path, matched_mount_point_info, determined_access_level)
-
-    Raises:
-        HTTPException: If path is invalid, outside mount points, or involves traversal.
-    """
-    normalized_user_path = user_path.replace('\\', '/')
-
-    matched_mount = None
+def validate_mount(mount_name: str) -> Dict[str, str]:
+    """Validates a mount point name and returns its configuration."""
     for mp in MOUNT_POINTS:
-        if normalized_user_path.startswith(mp['name']):
-            matched_mount = mp
-            break
+        if mp['name'] == mount_name:
+            return mp
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=f"Invalid mount point: {mount_name}. Valid mounts are: {[mp['name'] for mp in MOUNT_POINTS]}"
+    )
 
-    if not matched_mount:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Path does not start with a valid mount point prefix (e.g., {', '.join([mp['name'] for mp in MOUNT_POINTS])}).")
+def validate_path(path: str) -> str:
+    """Validates a path to prevent traversal attacks."""
+    if '..' in path:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Path traversal ('..') is not allowed in paths"
+        )
+    # Normalize path separators
+    return path.replace('\\', '/')
 
-    # Construct the potential absolute path
-    relative_part = normalized_user_path[len(matched_mount['name']):]
-    potential_abs_path = os.path.abspath(os.path.join(matched_mount['path'], relative_part)).replace('\\', '/')
-
-    # Security Check: Ensure the resolved path is still within the mount point base path
-    # This prevents traversal attacks like "userdata/../sensitive_file"
-    if not potential_abs_path.startswith(matched_mount['path']):
-         # Log the attempt for security auditing
-        logger.warning(f"Potential path traversal attempt: User path '{user_path}' resolved outside mount '{matched_mount['name']}' to '{potential_abs_path}'")
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid path: Access denied.")
-
-    logger.debug(f"Resolved path '{user_path}' to '{potential_abs_path}' within mount '{matched_mount['name']}'")
-    return potential_abs_path, matched_mount
+def resolve_path(mount_name: str, user_path: str) -> Tuple[str, Dict[str, str]]:
+    """Resolves a user path to an absolute path and validates it."""
+    mount_info = validate_mount(mount_name)
+    user_path = validate_path(user_path)
+    
+    # Construct absolute path
+    abs_path = os.path.abspath(os.path.join(mount_info['path'], user_path)).replace('\\', '/')
+    
+    # Security check: ensure the resolved path is within the mount point
+    if not abs_path.startswith(mount_info['path']):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid path: Access denied"
+        )
+    
+    return abs_path, mount_info
 
 def check_permissions(mount_info: Dict[str, str], required_access: Literal['read', 'write']):
     """
@@ -95,9 +95,9 @@ def get_mount_info() -> List[Dict[str, str]]:
     # Return a copy or specific fields if needed, e.g., don't expose absolute paths directly if sensitive
     return MOUNT_POINTS # For now, return the full info
 
-def perform_read_file(user_path: str) -> str:
+def perform_read_file(mount_name: str, user_path: str) -> str:
     """Reads a file after validating the path and permissions."""
-    abs_path, mount_info = resolve_path(user_path)
+    abs_path, mount_info = resolve_path(mount_name, user_path)
     check_permissions(mount_info, 'read')
 
     if not os.path.exists(abs_path):
@@ -114,9 +114,9 @@ def perform_read_file(user_path: str) -> str:
         logger.error(f"Error reading file {abs_path} (user path: {user_path}): {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to read file: {e}")
 
-def perform_write_file(user_path: str, content: str) -> Dict[str, str]:
+def perform_write_file(mount_name: str, user_path: str, content: str) -> Dict[str, str]:
     """Writes to a file after validating the path and permissions."""
-    abs_path, mount_info = resolve_path(user_path)
+    abs_path, mount_info = resolve_path(mount_name, user_path)
     check_permissions(mount_info, 'write')
 
     # Ensure parent directory exists
@@ -124,7 +124,7 @@ def perform_write_file(user_path: str, content: str) -> Dict[str, str]:
     if not os.path.exists(parent_dir):
          try:
              # Check if creating the parent is within the mount point (redundant but safe)
-             _, parent_mount_info = resolve_path(os.path.dirname(user_path) + '/') # Add slash to treat as dir path
+             _, parent_mount_info = resolve_path(mount_name, os.path.dirname(user_path) + '/') # Add slash to treat as dir path
              if parent_mount_info['name'] != mount_info['name']:
                  raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot create parent directory across mount points.")
              check_permissions(parent_mount_info, 'write')
@@ -147,9 +147,9 @@ def perform_write_file(user_path: str, content: str) -> Dict[str, str]:
         logger.error(f"Error writing file {abs_path} (user path: {user_path}): {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to write file: {e}")
 
-def perform_delete_file(user_path: str) -> Dict[str, str]:
+def perform_delete_file(mount_name: str, user_path: str) -> Dict[str, str]:
     """Deletes a file after validating the path and permissions."""
-    abs_path, mount_info = resolve_path(user_path)
+    abs_path, mount_info = resolve_path(mount_name, user_path)
     check_permissions(mount_info, 'write')
 
     if not os.path.exists(abs_path):
@@ -165,13 +165,13 @@ def perform_delete_file(user_path: str) -> Dict[str, str]:
         logger.error(f"Error deleting file {abs_path} (user path: {user_path}): {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to delete file: {e}")
 
-def perform_create_directory(user_path: str) -> Dict[str, str]:
+def perform_create_directory(mount_name: str, user_path: str) -> Dict[str, str]:
     """Creates a directory after validating the path and permissions."""
     # Ensure user path ends with / for consistency, helps resolve_path logic
     if not user_path.endswith('/'):
         user_path += '/'
         
-    abs_path, mount_info = resolve_path(user_path)
+    abs_path, mount_info = resolve_path(mount_name, user_path)
     check_permissions(mount_info, 'write')
 
     if os.path.exists(abs_path) and not os.path.isdir(abs_path):
@@ -185,12 +185,12 @@ def perform_create_directory(user_path: str) -> Dict[str, str]:
         logger.error(f"Error creating directory {abs_path} (user path: {user_path}): {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to create directory: {e}")
 
-def perform_list_directory(user_path: str) -> List[Dict[str, str]]:
+def perform_list_directory(mount_name: str, user_path: str) -> List[Dict[str, str]]:
     """Lists directory contents after validating the path and permissions."""
     if not user_path.endswith('/'):
         user_path += '/'
         
-    abs_path, mount_info = resolve_path(user_path)
+    abs_path, mount_info = resolve_path(mount_name, user_path)
     check_permissions(mount_info, 'read')
 
     if not os.path.exists(abs_path):
@@ -216,13 +216,13 @@ def perform_list_directory(user_path: str) -> List[Dict[str, str]]:
         logger.error(f"Error listing directory {abs_path} (user path: {user_path}): {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to list directory: {e}")
 
-def perform_delete_directory(user_path: str) -> Dict[str, str]:
+def perform_delete_directory(mount_name: str, user_path: str) -> Dict[str, str]:
     """Deletes an empty directory after validating the path and permissions."""
     # Note: For non-empty deletion, consider adding a recursive=True flag and using shutil.rmtree
     if not user_path.endswith('/'):
         user_path += '/'
         
-    abs_path, mount_info = resolve_path(user_path)
+    abs_path, mount_info = resolve_path(mount_name, user_path)
     check_permissions(mount_info, 'write')
 
     if not os.path.exists(abs_path):

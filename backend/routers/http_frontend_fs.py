@@ -15,10 +15,13 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# --- Pydantic Models for Request Bodies (keep these for API contract) ---
+# --- Pydantic Models for Request Bodies ---
 
-class WriteFilePayload(BaseModel):
-    path: str = Field(..., description="The user-facing path (e.g., userdata/file.txt) to write.")
+class PathPayload(BaseModel):
+    mount: str = Field(..., description="The mount point name (e.g., 'userdata/')")
+    path: str = Field(..., description="The path relative to the mount point (e.g., 'myfile.txt')")
+
+class WriteFilePayload(PathPayload):
     content: str = Field(..., description="The content to write to the file.")
 
 class CreateDirectoryPayload(BaseModel):
@@ -29,32 +32,28 @@ class CreateDirectoryPayload(BaseModel):
 # --- API Endpoints (Simplified to call service layer) ---
 
 @router.get("/read", response_model=str)
-async def read_file_endpoint(path: str = Query(..., description="User-facing path of the file to read (e.g., userdata/file.txt).")):
+async def read_file_endpoint(payload: PathPayload = Body(...)):
     """Reads the content of a specified file via the service layer."""
-    logger.info(f"Router received request to read file: {path}")
-    # Delegate validation and execution to the service layer
-    return file_operations.perform_read_file(path)
+    logger.info(f"Router received request to read file: {payload.mount}{payload.path}")
+    return file_operations.perform_read_file(payload.mount, payload.path)
 
 @router.post("/write", status_code=status.HTTP_201_CREATED)
 async def write_file_endpoint(payload: WriteFilePayload = Body(...)):
     """Writes content to a specified file via the service layer."""
-    logger.info(f"Router received request to write file: {payload.path}")
-    # Delegate validation and execution to the service layer
-    return file_operations.perform_write_file(payload.path, payload.content)
+    logger.info(f"Router received request to write file: {payload.mount}{payload.path}")
+    return file_operations.perform_write_file(payload.mount, payload.path, payload.content)
 
 @router.delete("/delete", status_code=status.HTTP_200_OK)
-async def delete_file_endpoint(path: str = Query(..., description="User-facing path of the file to delete.")):
+async def delete_file_endpoint(payload: PathPayload = Body(...)):
     """Deletes a specified file via the service layer."""
-    logger.info(f"Router received request to delete file: {path}")
-    # Delegate validation and execution to the service layer
-    return file_operations.perform_delete_file(path)
+    logger.info(f"Router received request to delete file: {payload.mount}{payload.path}")
+    return file_operations.perform_delete_file(payload.mount, payload.path)
 
 @router.put("/create_dir", status_code=status.HTTP_201_CREATED)
-async def create_directory_endpoint(payload: CreateDirectoryPayload = Body(...)):
+async def create_directory_endpoint(payload: PathPayload = Body(...)):
     """Creates a new directory via the service layer."""
-    logger.info(f"Router received request to create directory: {payload.path}")
-    # Delegate validation and execution to the service layer
-    return file_operations.perform_create_directory(payload.path)
+    logger.info(f"Router received request to create directory: {payload.mount}{payload.path}")
+    return file_operations.perform_create_directory(payload.mount, payload.path)
 
 # Define the response model for list_directory based on service output
 class FileSystemItem(BaseModel):
@@ -63,18 +62,16 @@ class FileSystemItem(BaseModel):
     type: Literal['file', 'directory']
 
 @router.get("/list_dir", response_model=List[FileSystemItem]) 
-async def list_directory_endpoint(path: str = Query(..., description="User-facing path of the directory to list.")):
+async def list_directory_endpoint(payload: PathPayload = Body(...)):
     """Lists the contents of a specified directory via the service layer."""
-    logger.info(f"Router received request to list directory: {path}")
-    # Delegate validation and execution to the service layer
-    return file_operations.perform_list_directory(path)
+    logger.info(f"Router received request to list directory: {payload.mount}{payload.path}")
+    return file_operations.perform_list_directory(payload.mount, payload.path)
 
 @router.delete("/delete_dir", status_code=status.HTTP_200_OK)
-async def delete_directory_endpoint(path: str = Query(..., description="User-facing path of the directory to delete.")):
+async def delete_directory_endpoint(payload: PathPayload = Body(...)):
     """Deletes a specified empty directory via the service layer."""
-    logger.info(f"Router received request to delete directory: {path}")
-    # Delegate validation and execution to the service layer
-    return file_operations.perform_delete_directory(path)
+    logger.info(f"Router received request to delete directory: {payload.mount}{payload.path}")
+    return file_operations.perform_delete_directory(payload.mount, payload.path)
 
 # Define the response model for mounts based on service output
 class MountPointInfo(BaseModel):
