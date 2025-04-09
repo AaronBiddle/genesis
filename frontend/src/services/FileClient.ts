@@ -15,7 +15,7 @@ const encodeParams = (params: Record<string, string>): string => {
 export const readFile = async (filePath: string): Promise<string> => {
   try {
     const params = encodeParams({ path: filePath });
-    const response = await get(`${FS_PATH}?${params}`);
+    const response = await get(`${FS_PATH}/read?${params}`);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -33,7 +33,7 @@ export const readFile = async (filePath: string): Promise<string> => {
 export const writeFile = async (filePath: string, content: string): Promise<any> => {
   try {
     // Assuming the backend expects path and content in the JSON body for POST
-    const response = await post(FS_PATH, { path: filePath, content });
+    const response = await post(`${FS_PATH}/write`, { path: filePath, content });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -50,7 +50,7 @@ export const writeFile = async (filePath: string, content: string): Promise<any>
 export const deleteFile = async (filePath: string): Promise<any> => {
   try {
     const params = encodeParams({ path: filePath });
-    const response = await del(`${FS_PATH}?${params}`); // Using path in query param for DELETE
+    const response = await del(`${FS_PATH}/delete?${params}`);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -67,8 +67,7 @@ export const deleteFile = async (filePath: string): Promise<any> => {
 export const createDirectory = async (dirPath: string): Promise<any> => {
   try {
     // Assuming backend expects path and type in JSON body for PUT/POST
-    // Using PUT here, but could be POST depending on backend logic
-    const response = await put(FS_PATH, { path: dirPath, type: 'directory' });
+    const response = await put(`${FS_PATH}/create_dir`, { path: dirPath, type: 'directory' });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -85,9 +84,8 @@ export const createDirectory = async (dirPath: string): Promise<any> => {
 export const listDirectory = async (dirPath: string): Promise<any> => {
   try {
     // Assuming listing is GET with the directory path as a query parameter
-    // Added a specific sub-path '/list' assuming backend routing
     const params = encodeParams({ path: dirPath });
-    const response = await get(`${FS_PATH}/list?${params}`);
+    const response = await get(`${FS_PATH}/list_dir?${params}`);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -105,9 +103,8 @@ export const listDirectory = async (dirPath: string): Promise<any> => {
 export const deleteDirectory = async (dirPath: string): Promise<any> => {
   try {
     // Assuming deleting a directory is DELETE with the path as a query parameter
-    // Added a specific sub-path '/dir' assuming backend routing
     const params = encodeParams({ path: dirPath });
-    const response = await del(`${FS_PATH}/dir?${params}`);
+    const response = await del(`${FS_PATH}/delete_dir?${params}`);
 
     if (!response.ok) {
       const errorText = await response.text();
