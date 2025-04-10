@@ -102,8 +102,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import {
-  readFile,
-  writeFile,
   deleteFile,
   listDirectory,
   createDirectory,
@@ -117,10 +115,6 @@ const props = defineProps({
     type: String,
     default: 'none', // 'open', 'save', 'none'
     validator: (value: string) => ['open', 'save', 'none'].includes(value)
-  },
-  initialContent: {
-    type: String,
-    default: ''
   },
   parentApplication: {
     type: Boolean,
@@ -297,20 +291,7 @@ const deleteItem = async (item: { name: string, isDirectory: boolean }) => {
 };
 
 const openFile = async (fileName: string) => {
-  try {
-    const filePath = currentPath.value 
-      ? `${currentPath.value}/${fileName}` 
-      : fileName;
-    
-    const content = await readFile(selectedMount.value, filePath);
-    emit('file-opened', {
-      content,
-      path: filePath,
-      mount: selectedMount.value
-    });
-  } catch (err: any) {
-    error.value = `Failed to open file: ${err.message}`;
-  }
+  console.log('openFile called with fileName:', fileName);
 };
 
 const openSelectedFile = () => {
@@ -323,28 +304,7 @@ const openSelectedFile = () => {
 };
 
 const saveFile = async () => {
-  if (!saveFileName.value.trim()) {
-    error.value = 'Please enter a file name';
-    return;
-  }
-  
-  try {
-    const filePath = currentPath.value 
-      ? `${currentPath.value}/${saveFileName.value}` 
-      : saveFileName.value;
-    
-    await writeFile(selectedMount.value, filePath, props.initialContent);
-    showSaveDialog.value = false;
-    
-    emit('file-saved', {
-      path: filePath,
-      mount: selectedMount.value
-    });
-    
-    loadCurrentDirectory();
-  } catch (err: any) {
-    error.value = `Failed to save file: ${err.message}`;
-  }
+  console.log('saveFile called');
 };
 
 const emitCancel = () => {
