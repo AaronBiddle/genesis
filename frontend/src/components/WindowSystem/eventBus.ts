@@ -1,20 +1,20 @@
 import { reactive } from 'vue';
 
 interface ListenerMap {
-  [windowId: string]: Function[];
+  [windowId: number]: Function[];
 }
 
 const eventBus = reactive({
   listeners: {} as ListenerMap, // Store listeners for each window ID
 
-  subscribe(windowId: string, callback: Function) {
+  subscribe(windowId: number, callback: Function) {
     if (!this.listeners[windowId]) {
       this.listeners[windowId] = [];
     }
     this.listeners[windowId].push(callback);
   },
 
-  unsubscribe(windowId: string, callback: Function) {
+  unsubscribe(windowId: number, callback: Function) {
     if (this.listeners[windowId]) {
       this.listeners[windowId] = this.listeners[windowId].filter(cb => cb !== callback);
       if (this.listeners[windowId].length === 0) {
@@ -23,7 +23,7 @@ const eventBus = reactive({
     }
   },
 
-  publish(senderId: string, receiverId: string, message: any) {
+  publish(senderId: number, receiverId: number, message: any) {
     if (this.listeners[receiverId]) {
       this.listeners[receiverId].forEach(callback => {
         callback(senderId, message);

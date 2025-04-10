@@ -20,22 +20,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, inject } from 'vue';
+import { ref, inject, onUnmounted } from 'vue';
 import { addWindow } from '@/components/WindowSystem/WindowManager';
 import { apps } from '@/components/WindowSystem/apps';
+import eventBus from '@/components/WindowSystem/eventBus';
 
 const content = ref('');
 const windowId = inject('windowId', -1);
 
+const handleFileManagerMessage = (senderId: number, message: { path: string, mode: string }) => {
+  console.log(`DocumentEditor (${windowId}) received message from FileManager (${senderId}):`, message);
+};
+
 function openFileManager(mode: 'open' | 'save' | 'none') {
   const fileManagerApp = apps.find(app => app.id === 'file-manager');
   if (fileManagerApp) {
-    addWindow(fileManagerApp, { 
-      parentId: windowId, 
-      launchOptions: { mode } 
+    eventBus.subscribe(windowId, handleFileManagerMessage);
+    console.log(`DocumentEditor (${windowId}) subscribed to eventBus.`);
+
+    addWindow(fileManagerApp, {
+      parentId: windowId,
+      launchOptions: { mode }
     });
   }
 }
+
+onUnmounted(() => {
+  eventBus.unsubscribe(windowId, handleFileManagerMessage);
+  console.log(`DocumentEditor (${windowId}) unsubscribed from eventBus.`);
+});
 </script>
 
 <style scoped>
