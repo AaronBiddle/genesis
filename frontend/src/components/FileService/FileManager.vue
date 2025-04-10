@@ -16,25 +16,28 @@
     </div>
 
     <!-- Current Path and Navigation -->
-    <div class="path-navigation">
-      <div class="breadcrumbs">
-        <span 
-          v-for="(segment, index) in pathSegments" 
-          :key="index" 
-          @click="navigateToPathSegment(index)" 
-          class="path-segment"
-        >
-          {{ segment || 'root' }}{{ index < pathSegments.length - 1 ? ' / ' : '' }}
-        </span>
+    <div class="path-and-actions-container">
+      <div class="path-navigation">
+        <div class="breadcrumbs">
+          <span v-if="pathSegments.length === 0">&nbsp;</span>
+          <span
+            v-for="(segment, index) in pathSegments"
+            :key="index"
+            @click="navigateToPathSegment(index)"
+            class="path-segment"
+          >
+            {{ segment || 'root' }}{{ index < pathSegments.length - 1 ? ' / ' : '' }}
+          </span>
+        </div>
       </div>
       <button @click="navigateUp" :disabled="currentPath === ''" class="nav-button">
         Up
       </button>
+      <button @click="showNewDirDialog = true" class="action-button">New Folder</button>
     </div>
 
     <!-- File/Directory Actions -->
     <div class="action-buttons">
-      <button @click="showNewDirDialog = true" class="action-button">New Folder</button>
       <button v-if="effectiveMode === 'save'" @click="showSaveDialog = true" class="action-button primary">Save File</button>
     </div>
 
@@ -365,10 +368,15 @@ onMounted(async () => {
   font-size: 14px;
 }
 
-.path-navigation {
+.path-and-actions-container {
   display: flex;
   align-items: center;
+  gap: 8px;
   margin-bottom: 12px;
+}
+
+.path-navigation {
+  flex: 1;
   background-color: #fff;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -391,12 +399,13 @@ onMounted(async () => {
 }
 
 .nav-button {
-  margin-left: 8px;
-  padding: 4px 8px;
+  padding: 8px 12px;
   background-color: #f0f0f0;
   border: 1px solid #ddd;
   border-radius: 4px;
   cursor: pointer;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .nav-button:disabled {
@@ -416,6 +425,8 @@ onMounted(async () => {
   border: 1px solid #ddd;
   border-radius: 4px;
   cursor: pointer;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .action-button.primary {
