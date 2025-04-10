@@ -38,13 +38,27 @@ const CASCADE_OFFSET = 20;
 const MIN_WIDTH = 200;
 const MIN_HEIGHT = 150;
 
-export function addWindow(app: App, options?: { x?: number; y?: number }): void {
+export function addWindow(app: App, options?: { parentId?: number }): void {
   const initialWidth = app.initialWidth ?? DEFAULT_WIDTH;
   const initialHeight = app.initialHeight ?? DEFAULT_HEIGHT;
 
-  // Calculate position: Use provided options or fallback to cascade
-  const posX = options?.x ?? START_X + (windows.value.length * CASCADE_OFFSET) % (window.innerWidth - initialWidth - START_X * 2);
-  const posY = options?.y ?? START_Y + (windows.value.length * CASCADE_OFFSET) % (window.innerHeight - initialHeight - START_Y * 2);
+  // Calculate position: Use parent window position or fallback to cascade
+  let posX = START_X + (windows.value.length * CASCADE_OFFSET) % (window.innerWidth - initialWidth - START_X * 2);
+  let posY = START_Y + (windows.value.length * CASCADE_OFFSET) % (window.innerHeight - initialHeight - START_Y * 2);
+
+  // Position relative to parent window if provided
+  if (options?.parentId !== undefined) {
+    const parentWindow = windows.value.find(w => w.id === options.parentId);
+    if (parentWindow) {
+      // Position the new window centered on the parent with a slight offset
+      posX = parentWindow.x + parentWindow.width / 2 - initialWidth / 2 + 30;
+      posY = parentWindow.y + parentWindow.height / 2 - initialHeight / 2 + 30;
+      
+      // Ensure the window is within screen bounds
+      posX = Math.max(0, Math.min(posX, window.innerWidth - initialWidth));
+      posY = Math.max(0, Math.min(posY, window.innerHeight - initialHeight));
+    }
+  }
 
   const newWindow: ManagedWindow = {
     id: nextWindowId.value,
