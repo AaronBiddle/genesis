@@ -30,7 +30,10 @@ const windowId = inject('windowId', -1);
 function openFileManager(mode: 'open' | 'save' | 'none') {
   const fileManagerApp = apps.find(app => app.id === 'file-manager');
   if (fileManagerApp) {
-    addWindow(fileManagerApp, { parentId: windowId });
+    addWindow(fileManagerApp, { 
+      parentId: windowId, 
+      launchOptions: { mode } 
+    });
   }
 }
 </script>

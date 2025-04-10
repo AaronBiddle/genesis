@@ -21,6 +21,7 @@ export interface ManagedWindow {
   iconColor?: string;
   titleBarColor?: string;
   titleColor?: string;
+  launchOptions?: any;
 }
 
 const windows = ref<ManagedWindow[]>([]);
@@ -38,7 +39,7 @@ const CASCADE_OFFSET = 20;
 const MIN_WIDTH = 200;
 const MIN_HEIGHT = 150;
 
-export function addWindow(app: App, options?: { parentId?: number }): void {
+export function addWindow(app: App, options?: { parentId?: number; launchOptions?: any }): void {
   const initialWidth = app.initialWidth ?? DEFAULT_WIDTH;
   const initialHeight = app.initialHeight ?? DEFAULT_HEIGHT;
 
@@ -79,6 +80,7 @@ export function addWindow(app: App, options?: { parentId?: number }): void {
     iconColor: app.iconColor,
     titleBarColor: app.titleBarColor,
     titleColor: app.titleColor,
+    launchOptions: options?.launchOptions,
   };
 
   windows.value.push(newWindow);
