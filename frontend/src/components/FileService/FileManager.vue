@@ -38,31 +38,7 @@
 
     <!-- File/Directory Actions -->
     <div class="action-buttons">
-      <button v-if="effectiveMode === 'save'" @click="showSaveDialog = true" class="action-button primary">Save File</button>
-    </div>
-
-    <!-- New Directory Dialog -->
-    <div v-if="showNewDirDialog" class="dialog-overlay">
-      <div class="dialog">
-        <h4>Create New Folder</h4>
-        <input v-model="newDirName" placeholder="Folder name" @keyup.enter="createNewDirectory" />
-        <div class="dialog-buttons">
-          <button @click="showNewDirDialog = false; emitCancel()" class="cancel-button">Cancel</button>
-          <button @click="createNewDirectory" class="confirm-button">Create</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Save Dialog (only in save mode) -->
-    <div v-if="showSaveDialog" class="dialog-overlay">
-      <div class="dialog">
-        <h4>Save File</h4>
-        <input v-model="saveFileName" placeholder="File name" @keyup.enter="saveFile" />
-        <div class="dialog-buttons">
-          <button @click="showSaveDialog = false; emitCancel()" class="cancel-button">Cancel</button>
-          <button @click="saveFile" class="confirm-button">Save</button>
-        </div>
-      </div>
+      <!-- Removed Save File button -->
     </div>
 
     <!-- File List -->
@@ -88,7 +64,24 @@
 
     <!-- Bottom Action Bar -->
     <div class="bottom-actions">
+      <!-- Show selected file in Open mode -->
+      <div class="selected-file-display" v-if="effectiveMode === 'open' && selectedFileDetails && !selectedFileDetails.isDirectory">
+        Selected: <span>{{ selectedFileDetails.name }}</span>
+      </div>
+
+      <!-- Show filename input in Save mode -->
+      <input 
+        v-if="effectiveMode === 'save'"
+        v-model="fileNameToSave"
+        placeholder="Enter filename"
+        class="filename-input"
+        @keyup.enter="saveFile"
+      />
+
+      <div class="spacer"></div>
       <button @click="emitCancel" class="cancel-button">Cancel</button>
+      
+      <!-- Show Open button in Open mode -->
       <button 
         v-if="effectiveMode === 'open'" 
         @click="openSelectedFile" 
@@ -97,6 +90,17 @@
       >
         Open
       </button>
+
+      <!-- Show Save button in Save mode -->
+      <button
+        v-if="effectiveMode === 'save'"
+        @click="saveFile"
+        :disabled="!fileNameToSave.trim()"
+        class="confirm-button"
+      >
+        Save
+      </button>
+
     </div>
   </div>
 </template>
@@ -133,9 +137,8 @@ const selectedItem = ref<string | null>(null);
 const loading = ref<boolean>(true);
 const error = ref<string | null>(null);
 const showNewDirDialog = ref<boolean>(false);
-const showSaveDialog = ref<boolean>(false);
 const newDirName = ref<string>('');
-const saveFileName = ref<string>('');
+const fileNameToSave = ref<string>('');
 
 // Computed properties
 const effectiveMode = computed<'open' | 'save' | 'none'>(() => {
@@ -159,6 +162,12 @@ const canOpen = computed(() => {
   if (effectiveMode.value !== 'open') return false;
   const selected = items.value.find(item => item.name === selectedItem.value);
   return selected && !selected.isDirectory;
+});
+
+// Add computed property for selected file details
+const selectedFileDetails = computed(() => {
+  if (!selectedItem.value) return null;
+  return items.value.find(item => item.name === selectedItem.value) || null;
 });
 
 // Methods for navigation
@@ -237,6 +246,10 @@ const handleItemClick = (item: { name: string, isDirectory: boolean }) => {
   } else if (effectiveMode.value === 'open') {
     // For files in open mode, just select them
     selectedItem.value = item.name;
+  } else if (effectiveMode.value === 'save' && !item.isDirectory) {
+    // For files in save mode, select and populate the save input
+    selectedItem.value = item.name;
+    fileNameToSave.value = item.name;
   }
 };
 
@@ -295,7 +308,16 @@ const openSelectedFile = () => {
 };
 
 const saveFile = async () => {
-  console.log('saveFile called');
+  if (!fileNameToSave.value.trim()) {
+    error.value = 'Please enter a filename';
+    return;
+  }
+  console.log('Saving file:', fileNameToSave.value, 'to path:', currentPath.value, 'on mount:', selectedMount.value);
+  // TODO: Implement actual save logic using FileClient
+  // e.g., await actualSaveFunction(selectedMount.value, currentPath.value, fileNameToSave.value, fileContent);
+  // Need to get fileContent from props or another source
+  // emit('fileSaved', { mount: selectedMount.value, path: currentPath.value, name: fileNameToSave.value });
+  // Potentially close window or give feedback
 };
 
 const emitCancel = () => {
@@ -506,7 +528,27 @@ onMounted(async () => {
 
 .bottom-actions {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.selected-file-display {
+  color: #555;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.selected-file-display span {
+  font-weight: bold;
+  margin-left: 4px;
+}
+
+.spacer {
+  flex-grow: 1;
 }
 
 .cancel-button, .confirm-button {
@@ -574,5 +616,15 @@ onMounted(async () => {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+/* Style for the filename input in save mode */
+.filename-input {
+  flex-grow: 1; /* Allow input to take available space */
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  min-width: 100px; /* Ensure it has some minimum width */
 }
 </style> 
