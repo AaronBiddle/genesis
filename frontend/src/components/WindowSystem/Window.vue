@@ -35,7 +35,7 @@
     </div>
 
     <!-- Content Area -->
-    <div class="content-area flex-grow bg-white p-2 overflow-auto">
+    <div class="content-area flex-grow bg-white overflow-auto">
       <component 
         :is="windowData.appComponent" 
         @cancelled="handleClose" 
