@@ -239,17 +239,18 @@ const loadMounts = async () => {
 
 const handleItemClick = (item: { name: string, isDirectory: boolean }) => {
   selectedItem.value = item.name;
-};
-
-const handleItemDoubleClick = (item: { name: string, isDirectory: boolean }) => {
   if (item.isDirectory) {
-    // Navigate into directory
+    // Navigate into directory on single click
     currentPath.value = currentPath.value 
       ? `${currentPath.value}/${item.name}` 
       : item.name;
     loadCurrentDirectory();
-  } else if (props.mode === 'open') {
-    // Open file directly on double-click
+  }
+};
+
+const handleItemDoubleClick = (item: { name: string, isDirectory: boolean }) => {
+  if (!item.isDirectory && props.mode === 'open') {
+    // Open file directly on double-click if it's a file and in open mode
     openFile(item.name);
   }
 };
@@ -395,18 +396,21 @@ onMounted(async () => {
 }
 
 .control-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 12px;
 }
 
 .control-section label {
-  display: block;
-  margin-bottom: 4px;
+  margin-bottom: 0;
   font-weight: 500;
   color: #444;
+  flex-shrink: 0;
 }
 
 .mount-select {
-  width: 100%;
+  flex-grow: 1;
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;

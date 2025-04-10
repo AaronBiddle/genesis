@@ -1,7 +1,6 @@
 <template>
   <div class="file-service-tester">
-    <h2>File Service Tester</h2>
-
+    
     <!-- Test Selection & Execution Row -->
     <div class="test-selection-row">
       <label for="test-select">Select Test:</label>
@@ -226,7 +225,7 @@ textarea {
 }
 
 .inputs-section { /* This section should not grow */
-  margin-top: 16px;
+  margin-top: 0px;
   flex-shrink: 0; /* Prevent shrinking */
 }
 
@@ -271,7 +270,7 @@ textarea {
 
 /* New container for results to manage flex growth */
 .result-container {
-  margin-top: 20px;
+  margin-top: 0px;
   display: flex;
   flex-direction: column;
   flex-grow: 1; /* Allow this container to fill remaining space */
