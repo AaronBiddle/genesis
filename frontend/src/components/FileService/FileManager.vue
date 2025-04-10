@@ -2,7 +2,7 @@
   <div class="file-manager">
     <div class="file-manager-header">
       <h3>{{ modeTitle }}</h3>
-      <div v-if="parentApplication" class="close-button" @click="emitCancel">×</div>
+      <div v-if="props.parentApplication" class="close-button" @click="emitCancel">×</div>
     </div>
 
     <!-- Mount Selection -->
@@ -35,7 +35,7 @@
     <!-- File/Directory Actions -->
     <div class="action-buttons">
       <button @click="showNewDirDialog = true" class="action-button">New Folder</button>
-      <button v-if="mode === 'save'" @click="showSaveDialog = true" class="action-button primary">Save File</button>
+      <button v-if="effectiveMode === 'save'" @click="showSaveDialog = true" class="action-button primary">Save File</button>
     </div>
 
     <!-- New Directory Dialog -->
@@ -88,7 +88,7 @@
     <div class="bottom-actions">
       <button @click="emitCancel" class="cancel-button">Cancel</button>
       <button 
-        v-if="mode === 'open'" 
+        v-if="effectiveMode === 'open'" 
         @click="openSelectedFile" 
         :disabled="!canOpen"
         class="confirm-button"
@@ -108,35 +108,24 @@ import {
   deleteDirectory,
   getMounts,
 } from '@/services/FileClient';
+import type { ManagedWindow } from '@/components/WindowSystem/WindowManager';
 
-// Define props
-const props = defineProps({
-  mode: {
-    type: String,
-    default: 'none', // 'open', 'save', 'none'
-    validator: (value: string) => ['open', 'save', 'none'].includes(value)
-  },
-  parentApplication: {
-    type: Boolean,
-    default: false
-  },
-  initialPath: {
-    type: String,
-    default: ''
-  },
-  initialMount: {
-    type: String,
-    default: 'userdata'
-  }
-});
+// Define props using TypeScript generic
+const props = defineProps<{
+  windowData: ManagedWindow;
+  parentApplication?: boolean; // Made optional as it has a default
+  initialPath?: string;      // Made optional as it has a default
+  initialMount?: string;     // Made optional as it has a default
+}>();
 
 // Define emits
-const emit = defineEmits(['file-opened', 'file-saved', 'cancelled']);
+const emit = defineEmits(['cancelled']);
 
 // Reactive state
 const mounts = ref<Array<{ name: string, path: string }>>([]);
-const selectedMount = ref<string>(props.initialMount);
-const currentPath = ref<string>(props.initialPath);
+// Use optional props with defaults
+const selectedMount = ref<string>(props.initialMount ?? 'userdata'); 
+const currentPath = ref<string>(props.initialPath ?? ''); 
 const items = ref<Array<{ name: string, isDirectory: boolean }>>([]);
 const selectedItem = ref<string | null>(null);
 const loading = ref<boolean>(true);
@@ -147,8 +136,12 @@ const newDirName = ref<string>('');
 const saveFileName = ref<string>('');
 
 // Computed properties
+const effectiveMode = computed<'open' | 'save' | 'none'>(() => {
+  return props.windowData?.launchOptions?.mode ?? 'none';
+});
+
 const modeTitle = computed(() => {
-  switch (props.mode) {
+  switch (effectiveMode.value) {
     case 'open': return 'Open File';
     case 'save': return 'Save File';
     default: return 'File Manager';
@@ -161,7 +154,7 @@ const pathSegments = computed(() => {
 });
 
 const canOpen = computed(() => {
-  if (props.mode !== 'open') return false;
+  if (effectiveMode.value !== 'open') return false;
   const selected = items.value.find(item => item.name === selectedItem.value);
   return selected && !selected.isDirectory;
 });
@@ -243,7 +236,7 @@ const handleItemClick = (item: { name: string, isDirectory: boolean }) => {
 };
 
 const handleItemDoubleClick = (item: { name: string, isDirectory: boolean }) => {
-  if (!item.isDirectory && props.mode === 'open') {
+  if (!item.isDirectory && effectiveMode.value === 'open') {
     // Open file directly on double-click if it's a file and in open mode
     openFile(item.name);
   }
@@ -312,7 +305,7 @@ const emitCancel = () => {
 };
 
 // Watch for changes
-watch(() => props.mode, () => {
+watch(effectiveMode, () => { // Watch the computed property directly
   // Reset state when mode changes
   selectedItem.value = null;
 });
