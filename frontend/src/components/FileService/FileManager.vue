@@ -64,18 +64,13 @@
 
     <!-- Bottom Action Bar -->
     <div class="bottom-actions">
-      <!-- Show selected file in Open mode -->
-      <div class="selected-file-display" v-if="effectiveMode === 'open' && selectedFileDetails && !selectedFileDetails.isDirectory">
-        Selected: <span>{{ selectedFileDetails.name }}</span>
-      </div>
-
-      <!-- Show filename input in Save mode -->
+      <!-- Unified filename input for Open and Save modes -->
       <input 
-        v-if="effectiveMode === 'save'"
-        v-model="fileNameToSave"
-        placeholder="Enter filename"
+        v-if="effectiveMode === 'open' || effectiveMode === 'save'"
+        v-model="activeFileName"
+        :placeholder="effectiveMode === 'open' ? 'Select or type filename to open' : 'Enter filename to save'"
         class="filename-input"
-        @keyup.enter="saveFile"
+        @keyup.enter="effectiveMode === 'open' ? openActiveFile() : saveFile()"
       />
 
       <div class="spacer"></div>
@@ -84,8 +79,8 @@
       <!-- Show Open button in Open mode -->
       <button 
         v-if="effectiveMode === 'open'" 
-        @click="openSelectedFile" 
-        :disabled="!canOpen"
+        @click="openActiveFile" 
+        :disabled="!canOpenFile"
         class="confirm-button"
       >
         Open
@@ -95,7 +90,7 @@
       <button
         v-if="effectiveMode === 'save'"
         @click="saveFile"
-        :disabled="!fileNameToSave.trim()"
+        :disabled="!activeFileName.trim()"
         class="confirm-button"
       >
         Save
@@ -138,7 +133,7 @@ const loading = ref<boolean>(true);
 const error = ref<string | null>(null);
 const showNewDirDialog = ref<boolean>(false);
 const newDirName = ref<string>('');
-const fileNameToSave = ref<string>('');
+const activeFileName = ref<string>('');
 
 // Computed properties
 const effectiveMode = computed<'open' | 'save' | 'none'>(() => {
@@ -158,10 +153,10 @@ const pathSegments = computed(() => {
   return currentPath.value.split('/').filter(segment => segment);
 });
 
-const canOpen = computed(() => {
-  if (effectiveMode.value !== 'open') return false;
-  const selected = items.value.find(item => item.name === selectedItem.value);
-  return selected && !selected.isDirectory;
+const canOpenFile = computed(() => {
+  if (effectiveMode.value !== 'open' || !activeFileName.value.trim()) return false;
+  const potentialMatch = items.value.find(item => item.name === activeFileName.value.trim());
+  return potentialMatch && !potentialMatch.isDirectory;
 });
 
 // Add computed property for selected file details
@@ -238,18 +233,16 @@ const loadMounts = async () => {
 const handleItemClick = (item: { name: string, isDirectory: boolean }) => {
   selectedItem.value = item.name;
   if (item.isDirectory) {
-    // Navigate into directory
+    // Navigate into directory and clear filename input
+    activeFileName.value = '';
+    selectedItem.value = null;
     currentPath.value = currentPath.value 
       ? `${currentPath.value}/${item.name}` 
       : item.name;
     loadCurrentDirectory();
-  } else if (effectiveMode.value === 'open') {
-    // For files in open mode, just select them
-    selectedItem.value = item.name;
-  } else if (effectiveMode.value === 'save' && !item.isDirectory) {
-    // For files in save mode, select and populate the save input
-    selectedItem.value = item.name;
-    fileNameToSave.value = item.name;
+  } else {
+    // For files (in any mode), select and populate the filename input
+    activeFileName.value = item.name;
   }
 };
 
@@ -295,28 +288,27 @@ const deleteItem = async (item: { name: string, isDirectory: boolean }) => {
 };
 
 const openFile = async (fileName: string) => {
-  console.log('openFile called with fileName:', fileName);
+  console.log('Attempting to open file:', fileName, 'from path:', currentPath.value, 'on mount:', selectedMount.value);
+  // TODO: Implement actual open logic, likely emitting an event
+  // emit('fileOpened', { mount: selectedMount.value, path: currentPath.value, name: fileName });
 };
 
-const openSelectedFile = () => {
-  if (selectedItem.value) {
-    const selected = items.value.find(item => item.name === selectedItem.value);
-    if (selected && !selected.isDirectory) {
-      openFile(selectedItem.value);
-    }
+const openActiveFile = () => {
+  if (canOpenFile.value) {
+    openFile(activeFileName.value.trim());
   }
 };
 
 const saveFile = async () => {
-  if (!fileNameToSave.value.trim()) {
+  if (!activeFileName.value.trim()) {
     error.value = 'Please enter a filename';
     return;
   }
-  console.log('Saving file:', fileNameToSave.value, 'to path:', currentPath.value, 'on mount:', selectedMount.value);
+  console.log('Saving file:', activeFileName.value, 'to path:', currentPath.value, 'on mount:', selectedMount.value);
   // TODO: Implement actual save logic using FileClient
-  // e.g., await actualSaveFunction(selectedMount.value, currentPath.value, fileNameToSave.value, fileContent);
+  // e.g., await actualSaveFunction(selectedMount.value, currentPath.value, activeFileName.value, fileContent);
   // Need to get fileContent from props or another source
-  // emit('fileSaved', { mount: selectedMount.value, path: currentPath.value, name: fileNameToSave.value });
+  // emit('fileSaved', { mount: selectedMount.value, path: currentPath.value, name: activeFileName.value });
   // Potentially close window or give feedback
 };
 
@@ -621,10 +613,10 @@ onMounted(async () => {
 /* Style for the filename input in save mode */
 .filename-input {
   flex-grow: 1; /* Allow input to take available space */
-  padding: 8px 12px;
+  padding: 6px 12px; /* Adjusted padding */
   border: 1px solid #ccc;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 16px; /* Increased font size */
   min-width: 100px; /* Ensure it has some minimum width */
 }
 </style> 
