@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, markRaw } from 'vue';
 import type { App } from './apps';
 import type { Component } from 'vue';
 
@@ -65,7 +65,7 @@ export function addWindow(app: App, options?: { parentId?: number; launchOptions
     id: nextWindowId.value,
     appId: app.id,
     title: app.title,
-    appComponent: app.appComponent,
+    appComponent: markRaw(app.appComponent),
     iconId: app.iconId,
     x: posX,
     y: posY,
