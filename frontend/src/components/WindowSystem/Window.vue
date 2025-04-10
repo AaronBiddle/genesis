@@ -38,6 +38,7 @@
     <div class="content-area flex-grow bg-white overflow-auto">
       <component 
         :is="windowData.appComponent" 
+        :windowData="windowData"
         @cancelled="handleClose" 
       />
     </div>
