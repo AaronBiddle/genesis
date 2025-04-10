@@ -72,7 +72,6 @@
           v-for="item in items" 
           :key="item.name" 
           @click="handleItemClick(item)"
-          @dblclick="handleItemDoubleClick(item)"
           :class="['file-item', { 'selected': selectedItem === item.name }]"
         >
           <div class="file-icon">{{ item.isDirectory ? '📁' : '📄' }}</div>
@@ -227,18 +226,14 @@ const loadMounts = async () => {
 const handleItemClick = (item: { name: string, isDirectory: boolean }) => {
   selectedItem.value = item.name;
   if (item.isDirectory) {
-    // Navigate into directory on single click
+    // Navigate into directory
     currentPath.value = currentPath.value 
       ? `${currentPath.value}/${item.name}` 
       : item.name;
     loadCurrentDirectory();
-  }
-};
-
-const handleItemDoubleClick = (item: { name: string, isDirectory: boolean }) => {
-  if (!item.isDirectory && effectiveMode.value === 'open') {
-    // Open file directly on double-click if it's a file and in open mode
-    openFile(item.name);
+  } else if (effectiveMode.value === 'open') {
+    // For files in open mode, just select them
+    selectedItem.value = item.name;
   }
 };
 
