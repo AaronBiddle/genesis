@@ -124,14 +124,21 @@ import {
   getMounts,
 } from '@/services/FileClient';
 import type { ManagedWindow } from '@/components/WindowSystem/WindowManager';
+import { withDefaults } from 'vue';
 
 // Define props using TypeScript generic
-const props = defineProps<{
+interface Props {
   windowData: ManagedWindow;
   parentApplication?: boolean; // Made optional as it has a default
   initialPath?: string;      // Made optional as it has a default
   initialMount?: string;     // Made optional as it has a default
-}>();
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  parentApplication: false, // Assuming default is false
+  initialPath: '',
+  initialMount: 'userdata',
+});
 
 // Define emits
 const emit = defineEmits(['cancelled']);
@@ -139,8 +146,8 @@ const emit = defineEmits(['cancelled']);
 // Reactive state
 const mounts = ref<Array<{ name: string, path: string }>>([]);
 // Use optional props with defaults
-const selectedMount = ref<string>(props.initialMount ?? 'userdata'); 
-const currentPath = ref<string>(props.initialPath ?? ''); 
+const selectedMount = ref<string>(props.initialMount);
+const currentPath = ref<string>(props.initialPath);
 const items = ref<Array<{ name: string, isDirectory: boolean }>>([]);
 const selectedItem = ref<string | null>(null);
 const loading = ref<boolean>(true);
@@ -171,12 +178,6 @@ const canOpenFile = computed(() => {
   if (effectiveMode.value !== 'open' || !activeFileName.value.trim()) return false;
   const potentialMatch = items.value.find(item => item.name === activeFileName.value.trim());
   return potentialMatch && !potentialMatch.isDirectory;
-});
-
-// Add computed property for selected file details
-const selectedFileDetails = computed(() => {
-  if (!selectedItem.value) return null;
-  return items.value.find(item => item.name === selectedItem.value) || null;
 });
 
 // Methods for navigation
