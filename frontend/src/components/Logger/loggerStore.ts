@@ -1,4 +1,5 @@
 import { ref, reactive, watch, computed } from 'vue';
+import { initialNamespaces } from './namespaces'; // Import initial namespaces
 
 export interface LogEntry {
   namespace: string;
@@ -11,7 +12,7 @@ const STORAGE_KEY = 'logger_enabled_namespaces';
 
 // --- Reactive State ---
 const allLogs = ref<LogEntry[]>([]);
-const availableNamespaces = ref<string[]>(['FileManager.vue']); // Start with a default
+const availableNamespaces = ref<string[]>([...initialNamespaces]); // Use imported namespaces
 const enabledNamespaces = reactive<Record<string, boolean>>({});
 
 // --- Internal Functions ---
@@ -24,6 +25,10 @@ const saveEnabledNamespaces = () => {
 };
 
 const loadEnabledNamespaces = () => {
+  // Clear existing reactive state before loading/setting defaults
+  availableNamespaces.value = [...initialNamespaces];
+  Object.keys(enabledNamespaces).forEach(key => delete enabledNamespaces[key]);
+
   try {
     const storedSettings = localStorage.getItem(STORAGE_KEY);
     if (storedSettings) {
@@ -52,6 +57,24 @@ const loadEnabledNamespaces = () => {
     availableNamespaces.value.forEach(ns => {
         enabledNamespaces[ns] = true;
     });
+  }
+};
+
+// Function to clear stored settings and reset state
+const clearNamespaceSettings = () => {
+  log('LoggerInternal', 'Clearing stored namespace settings and resetting state.'); // Log the action
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    // Reset reactive state to initial defaults
+    availableNamespaces.value = [...initialNamespaces];
+    Object.keys(enabledNamespaces).forEach(key => delete enabledNamespaces[key]);
+    initialNamespaces.forEach(ns => {
+        enabledNamespaces[ns] = true;
+    });
+    // Note: We don't clear allLogs here, that's separate
+  } catch (e) {
+    log('LoggerInternal', 'Failed to clear namespace settings from localStorage', true);
+    console.error("Failed to clear namespace settings:", e);
   }
 };
 
@@ -89,7 +112,8 @@ export function useLogger() {
         filteredLogs,
         isNamespaceEnabled,
         toggleNamespace,
-        clearLogs
+        clearLogs,
+        clearNamespaceSettings
     };
 }
 
@@ -135,4 +159,7 @@ watch(availableNamespaces, (newNamespaces) => {
     if (updated) {
         saveEnabledNamespaces();
     }
-}, { deep: true }); 
+}, { deep: true });
+
+// Initialize by loading settings when the store module is first loaded
+loadEnabledNamespaces(); 

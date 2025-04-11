@@ -126,6 +126,9 @@ import {
 import type { ManagedWindow } from '@/components/WindowSystem/WindowManager';
 import { withDefaults } from 'vue';
 import eventBus from '@/components/WindowSystem/eventBus';
+import { log } from '@/components/Logger/loggerStore';
+
+const NS = 'FileManager.vue';
 
 // Define props using TypeScript generic
 interface Props {
@@ -217,13 +220,14 @@ const loadCurrentDirectory = async () => {
   selectedItem.value = null;
   
   try {
+    log(NS, `Listing directory: Mount=${selectedMount.value}, Path='${currentPath.value}'`);
     const result = await listDirectory(selectedMount.value, currentPath.value);
     items.value = result.map((item: any) => ({
       name: item.name,
       isDirectory: item.isDirectory
     }));
   } catch (err: any) {
-    console.error('Error loading directory:', err);
+    log(NS, `Error loading directory: Mount=${selectedMount.value}, Path='${currentPath.value}', Error: ${err?.message || err}`, true);
     error.value = `Error: ${err.message || 'Failed to load directory'}`;
     items.value = [];
   } finally {
@@ -233,6 +237,7 @@ const loadCurrentDirectory = async () => {
 
 const loadMounts = async () => {
   try {
+    log(NS, 'Loading storage mounts.');
     const result = await getMounts();
     mounts.value = result;
     
@@ -241,7 +246,7 @@ const loadMounts = async () => {
       selectedMount.value = mounts.value[0].name;
     }
   } catch (err: any) {
-    console.error('Error loading mounts:', err);
+    log(NS, `Error loading mounts: ${err?.message || err}`, true);
     error.value = `Error: ${err.message || 'Failed to load storage mounts'}`;
   }
 };
@@ -263,43 +268,42 @@ const handleItemClick = (item: { name: string, isDirectory: boolean }) => {
 };
 
 const createNewDirectory = async () => {
-  if (!newDirName.value.trim()) {
-    error.value = 'Please enter a folder name';
-    return;
-  }
+  const name = newDirName.value.trim();
+  if (!name || !selectedMount.value) return;
 
-  const dirPath = currentPath.value
-    ? `${currentPath.value}/${newDirName.value}`
-    : newDirName.value;
-
+  const dirPath = currentPath.value ? `${currentPath.value}/${name}` : name;
+  log(NS, `Creating new directory: Mount=${selectedMount.value}, Path=${dirPath}`);
   try {
     await createDirectory(selectedMount.value, dirPath);
+    newDirName.value = '';
     showNewDirDialog.value = false;
-    newDirName.value = ''; // Clear input after creation
-    loadCurrentDirectory();
+    await loadCurrentDirectory();
   } catch (err: any) {
-    error.value = `Failed to create folder: ${err.message}`;
+    log(NS, `Error creating directory: Mount=${selectedMount.value}, Path=${dirPath}, Error: ${err?.message || err}`, true);
+    error.value = `Error: ${err.message || 'Failed to create directory'}`;
+    // Optionally, keep the dialog open or show error within it
   }
 };
 
 const deleteItem = async (item: { name: string, isDirectory: boolean }) => {
-  if (!confirm(`Are you sure you want to delete ${item.name}?`)) {
-    return;
-  }
-  
-  const path = currentPath.value 
-    ? `${currentPath.value}/${item.name}` 
-    : item.name;
-  
+  const fullPath = currentPath.value ? `${currentPath.value}/${item.name}` : item.name;
+  if (!selectedMount.value) return;
+
+  const confirmation = confirm(`Are you sure you want to delete ${item.isDirectory ? 'folder' : 'file'} '${item.name}'?`);
+  if (!confirmation) return;
+
+  log(NS, `Attempting to delete: Mount=${selectedMount.value}, Path=${fullPath}, IsDirectory=${item.isDirectory}`);
   try {
     if (item.isDirectory) {
-      await deleteDirectory(selectedMount.value, path);
+      await deleteDirectory(selectedMount.value, fullPath);
     } else {
-      await deleteFile(selectedMount.value, path);
+      await deleteFile(selectedMount.value, fullPath);
     }
-    loadCurrentDirectory();
+    log(NS, `Successfully deleted: Mount=${selectedMount.value}, Path=${fullPath}`);
+    await loadCurrentDirectory();
   } catch (err: any) {
-    error.value = `Failed to delete: ${err.message}`;
+    log(NS, `Error deleting item: Mount=${selectedMount.value}, Path=${fullPath}, Error: ${err?.message || err}`, true);
+    error.value = `Error: ${err.message || 'Failed to delete item'}`;
   }
 };
 
@@ -325,26 +329,19 @@ const openActiveFile = () => {
   }
 };
 
-const saveFile = async () => {
-  if (!activeFileName.value.trim()) {
-    error.value = 'Please enter a filename';
-    return;
+const saveFile = () => {
+  const fileName = activeFileName.value.trim();
+  if (!fileName) return;
+  const pathToSend = currentPath.value ? `${currentPath.value}/${fileName}` : fileName;
+  const parentId = props.windowData?.launchOptions?.parentId;
+  if (parentId) {
+    log(NS, `Sending 'save' message to parent ${parentId}: Mount=${selectedMount.value}, Path=${pathToSend}`);
+    eventBus.publish(props.windowData.id, parentId, { mount: selectedMount.value, path: pathToSend, mode: 'save' });
+    emit('cancelled'); // Close file manager after sending message
+  } else {
+    log(NS, 'Cannot send save message: No parent window ID found.', true);
+    // Handle case where there is no parent (e.g., show error or log)
   }
-  const parentWindowId = props.windowData?.launchOptions?.parentId;
-  const filePath = currentPath.value ? `${currentPath.value}/${activeFileName.value.trim()}` : activeFileName.value.trim();
-  console.log('Saving file:', activeFileName.value, 'to path:', currentPath.value, 'on mount:', selectedMount.value);
-  
-  // TODO: Implement actual save logic, likely emitting an event to the parent
-  // emit('fileSaved', { mount: selectedMount.value, path: filePath });
-  
-  // Unsubscribe the parent *after* emitting the result
-  if (parentWindowId !== undefined) {
-      console.log(`FileManager: Unsubscribing parent window ${parentWindowId} after Save action.`);
-      eventBus.unsubscribe(parentWindowId);
-  }
-
-  // Possibly close the FileManager window itself after emitting
-  // closeWindow(props.windowData.id);
 };
 
 const emitCancel = () => {
@@ -364,8 +361,9 @@ watch(effectiveMode, () => { // Watch the computed property directly
 
 // Initialize component
 onMounted(async () => {
+  log(NS, `Component mounted. Mode: ${effectiveMode.value}, Parent: ${props.parentApplication}, Initial Mount: ${props.initialMount}, Initial Path: '${props.initialPath}'`);
   await loadMounts();
-  loadCurrentDirectory();
+  await loadCurrentDirectory();
 });
 </script>
 

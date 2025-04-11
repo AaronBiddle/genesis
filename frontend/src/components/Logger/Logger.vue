@@ -12,12 +12,19 @@
         />
         <label :for="`ns-${ns}`" class="text-sm text-gray-700">{{ ns }}</label>
       </div>
-       <button
-         @click="clearLogs"
-         class="mt-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
-       >
-         Clear Logs
-       </button>
+      <div class="mt-2 space-x-2"> <button
+          @click="clearLogs"
+          class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+        >
+          Clear Logs
+        </button>
+        <button
+          @click="handleClearSettings"
+          class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-xs"
+        >
+          Reset Namespaces
+        </button>
+       </div>
     </div>
 
     <div class="flex-grow overflow-y-auto bg-white p-2 border border-gray-200 rounded shadow-inner" ref="logContainer">
@@ -40,9 +47,17 @@
 import { ref, watch, nextTick } from 'vue';
 import { useLogger } from './loggerStore';
 
-const { availableNamespaces, enabledNamespaces, filteredLogs, isNamespaceEnabled, toggleNamespace, clearLogs } = useLogger();
+const { availableNamespaces, enabledNamespaces, filteredLogs, isNamespaceEnabled, toggleNamespace, clearLogs, clearNamespaceSettings } = useLogger();
 
 const logContainer = ref<HTMLElement | null>(null);
+
+// Wrapper function to potentially add confirmation later
+const handleClearSettings = () => {
+    // Optional: Add a confirmation dialog here if desired
+    // if (confirm("Are you sure you want to reset all namespace settings?")) {
+        clearNamespaceSettings();
+    // }
+};
 
 // Scroll to bottom when new logs are added
 watch(filteredLogs, async () => {

@@ -24,6 +24,9 @@ import { ref, onUnmounted } from 'vue';
 import { addWindow } from '@/components/WindowSystem/WindowManager';
 import { apps } from '@/components/WindowSystem/apps';
 import eventBus from '@/components/WindowSystem/eventBus';
+import { log } from '@/components/Logger/loggerStore';
+
+const NS = 'DocumentEditor.vue';
 
 const content = ref('');
 const props = defineProps<{
@@ -37,14 +40,14 @@ const props = defineProps<{
 const windowId = props.windowData.id;
 
 const handleFileManagerMessage = (senderId: number, message: { path: string, mode: string }) => {
-  console.log(`DocumentEditor (${windowId}) received message from FileManager (${senderId}):`, message);
+  log(NS, `Received message from FileManager (${senderId}): ${JSON.stringify(message)}`);
 };
 
 function openFileManager(mode: 'open' | 'save' | 'none') {
   const fileManagerApp = apps.find(app => app.id === 'file-manager');
   if (fileManagerApp) {
     eventBus.subscribe(windowId, handleFileManagerMessage);
-    console.log(`DocumentEditor (${windowId}) subscribed to eventBus.`);
+    log(NS, `Subscribed to eventBus for window ${windowId}.`);
 
     addWindow(fileManagerApp, {
       parentId: windowId,
@@ -56,7 +59,7 @@ function openFileManager(mode: 'open' | 'save' | 'none') {
 onUnmounted(() => {
   // Unsubscribe without the callback, force defaults to false
   eventBus.unsubscribe(windowId);
-  console.log(`DocumentEditor (${windowId}) unsubscribed from eventBus.`);
+  log(NS, `Unsubscribed from eventBus for window ${windowId}.`);
 });
 </script>
 
