@@ -7,14 +7,17 @@
       <div v-if="Object.keys(listeners).length === 0" class="text-gray-500 italic">
         No active listeners registered
       </div>
-      <div v-else class="space-y-4">
-        <div v-for="(callbacks, windowId) in listeners" :key="windowId" class="border border-gray-200 rounded p-3">
-          <div class="flex justify-between items-center mb-2">
+      <div v-else class="space-y-2">
+        <!-- Iterate through window IDs and their listener entries -->
+        <div v-for="(entries, windowId) in listeners" :key="windowId" class="border border-gray-200 rounded p-3 bg-white">
+          <!-- Since subscribe overwrites, there's only one entry per windowId -->
+          <div v-if="entries.length > 0" class="flex justify-between items-center">
             <div class="font-medium">Window ID: {{ windowId }}</div>
-            <div class="text-sm text-gray-600">{{ callbacks.length }} listener(s)</div>
-          </div>
-          <div v-for="(_, index) in callbacks" :key="index" class="text-sm text-gray-700 pl-4">
-            Callback #{{ index + 1 }}
+            <div class="text-sm flex items-center space-x-4">
+               <span :class="entries[0].keepAlive ? 'text-green-600 font-semibold' : 'text-red-600'">
+                 KeepAlive: {{ entries[0].keepAlive ? 'Yes' : 'No' }}
+               </span>
+            </div>
           </div>
         </div>
       </div>
@@ -73,15 +76,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watchEffect } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import eventBus from './eventBus';
+import type { ListenerMap } from './eventBus'; // Import the type
 
 // Reactively track listeners from the event bus
-const listeners = ref({...eventBus.listeners});
+const listeners = ref<ListenerMap>({});
 
 // Update listeners when they change
 const updateListeners = () => {
-  listeners.value = {...eventBus.listeners};
+  // Use JSON parse/stringify for a deep copy to ensure reactivity
+  listeners.value = JSON.parse(JSON.stringify(eventBus.listeners)); 
 };
 
 // Message tester state
@@ -114,7 +119,7 @@ const sendMessage = () => {
     const messageObject = JSON.parse(messageContent.value);
     
     // Check if the target window has any listeners
-    if (!eventBus.listeners[toWindowId.value]) {
+    if (!eventBus.listeners[toWindowId.value] || eventBus.listeners[toWindowId.value].length === 0) {
       messageError.value = `No listeners found for window ID: ${toWindowId.value}`;
       return;
     }
@@ -143,10 +148,7 @@ onMounted(() => {
     updateListeners();
   }, 1000);
   
-  // Watch for direct changes to the eventBus listeners
-  watchEffect(() => {
-    updateListeners();
-  });
+  // Note: watchEffect removed as polling is used for simplicity
 });
 
 onUnmounted(() => {
