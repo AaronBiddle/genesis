@@ -33,17 +33,21 @@ const eventBus = reactive({
     console.log(`EventBus: Window ${windowId} registered listener. Final keepAlive: ${finalKeepAlive} (Previous: ${existingEntry?.keepAlive ?? 'N/A'}, New: ${keepAlive})`);
   },
 
-  unsubscribe(windowId: number, callback: Function) {
-    if (this.listeners[windowId]) {
-      // Filter based on the callback function within the ListenerEntry object
-      this.listeners[windowId] = this.listeners[windowId].filter(entry => entry.callback !== callback);
-      
-      if (this.listeners[windowId].length === 0) {
-        delete this.listeners[windowId];
-        console.log(`EventBus: Removed all listeners for window ${windowId}`);
+  // Updated unsubscribe method: removes based on windowId, respects keepAlive unless forced
+  unsubscribe(windowId: number, force: boolean = false) {
+    const entry = this.listeners[windowId]?.[0]; // Get the entry if it exists
+
+    if (entry) {
+      if (force || !entry.keepAlive) {
+        delete this.listeners[windowId]; // Remove the entry for this window ID
+        console.log(`EventBus: Removed listener for window ${windowId}. KeepAlive: ${entry.keepAlive}, Forced: ${force}`);
       } else {
-        console.log(`EventBus: Removed a listener from window ${windowId}, ${this.listeners[windowId].length} remaining`);
+        // KeepAlive is true and force is false
+        console.log(`EventBus: Did not remove listener for window ${windowId} because keepAlive is true and force is false.`);
       }
+    } else {
+      // No listener found for this ID
+      console.log(`EventBus: No listener found for window ${windowId} to unsubscribe.`);
     }
   },
 

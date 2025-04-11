@@ -54,7 +54,8 @@ function openFileManager(mode: 'open' | 'save' | 'none') {
 }
 
 onUnmounted(() => {
-  eventBus.unsubscribe(windowId, handleFileManagerMessage);
+  // Unsubscribe without the callback, force defaults to false
+  eventBus.unsubscribe(windowId);
   console.log(`DocumentEditor (${windowId}) unsubscribed from eventBus.`);
 });
 </script>
