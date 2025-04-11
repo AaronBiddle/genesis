@@ -17,9 +17,9 @@
           selectedWindow?.id === win.id ? 'bg-blue-200' : '',
         ]"
       >
-        <span class="font-mono w-6 inline-block mr-2 text-left">{{ win.id }}</span>
-        <span class="font-mono w-12 inline-block mr-5 text-left">{{ win.parentId ?? '' }}</span>
-        <span class="flex-grow truncate">{{ win.title }}</span>
+        <span class="font-mono w-6 inline-block mr-2 text-right">{{ win.id }}</span>
+        <span class="font-mono w-12 inline-block mr-5 text-right">{{ win.parentId ?? '' }}</span>
+        <span class="flex-grow truncate text-left">{{ win.title }}</span>
       </div>
     </div>
 
