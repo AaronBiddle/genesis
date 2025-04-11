@@ -78,5 +78,17 @@ export const svgIcons: Map<string, string> = new Map([
             <path d="M4 13 Q4 15 6 15 H18 Q20 15 20 13 V11 L17 7 H6 Q4 7 4 9 V13 Z" fill="none"/>
 
             <circle cx="7" cy="17" r="2" fill="none"/> <circle cx="17" cy="17" r="2" fill="none"/> </svg>`
+  ],
+  [
+    "windows",
+    `<svg xmlns="http://www.w3.org/2000/svg"
+             viewBox="0 0 24 24"
+             fill="none"
+             stroke="currentColor"
+             stroke-width="1.5"
+             stroke-linecap="round"
+             stroke-linejoin="round"
+             class="w-5 h-5"> <rect x="3" y="7" width="15" height="11" rx="1"/> <rect x="7" y="3" width="14" height="11" rx="1"/>
+        </svg>`
   ]
 ]); 

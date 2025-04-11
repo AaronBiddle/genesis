@@ -22,6 +22,7 @@ export interface ManagedWindow {
   titleBarColor?: string;
   titleColor?: string;
   launchOptions?: any;
+  parentId?: number;
 }
 
 const windows = ref<ManagedWindow[]>([]);
@@ -81,6 +82,7 @@ export function addWindow(app: App, options?: { parentId?: number; launchOptions
     titleBarColor: app.titleBarColor,
     titleColor: app.titleColor,
     launchOptions: options?.launchOptions,
+    parentId: options?.parentId,
   };
 
   windows.value.push(newWindow);

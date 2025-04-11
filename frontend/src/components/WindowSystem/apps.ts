@@ -6,6 +6,7 @@ import FileServiceTester from '@/components/FileService/FileServiceTester.vue'; 
 import FileManager from '@/components/FileService/FileManager.vue'; // Import FileManager
 import EventBusInspector from './EventBusInspector.vue'; // Import EventBusInspector
 import Logger from '@/components/Logger/Logger.vue'; // Import Logger
+import WindowInspector from './WindowInspector.vue'; // Import the new Window Inspector
 
 export interface App {
   id: string; // Unique identifier (e.g., 'text-editor', 'web-browser') - Essential
@@ -103,5 +104,18 @@ export const apps: App[] = [
     initialWidth: 600,
     initialHeight: 450,
     category: 'Utilities',
+  },
+  {
+    id: "window-inspector",
+    title: "Window Inspector",
+    iconId: "windows", // Use the 'windows' icon
+    appComponent: WindowInspector,
+    iconColor: 'text-purple-600', // Use the purple color from the original request
+    titleBarColor: 'bg-purple-200',
+    titleColor: 'text-purple-900',
+    initialWidth: 400,
+    initialHeight: 350,
+    category: 'Utilities',
+    allowMultipleInstances: false, // Only allow one instance
   }
 ];
