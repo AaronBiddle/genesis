@@ -309,7 +309,7 @@ const deleteItem = async (item: { name: string, isDirectory: boolean }) => {
 
 const openFile = async (fileName: string) => {
   log(NS, `Attempting to open file: ${fileName} from path: ${currentPath.value} on mount: ${selectedMount.value}`);
-  const parentWindowId = props.windowData?.launchOptions?.parentId;
+  const parentWindowId = props.windowData?.parentId;
   // TODO: Implement actual open logic, likely emitting an event to the parent
   // emit('fileOpened', { mount: selectedMount.value, path: currentPath.value, name: fileName });
   
@@ -333,7 +333,7 @@ const saveFile = () => {
   const fileName = activeFileName.value.trim();
   if (!fileName) return;
   const pathToSend = currentPath.value ? `${currentPath.value}/${fileName}` : fileName;
-  const parentId = props.windowData?.launchOptions?.parentId;
+  const parentId = props.windowData?.parentId;
   if (parentId) {
     log(NS, `Sending 'save' message to parent ${parentId}: Mount=${selectedMount.value}, Path=${pathToSend}`);
     eventBus.publish(props.windowData.id, parentId, { mount: selectedMount.value, path: pathToSend, mode: 'save' });
@@ -345,8 +345,8 @@ const saveFile = () => {
 };
 
 const emitCancel = () => {
-  log(NS, `File manager cancelled. Parent window ID: ${props.windowData?.launchOptions?.parentId}`);
-  const parentWindowId = props.windowData?.launchOptions?.parentId;
+  log(NS, `File manager cancelled. Parent window ID: ${props.windowData?.parentId}`);
+  const parentWindowId = props.windowData?.parentId;
   if (parentWindowId !== undefined) {
     log(NS, `Unsubscribing parent window ${parentWindowId} on cancel.`);
     eventBus.unsubscribe(parentWindowId);
