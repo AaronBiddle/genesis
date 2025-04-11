@@ -20,13 +20,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, inject, onUnmounted } from 'vue';
+import { ref, onUnmounted } from 'vue';
 import { addWindow } from '@/components/WindowSystem/WindowManager';
 import { apps } from '@/components/WindowSystem/apps';
 import eventBus from '@/components/WindowSystem/eventBus';
 
 const content = ref('');
-const windowId = inject('windowId', -1);
+const props = defineProps<{
+  windowData: {
+    id: number;
+    [key: string]: any;
+  }
+}>();
+
+// Get the real window ID from the windowData prop
+const windowId = props.windowData.id;
 
 const handleFileManagerMessage = (senderId: number, message: { path: string, mode: string }) => {
   console.log(`DocumentEditor (${windowId}) received message from FileManager (${senderId}):`, message);
