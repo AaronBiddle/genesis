@@ -3,8 +3,8 @@
     <div class="overflow-y-auto border-b border-gray-300 pb-1 mb-1 flex-shrink-0">
       <!-- Header Row -->
       <div class="flex px-2 py-1 border-b border-gray-200 font-semibold text-gray-600">
-        <span class="w-12 text-left mr-2">ID</span>
-        <span class="w-12 text-left mr-2">ParentID</span>
+        <span class="w-6 text-left mr-2">ID</span>
+        <span class="w-12 text-left mr-5">ParentID</span>
         <span class="flex-grow text-left">Name</span>
       </div>
       <!-- Data Rows -->
@@ -17,8 +17,8 @@
           selectedWindow?.id === win.id ? 'bg-blue-200' : '',
         ]"
       >
-        <span class="font-mono w-12 inline-block mr-2 text-left">{{ win.id }}</span>
-        <span class="font-mono w-12 inline-block mr-2 text-left">{{ win.parentId ?? '' }}</span>
+        <span class="font-mono w-6 inline-block mr-2 text-left">{{ win.id }}</span>
+        <span class="font-mono w-12 inline-block mr-5 text-left">{{ win.parentId ?? '' }}</span>
         <span class="flex-grow truncate">{{ win.title }}</span>
       </div>
     </div>
