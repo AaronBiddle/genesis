@@ -125,6 +125,7 @@ import {
 } from '@/services/FileClient';
 import type { ManagedWindow } from '@/components/WindowSystem/WindowManager';
 import { withDefaults } from 'vue';
+import eventBus from '@/components/WindowSystem/eventBus';
 
 // Define props using TypeScript generic
 interface Props {
@@ -304,8 +305,18 @@ const deleteItem = async (item: { name: string, isDirectory: boolean }) => {
 
 const openFile = async (fileName: string) => {
   console.log('Attempting to open file:', fileName, 'from path:', currentPath.value, 'on mount:', selectedMount.value);
-  // TODO: Implement actual open logic, likely emitting an event
+  const parentWindowId = props.windowData?.launchOptions?.parentId;
+  // TODO: Implement actual open logic, likely emitting an event to the parent
   // emit('fileOpened', { mount: selectedMount.value, path: currentPath.value, name: fileName });
+  
+  // Unsubscribe the parent *after* emitting the result
+  if (parentWindowId !== undefined) {
+      console.log(`FileManager: Unsubscribing parent window ${parentWindowId} after Open action.`);
+      eventBus.unsubscribe(parentWindowId);
+  }
+  
+  // Possibly close the FileManager window itself after emitting
+  // closeWindow(props.windowData.id); 
 };
 
 const openActiveFile = () => {
@@ -319,15 +330,29 @@ const saveFile = async () => {
     error.value = 'Please enter a filename';
     return;
   }
+  const parentWindowId = props.windowData?.launchOptions?.parentId;
+  const filePath = currentPath.value ? `${currentPath.value}/${activeFileName.value.trim()}` : activeFileName.value.trim();
   console.log('Saving file:', activeFileName.value, 'to path:', currentPath.value, 'on mount:', selectedMount.value);
-  // TODO: Implement actual save logic using FileClient
-  // e.g., await actualSaveFunction(selectedMount.value, currentPath.value, activeFileName.value, fileContent);
-  // Need to get fileContent from props or another source
-  // emit('fileSaved', { mount: selectedMount.value, path: currentPath.value, name: activeFileName.value });
-  // Potentially close window or give feedback
+  
+  // TODO: Implement actual save logic, likely emitting an event to the parent
+  // emit('fileSaved', { mount: selectedMount.value, path: filePath });
+  
+  // Unsubscribe the parent *after* emitting the result
+  if (parentWindowId !== undefined) {
+      console.log(`FileManager: Unsubscribing parent window ${parentWindowId} after Save action.`);
+      eventBus.unsubscribe(parentWindowId);
+  }
+
+  // Possibly close the FileManager window itself after emitting
+  // closeWindow(props.windowData.id);
 };
 
 const emitCancel = () => {
+  const parentWindowId = props.windowData?.launchOptions?.parentId;
+  if (parentWindowId !== undefined) {
+    console.log(`FileManager: Unsubscribing parent window ${parentWindowId} on cancel.`);
+    eventBus.unsubscribe(parentWindowId);
+  }
   emit('cancelled');
 };
 

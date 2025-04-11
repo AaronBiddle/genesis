@@ -35,6 +35,23 @@ export const svgIcons: Map<string, string> = new Map([
      </svg>`
   ],
   [
+    "logger",
+    `<svg xmlns="http://www.w3.org/2000/svg"
+             viewBox="0 0 24 24"
+             fill="none"
+             stroke="currentColor"
+             stroke-width="1.5"
+             stroke-linecap="round"
+             stroke-linejoin="round"
+             class="w-5 h-5">
+
+            <path d="M5.75 4.75H18.25C18.8023 4.75 19.25 5.19772 19.25 5.75V19.25C19.25 19.8023 18.8023 20.25 18.25 20.25H5.75C5.19772 20.25 4.75 19.8023 4.75 19.25V5.75C4.75 5.19772 5.19772 4.75 5.75 4.75Z"/>
+
+            <line x1="7.5" y1="7.5" x2="16.5" y2="7.5" stroke-width="1"/>
+            <line x1="11.5" y1="11.5" x2="13.5" y2="11.5" stroke-width="1"/> <line x1="10.5" y1="14.5" x2="13.5" y2="14.5" stroke-width="1"/> <circle cx="12.5" cy="13.5" r="4"/> <line x1="15.3" y1="16.3" x2="17.8" y2="18.8"/>
+    </svg>`
+  ],
+  [
     "utilities",
     `<svg xmlns="http://www.w3.org/2000/svg"
              viewBox="0 0 24 24"

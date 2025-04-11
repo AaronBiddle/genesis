@@ -5,6 +5,7 @@ import HttpInspector from '@/components/HTTP/HttpInspector.vue'; // Import HttpI
 import FileServiceTester from '@/components/FileService/FileServiceTester.vue'; // Import FileServiceTester
 import FileManager from '@/components/FileService/FileManager.vue'; // Import FileManager
 import EventBusInspector from './EventBusInspector.vue'; // Import EventBusInspector
+import Logger from '@/components/Logger/Logger.vue'; // Import Logger
 
 export interface App {
   id: string; // Unique identifier (e.g., 'text-editor', 'web-browser') - Essential
@@ -89,6 +90,18 @@ export const apps: App[] = [
     titleColor: 'text-orange-900',
     initialWidth: 550,
     initialHeight: 500,
+    category: 'Utilities',
+  },
+  {
+    id: "logger",
+    title: "Logger",
+    iconId: "logger", // Use the new logger icon
+    appComponent: Logger,
+    iconColor: 'text-teal-600', // Teal theme
+    titleBarColor: 'bg-teal-200',
+    titleColor: 'text-teal-900',
+    initialWidth: 600,
+    initialHeight: 450,
     category: 'Utilities',
   }
 ];
