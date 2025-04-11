@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import type { ManagedWindow } from './WindowManager'; // Corrected import path
 import { windows as windowManagerWindows } from './WindowManager'; // Import the reactive windows state
 
@@ -49,6 +49,13 @@ import { windows as windowManagerWindows } from './WindowManager'; // Import the
 
 const windows = windowManagerWindows; // Use the imported reactive ref directly
 const selectedWindow = ref<ManagedWindow | null>(null);
+
+// Watch for changes in windows and clear selectedWindow if it's no longer in the list
+watch(windows, (newWindows) => {
+  if (selectedWindow.value && !newWindows.some(win => win.id === selectedWindow.value?.id)) {
+    selectedWindow.value = null;
+  }
+});
 
 const formatValue = (value: any, key: string): string => {
   // Handle appComponent specifically
