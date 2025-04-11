@@ -308,14 +308,14 @@ const deleteItem = async (item: { name: string, isDirectory: boolean }) => {
 };
 
 const openFile = async (fileName: string) => {
-  console.log('Attempting to open file:', fileName, 'from path:', currentPath.value, 'on mount:', selectedMount.value);
+  log(NS, `Attempting to open file: ${fileName} from path: ${currentPath.value} on mount: ${selectedMount.value}`);
   const parentWindowId = props.windowData?.launchOptions?.parentId;
   // TODO: Implement actual open logic, likely emitting an event to the parent
   // emit('fileOpened', { mount: selectedMount.value, path: currentPath.value, name: fileName });
   
   // Unsubscribe the parent *after* emitting the result
   if (parentWindowId !== undefined) {
-      console.log(`FileManager: Unsubscribing parent window ${parentWindowId} after Open action.`);
+      log(NS, `Unsubscribing parent window ${parentWindowId} after Open action.`);
       eventBus.unsubscribe(parentWindowId);
   }
   
@@ -345,9 +345,10 @@ const saveFile = () => {
 };
 
 const emitCancel = () => {
+  log(NS, `File manager cancelled. Parent window ID: ${props.windowData?.launchOptions?.parentId}`);
   const parentWindowId = props.windowData?.launchOptions?.parentId;
   if (parentWindowId !== undefined) {
-    console.log(`FileManager: Unsubscribing parent window ${parentWindowId} on cancel.`);
+    log(NS, `Unsubscribing parent window ${parentWindowId} on cancel.`);
     eventBus.unsubscribe(parentWindowId);
   }
   emit('cancelled');
