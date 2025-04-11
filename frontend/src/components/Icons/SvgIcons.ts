@@ -46,5 +46,20 @@ export const svgIcons: Map<string, string> = new Map([
              class="w-5 h-5">
              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
         </svg>`
+  ],
+  [
+    "bus",
+    `<svg xmlns="http://www.w3.org/2000/svg"
+             viewBox="0 0 24 24"
+             fill="none"
+             stroke="currentColor"
+             stroke-width="1.5"
+             stroke-linecap="round"
+             stroke-linejoin="round"
+             class="w-5 h-5">
+
+            <path d="M4 13 Q4 15 6 15 H18 Q20 15 20 13 V11 L17 7 H6 Q4 7 4 9 V13 Z" fill="none"/>
+
+            <circle cx="7" cy="17" r="2" fill="none"/> <circle cx="17" cy="17" r="2" fill="none"/> </svg>`
   ]
 ]); 
