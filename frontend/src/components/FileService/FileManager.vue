@@ -97,6 +97,20 @@
       </button>
 
     </div>
+
+    <!-- Restore New Directory Dialog -->
+    <div v-if="showNewDirDialog" class="dialog-overlay">
+      <div class="dialog">
+        <h4>Create New Folder</h4>
+        <input v-model="newDirName" placeholder="Folder name" @keyup.enter="createNewDirectory" />
+        <div class="dialog-buttons">
+          <button @click="showNewDirDialog = false" class="cancel-button">Cancel</button>
+          <button @click="createNewDirectory" class="confirm-button">Create</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Removed Save Dialog -->
   </div>
 </template>
 
@@ -251,15 +265,15 @@ const createNewDirectory = async () => {
     error.value = 'Please enter a folder name';
     return;
   }
-  
-  const dirPath = currentPath.value 
-    ? `${currentPath.value}/${newDirName.value}` 
+
+  const dirPath = currentPath.value
+    ? `${currentPath.value}/${newDirName.value}`
     : newDirName.value;
-  
+
   try {
     await createDirectory(selectedMount.value, dirPath);
     showNewDirDialog.value = false;
-    newDirName.value = '';
+    newDirName.value = ''; // Clear input after creation
     loadCurrentDirectory();
   } catch (err: any) {
     error.value = `Failed to create folder: ${err.message}`;
