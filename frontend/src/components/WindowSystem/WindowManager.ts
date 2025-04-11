@@ -27,7 +27,7 @@ export interface ManagedWindow {
 
 const windows = ref<ManagedWindow[]>([]);
 const nextWindowId = ref(0);
-let highestZIndex = ref(0);
+const BASE_Z_INDEX = 1;
 
 // Default window dimensions and starting position
 const DEFAULT_WIDTH = 400;
@@ -72,7 +72,7 @@ export function addWindow(app: App, options?: { parentId?: number; launchOptions
     y: posY,
     width: initialWidth,
     height: initialHeight,
-    zIndex: highestZIndex.value + 1,
+    zIndex: BASE_Z_INDEX,
     state: 'normal',
     isFocused: true,
     resizable: app.resizable ?? true,
@@ -87,7 +87,6 @@ export function addWindow(app: App, options?: { parentId?: number; launchOptions
 
   windows.value.push(newWindow);
   nextWindowId.value++;
-  highestZIndex.value = newWindow.zIndex;
 }
 
 // Function to bring a window to the front and focus it
@@ -95,10 +94,10 @@ export function bringToFront(windowId: number): void {
     const windowIndex = windows.value.findIndex(w => w.id === windowId);
     if (windowIndex !== -1) {
         const windowToUpdate = windows.value[windowIndex];
-        
+
         // Unfocus all other windows
-        windows.value.forEach(w => {
-          if (w.id !== windowId) {
+        windows.value.forEach((w, index) => {
+          if (index !== windowIndex) {
             w.isFocused = false;
           }
         });
@@ -106,10 +105,12 @@ export function bringToFront(windowId: number): void {
         // Focus the target window
         windowToUpdate.isFocused = true;
 
-        // Bring to front if not already the top-most
-        if (windowToUpdate.zIndex < highestZIndex.value) {
-            highestZIndex.value++;
-            windowToUpdate.zIndex = highestZIndex.value;
+        // Bring to front by moving the item to the end of the array
+        if (windowIndex < windows.value.length - 1) {
+            // Remove the window from its current position
+            const [movedWindow] = windows.value.splice(windowIndex, 1);
+            // Add it to the end
+            windows.value.push(movedWindow);
         }
     }
 }
@@ -149,16 +150,7 @@ export function closeWindow(windowId: number): void {
   const index = windows.value.findIndex(w => w.id === windowId);
   if (index !== -1) {
     windows.value.splice(index, 1);
-    // Optional: Re-evaluate highestZIndex if the closed window was on top
-    if (windows.value.length === 0) {
-      highestZIndex.value = 0;
-    } else if (highestZIndex.value === windows.value[index]?.zIndex) {
-        // This check is slightly complex as the removed window's zIndex is gone.
-        // A safer approach is to recalculate highestZIndex from the remaining windows.
-        highestZIndex.value = Math.max(0, ...windows.value.map(w => w.zIndex));
-    }
   }
 }
 
-// Export the reactive state and actions
-export { windows, highestZIndex }; 
+export { windows }; 

@@ -29,7 +29,7 @@
         <dl class="grid grid-cols-2 gap-x-4 gap-y-0.5">
           <template v-for="(value, key) in selectedWindow" :key="key">
             <dt class="font-medium text-gray-600">{{ key }}:</dt>
-            <dd class="font-mono break-all">{{ formatValue(value) }}</dd>
+            <dd class="font-mono break-all">{{ formatValue(value, key) }}</dd>
           </template>
         </dl>
       </div>
@@ -50,7 +50,15 @@ import { windows as windowManagerWindows } from './WindowManager'; // Import the
 const windows = windowManagerWindows; // Use the imported reactive ref directly
 const selectedWindow = ref<ManagedWindow | null>(null);
 
-const formatValue = (value: any): string => {
+const formatValue = (value: any, key: string): string => {
+  // Handle appComponent specifically
+  if (key === 'appComponent' && value?.__name) {
+    return value.__name;
+  } else if (key === 'appComponent') {
+      return '[Component]'; // Fallback if __name is not available
+  }
+
+  // Existing formatting logic
   if (typeof value === 'object' && value !== null) {
     try {
       return JSON.stringify(value);
