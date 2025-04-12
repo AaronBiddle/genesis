@@ -3,4 +3,4 @@ description:
 globs: *.ts,*.vue
 alwaysApply: false
 ---
-When generating or modifying file paths within a Vue.js project, prefer using the `@` alias instead of either the `src` directory. References within a single component should use relative paths.
+When generating or modifying file paths within a Vue.js project, prefer using the `@/` alias to access the `src/` directory. References within a single component should use relative paths.

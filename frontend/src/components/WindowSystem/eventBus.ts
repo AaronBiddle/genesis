@@ -1,4 +1,5 @@
 import { reactive } from 'vue';
+import { log } from "@/components/Logger/loggerStore";
 
 // Define the structure for a single listener entry
 export interface ListenerEntry {
@@ -30,7 +31,7 @@ const eventBus = reactive({
     // Replace the existing listeners array with a new array containing only the new entry
     this.listeners[windowId] = [newListenerEntry];
     
-    console.log(`EventBus: Window ${windowId} registered listener. Final keepAlive: ${finalKeepAlive} (Previous: ${existingEntry?.keepAlive ?? 'N/A'}, New: ${keepAlive})`);
+    log("eventBus.ts", `Window ${windowId} registered listener. Final keepAlive: ${finalKeepAlive} (Previous: ${existingEntry?.keepAlive ?? 'N/A'}, New: ${keepAlive})`);
   },
 
   // Updated unsubscribe method: removes based on windowId, respects keepAlive unless forced
@@ -40,14 +41,14 @@ const eventBus = reactive({
     if (entry) {
       if (force || !entry.keepAlive) {
         delete this.listeners[windowId]; // Remove the entry for this window ID
-        console.log(`EventBus: Removed listener for window ${windowId}. KeepAlive: ${entry.keepAlive}, Forced: ${force}`);
+        log("eventBus.ts", `Removed listener for window ${windowId}. KeepAlive: ${entry.keepAlive}, Forced: ${force}`);
       } else {
         // KeepAlive is true and force is false
-        console.log(`EventBus: Did not remove listener for window ${windowId} because keepAlive is true and force is false.`);
+        log("eventBus.ts", `Did not remove listener for window ${windowId} because keepAlive is true and force is false.`);
       }
     } else {
       // No listener found for this ID
-      console.log(`EventBus: No listener found for window ${windowId} to unsubscribe.`);
+      log("eventBus.ts", `No listener found for window ${windowId} to unsubscribe.`);
     }
   },
 
@@ -57,9 +58,9 @@ const eventBus = reactive({
       this.listeners[receiverId].forEach(entry => {
         entry.callback(senderId, message);
       });
-      console.log(`EventBus: Message from window ${senderId} posted to window ${receiverId}`);
+      log("eventBus.ts", `Message from window ${senderId} posted to window ${receiverId}`);
     } else {
-      console.warn(`EventBus: No listeners found for window ID: ${receiverId} to post message from ${senderId}`);
+      log("eventBus.ts", `No listeners found for window ID: ${receiverId} to post message from ${senderId}`, true);
     }
   }
 });
