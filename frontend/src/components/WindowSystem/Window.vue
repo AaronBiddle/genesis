@@ -6,26 +6,26 @@
   >
     <!-- Title Bar -->
     <div
-      class="title-bar bg-blue-500 text-white flex justify-between items-center border-b border-gray-300"
-      :style="{ backgroundColor: windowData.titleBarColor || '' }"
+      class="title-bar text-white flex justify-between items-center border-b border-gray-300"
+      :class="windowData.titleBarColor || 'bg-blue-500'"
       @mousedown.prevent="startDrag"
     >
       <div class="flex items-center flex-grow min-w-0">
         <span
           v-if="iconSvg"
           class="icon-container pl-2 w-7 h-6 mr-2 flex-shrink-0"
-          :style="{ color: windowData.iconColor || '' }"
+          :class="windowData.iconColor || ''"
           v-html="iconSvg"
         ></span>
         <span
           class="window-title pl-2 py-1"
-          :style="{ color: windowData.titleColor || '' }"
+          :class="windowData.titleColor || ''"
         >{{ windowData.title }}</span>
       </div>
       <div class="window-controls self-stretch flex-shrink-0">
         <button
           class="close-button pr-3 pl-3 h-full flex items-center"
-          :style="{ color: windowData.titleColor || '' }"
+          :class="windowData.titleColor || ''"
           @click.stop="handleClose"
           title="Close"
         >
@@ -35,8 +35,15 @@
     </div>
 
     <!-- Content Area -->
-    <div class="content-area flex-grow bg-white p-2 overflow-auto">
-      <component :is="windowData.appComponent" />
+    <div class="content-area flex-grow bg-white overflow-auto">
+      <component 
+        ref="appComponentRef"
+        :is="windowData.appComponent" 
+        :sendParent="sendParent"
+        :getLaunchOptions="getLaunchOptions" 
+        :newWindow="newWindow"
+        @close="handleClose" 
+      />
     </div>
 
     <!-- Resize Handles (only if resizable) -->
@@ -54,15 +61,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted, shallowRef, watch } from 'vue';
 import type { ManagedWindow } from '@/components/WindowSystem/WindowManager';
+import type { ComponentPublicInstance } from 'vue';
 import {
   bringToFront,
   moveWindow,
   updateWindowBounds,
-  closeWindow
+  closeWindow,
+  addWindow
 } from '@/components/WindowSystem/WindowManager';
+import eventBus from '@/components/WindowSystem/eventBus'; // Import eventBus
 import { svgIcons } from '@/components/Icons/SvgIcons';
+import { log } from '@/components/Logger/loggerStore';
+import { apps } from '@/components/WindowSystem/apps'; // Import apps array
+
+const NS = 'Window.vue';
 
 // Type alias for resize handle directions
 type ResizeDirection = | 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
@@ -83,6 +97,9 @@ const initialX = ref(0); // Store initial window bounds for resizing
 const initialY = ref(0);
 const initialWidth = ref(0);
 const initialHeight = ref(0);
+
+// Ref to hold the app component instance
+const appComponentRef = shallowRef<ComponentPublicInstance | null>(null);
 
 const windowStyle = computed(() => ({
   left: `${props.windowData.x}px`,
@@ -188,6 +205,47 @@ function handleClose() {
   closeWindow(props.windowData.id);
 }
 
+// Function to send a message to the parent window
+function sendParent(message: any) {
+  if (props.windowData.parentId !== undefined) {
+    eventBus.post(props.windowData.id, props.windowData.parentId, message);
+    log(NS, `Window ${props.windowData.id} sending message to parent ${props.windowData.parentId}`);
+  } else {
+    log(NS, `Window ${props.windowData.id} tried to send to parent, but parentId is undefined.`, true);
+  }
+}
+
+// Function to get launch options for the child component
+function getLaunchOptions(): any {
+  return props.windowData.launchOptions;
+}
+
+// Function to be passed down for launching new windows by ID
+function newWindow(appId: string, launchOptions?: any) {
+  const appToLaunch = apps.find(app => app.id === appId);
+  if (appToLaunch) {
+    addWindow(appToLaunch, { parentId: props.windowData.id, launchOptions });
+    log(NS, `Window ${props.windowData.id} requested to launch new window for app ID ${appId}`);
+  } else {
+    log(NS, `Window ${props.windowData.id} requested to launch unknown app ID: ${appId}`, true);
+  }
+}
+
+// Lifecycle hook: Subscribe to eventBus if the component has handleMessage
+onMounted(() => {
+  // We need to wait for the component instance to be available.
+  // Using watch on the ref ensures we act when it's mounted.
+  watch(appComponentRef, (newInstance) => {
+    if (newInstance && typeof (newInstance as any).handleMessage === 'function') {
+      const callback = (newInstance as any).handleMessage as (senderId: number, message: any) => void;
+      // Subscribe with keepAlive: false by default. 
+      // If an app NEEDS persistent listening, it would need a different mechanism.
+      eventBus.subscribe(props.windowData.id, callback, false);
+      log(NS, `Window ${props.windowData.id}: Subscribed eventBus for component with handleMessage.`);
+    }
+  }, { immediate: true }); // immediate: true checks right away if ref is already set
+});
+
 </script>
 
 <style scoped>
@@ -212,14 +270,14 @@ function handleClose() {
 .close-button {
   background: none;
   border: none;
-  color: white;
+  /* color: white; */ /* Removed - Let Tailwind class control color */
   font-size: 1rem;
   line-height: 1;
 }
 
 .close-button:hover {
   background-color: rgba(255, 0, 0, 0.7);
-  color: white;
+  /* color: white; */ /* Removed - Let Tailwind class control color */
 }
 
 .content-area {

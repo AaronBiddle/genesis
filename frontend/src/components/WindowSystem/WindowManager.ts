@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, markRaw } from 'vue';
 import type { App } from './apps';
 import type { Component } from 'vue';
 
@@ -21,11 +21,13 @@ export interface ManagedWindow {
   iconColor?: string;
   titleBarColor?: string;
   titleColor?: string;
+  launchOptions?: any;
+  parentId?: number;
 }
 
 const windows = ref<ManagedWindow[]>([]);
 const nextWindowId = ref(0);
-let highestZIndex = ref(0);
+const BASE_Z_INDEX = 1;
 
 // Default window dimensions and starting position
 const DEFAULT_WIDTH = 400;
@@ -38,25 +40,39 @@ const CASCADE_OFFSET = 20;
 const MIN_WIDTH = 200;
 const MIN_HEIGHT = 150;
 
-export function addWindow(app: App, options?: { x?: number; y?: number }): void {
+export function addWindow(app: App, options?: { parentId?: number; launchOptions?: any }): void {
   const initialWidth = app.initialWidth ?? DEFAULT_WIDTH;
   const initialHeight = app.initialHeight ?? DEFAULT_HEIGHT;
 
-  // Calculate position: Use provided options or fallback to cascade
-  const posX = options?.x ?? START_X + (windows.value.length * CASCADE_OFFSET) % (window.innerWidth - initialWidth - START_X * 2);
-  const posY = options?.y ?? START_Y + (windows.value.length * CASCADE_OFFSET) % (window.innerHeight - initialHeight - START_Y * 2);
+  // Calculate position: Use parent window position or fallback to cascade
+  let posX = START_X + (windows.value.length * CASCADE_OFFSET) % (window.innerWidth - initialWidth - START_X * 2);
+  let posY = START_Y + (windows.value.length * CASCADE_OFFSET) % (window.innerHeight - initialHeight - START_Y * 2);
+
+  // Position relative to parent window if provided
+  if (options?.parentId !== undefined) {
+    const parentWindow = windows.value.find(w => w.id === options.parentId);
+    if (parentWindow) {
+      // Position the new window centered on the parent with a slight offset
+      posX = parentWindow.x + parentWindow.width / 2 - initialWidth / 2 + 30;
+      posY = parentWindow.y + parentWindow.height / 2 - initialHeight / 2 + 30;
+      
+      // Ensure the window is within screen bounds
+      posX = Math.max(0, Math.min(posX, window.innerWidth - initialWidth));
+      posY = Math.max(0, Math.min(posY, window.innerHeight - initialHeight));
+    }
+  }
 
   const newWindow: ManagedWindow = {
     id: nextWindowId.value,
     appId: app.id,
     title: app.title,
-    appComponent: app.appComponent,
+    appComponent: markRaw(app.appComponent),
     iconId: app.iconId,
     x: posX,
     y: posY,
     width: initialWidth,
     height: initialHeight,
-    zIndex: highestZIndex.value + 1,
+    zIndex: BASE_Z_INDEX,
     state: 'normal',
     isFocused: true,
     resizable: app.resizable ?? true,
@@ -65,11 +81,12 @@ export function addWindow(app: App, options?: { x?: number; y?: number }): void 
     iconColor: app.iconColor,
     titleBarColor: app.titleBarColor,
     titleColor: app.titleColor,
+    launchOptions: options?.launchOptions,
+    parentId: options?.parentId,
   };
 
   windows.value.push(newWindow);
   nextWindowId.value++;
-  highestZIndex.value = newWindow.zIndex;
 }
 
 // Function to bring a window to the front and focus it
@@ -77,10 +94,10 @@ export function bringToFront(windowId: number): void {
     const windowIndex = windows.value.findIndex(w => w.id === windowId);
     if (windowIndex !== -1) {
         const windowToUpdate = windows.value[windowIndex];
-        
+
         // Unfocus all other windows
-        windows.value.forEach(w => {
-          if (w.id !== windowId) {
+        windows.value.forEach((w, index) => {
+          if (index !== windowIndex) {
             w.isFocused = false;
           }
         });
@@ -88,10 +105,12 @@ export function bringToFront(windowId: number): void {
         // Focus the target window
         windowToUpdate.isFocused = true;
 
-        // Bring to front if not already the top-most
-        if (windowToUpdate.zIndex < highestZIndex.value) {
-            highestZIndex.value++;
-            windowToUpdate.zIndex = highestZIndex.value;
+        // Bring to front by moving the item to the end of the array
+        if (windowIndex < windows.value.length - 1) {
+            // Remove the window from its current position
+            const [movedWindow] = windows.value.splice(windowIndex, 1);
+            // Add it to the end
+            windows.value.push(movedWindow);
         }
     }
 }
@@ -131,16 +150,7 @@ export function closeWindow(windowId: number): void {
   const index = windows.value.findIndex(w => w.id === windowId);
   if (index !== -1) {
     windows.value.splice(index, 1);
-    // Optional: Re-evaluate highestZIndex if the closed window was on top
-    if (windows.value.length === 0) {
-      highestZIndex.value = 0;
-    } else if (highestZIndex.value === windows.value[index]?.zIndex) {
-        // This check is slightly complex as the removed window's zIndex is gone.
-        // A safer approach is to recalculate highestZIndex from the remaining windows.
-        highestZIndex.value = Math.max(0, ...windows.value.map(w => w.zIndex));
-    }
   }
 }
 
-// Export the reactive state and actions
-export { windows, highestZIndex }; 
+export { windows }; 
