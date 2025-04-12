@@ -40,6 +40,7 @@
         ref="appComponentRef"
         :is="windowData.appComponent" 
         :sendParent="sendParent"
+        :getLaunchOptions="getLaunchOptions" 
         @cancelled="handleClose" 
       />
     </div>
@@ -206,6 +207,11 @@ function sendParent(message: any) {
   } else {
     console.warn(`Window ${props.windowData.id} tried to send to parent, but parentId is undefined.`);
   }
+}
+
+// Function to get launch options for the child component
+function getLaunchOptions(): any {
+  return props.windowData.launchOptions;
 }
 
 // Lifecycle hook: Subscribe to eventBus if the component has handleMessage
