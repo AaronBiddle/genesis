@@ -22,6 +22,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { log } from '@/components/Logger/loggerStore';
+import { readFile, writeFile } from '@/services/FileClient';
 
 const props = defineProps<{
   newWindow: (appId: string, launchOptions?: any) => void;
@@ -30,6 +31,8 @@ const props = defineProps<{
 const NS = 'DocumentEditor.vue';
 
 const content = ref('');
+const currentFilePath = ref<string | null>(null);
+const currentFileMount = ref<string | null>(null);
 
 interface FileMessagePayload {
   mode: 'open' | 'save';
@@ -43,21 +46,35 @@ interface FileMessage {
   payload: FileMessagePayload;
 }
 
-const handleMessage = (senderId: number, message: FileMessage | any) => { // Allow 'any' for flexibility or future message types
+const handleMessage = async (senderId: number, message: FileMessage | any) => {
   log(NS, `Received message from sender (${senderId}): ${JSON.stringify(message)}`);
 
   if (message.type === 'file') {
     const payload = message.payload as FileMessagePayload;
-    const fullPath = payload.name ? `${payload.path}/${payload.name}` : payload.path;
 
     if (payload.mode === 'open') {
-      // Placeholder: Log that we would load the file
-      log(NS, `Received request to open: Mount=${payload.mount}, Path=${payload.path}, Name=${payload.name}. Full path: ${fullPath}`);
-      // In a real scenario: fetch(fullPath).then(...) -> content.value = ...
+      const fullPath = payload.name ? `${payload.path}/${payload.name}` : payload.path;
+      log(NS, `Attempting to open: Mount=${payload.mount}, Path=${payload.path}, Name=${payload.name}. Full path: ${fullPath}`);
+      try {
+        const fileContent = await readFile(payload.mount, fullPath);
+        content.value = fileContent;
+        currentFilePath.value = fullPath;
+        currentFileMount.value = payload.mount;
+        log(NS, `Successfully opened and read file: ${fullPath}`);
+      } catch (error: any) {
+        log(NS, `Error opening file ${fullPath}: ${error.message}`, true);
+      }
     } else if (payload.mode === 'save') {
-      // Placeholder: Log that we would save the file
-      log(NS, `Received request to save to: Mount=${payload.mount}, Full Path=${payload.path}`);
-      // In a real scenario: saveContentToFile(content.value, payload.path) ...
+      const savePath = payload.path;
+      log(NS, `Attempting to save content to: Mount=${payload.mount}, Path=${savePath}`);
+      try {
+        await writeFile(payload.mount, savePath, content.value);
+        currentFilePath.value = savePath;
+        currentFileMount.value = payload.mount;
+        log(NS, `Successfully saved file to: ${savePath}`);
+      } catch (error: any) {
+        log(NS, `Error saving file to ${savePath}: ${error.message}`, true);
+      }
     }
   } else {
     log(NS, `Received unhandled message type: ${message.type ?? 'unknown'}`);

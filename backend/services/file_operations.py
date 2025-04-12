@@ -75,6 +75,9 @@ def resolve_path(mount_name: str, user_path: str) -> Tuple[str, Dict[str, str]]:
             mount_path += '/'
         return mount_path, mount_info
     
+    # Strip leading slashes to prevent os.path.join issues on Windows
+    user_path = user_path.lstrip('/')
+
     # Construct absolute path
     abs_path = os.path.abspath(os.path.join(mount_info['path'], user_path)).replace('\\\\', '/')
     

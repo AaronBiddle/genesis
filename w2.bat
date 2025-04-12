@@ -1,2 +1,2 @@
 call backend\.venv\Scripts\activate
-python -m backend.server
+REM python -m backend.server
