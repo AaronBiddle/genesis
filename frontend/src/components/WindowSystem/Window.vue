@@ -71,6 +71,9 @@ import {
 } from '@/components/WindowSystem/WindowManager';
 import eventBus from '@/components/WindowSystem/eventBus'; // Import eventBus
 import { svgIcons } from '@/components/Icons/SvgIcons';
+import { log } from '@/components/Logger/loggerStore';
+
+const NS = 'Window.vue';
 
 // Type alias for resize handle directions
 type ResizeDirection = | 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
@@ -203,9 +206,9 @@ function handleClose() {
 function sendParent(message: any) {
   if (props.windowData.parentId !== undefined) {
     eventBus.post(props.windowData.id, props.windowData.parentId, message);
-    console.log(`Window ${props.windowData.id} sending message to parent ${props.windowData.parentId}`);
+    log(NS, `Window ${props.windowData.id} sending message to parent ${props.windowData.parentId}`);
   } else {
-    console.warn(`Window ${props.windowData.id} tried to send to parent, but parentId is undefined.`);
+    log(NS, `Window ${props.windowData.id} tried to send to parent, but parentId is undefined.`, true);
   }
 }
 
@@ -224,7 +227,7 @@ onMounted(() => {
       // Subscribe with keepAlive: false by default. 
       // If an app NEEDS persistent listening, it would need a different mechanism.
       eventBus.subscribe(props.windowData.id, callback, false);
-      console.log(`Window ${props.windowData.id}: Subscribed eventBus for component with handleMessage.`);
+      log(NS, `Window ${props.windowData.id}: Subscribed eventBus for component with handleMessage.`);
     }
   }, { immediate: true }); // immediate: true checks right away if ref is already set
 });
