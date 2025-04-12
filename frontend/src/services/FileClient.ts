@@ -22,8 +22,16 @@ export const readFile = async (mountName: string, filePath: string): Promise<str
       throw new Error(`HTTP error ${response.status} (${response.statusText}): ${errorText}`);
     }
 
-    const data = await response.text(); // Read response as text
-    return data;
+    const rawData = await response.text(); // Read response as text
+    try {
+      // Attempt to parse the raw text as a JSON string literal
+      const parsedData = JSON.parse(rawData);
+      return parsedData;
+    } catch (parseError) {
+      // If parsing fails, assume it was plain text and return rawData
+      console.warn('FileClient: readFile response was not valid JSON, returning as raw text.', parseError);
+      return rawData;
+    }
   } catch (err: any) {
     console.error('FileClient: Error reading file:', err);
     throw new Error(err.message || 'Failed to read file. Is the backend server running?');

@@ -57,6 +57,7 @@ const handleMessage = async (senderId: number, message: FileMessage | any) => {
       log(NS, `Attempting to open: Mount=${payload.mount}, Path=${payload.path}, Name=${payload.name}. Full path: ${fullPath}`);
       try {
         const fileContent = await readFile(payload.mount, fullPath);
+        log(NS, `Raw file content received: [${fileContent}]`);
         content.value = fileContent;
         currentFilePath.value = fullPath;
         currentFileMount.value = payload.mount;
