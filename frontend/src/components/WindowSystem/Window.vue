@@ -41,6 +41,7 @@
         :is="windowData.appComponent" 
         :sendParent="sendParent"
         :getLaunchOptions="getLaunchOptions" 
+        :newWindow="newWindow"
         @close="handleClose" 
       />
     </div>
@@ -67,11 +68,13 @@ import {
   bringToFront,
   moveWindow,
   updateWindowBounds,
-  closeWindow
+  closeWindow,
+  addWindow
 } from '@/components/WindowSystem/WindowManager';
 import eventBus from '@/components/WindowSystem/eventBus'; // Import eventBus
 import { svgIcons } from '@/components/Icons/SvgIcons';
 import { log } from '@/components/Logger/loggerStore';
+import type { App } from '@/components/WindowSystem/apps'; // Keep this import
 
 const NS = 'Window.vue';
 
@@ -215,6 +218,12 @@ function sendParent(message: any) {
 // Function to get launch options for the child component
 function getLaunchOptions(): any {
   return props.windowData.launchOptions;
+}
+
+// Function to be passed down to the child component for launching new windows
+function newWindow(app: App, launchOptions?: any) {
+  addWindow(app, { parentId: props.windowData.id, launchOptions });
+  log(NS, `Window ${props.windowData.id} requested to launch new window for app ${app.id}`);
 }
 
 // Lifecycle hook: Subscribe to eventBus if the component has handleMessage
