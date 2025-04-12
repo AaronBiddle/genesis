@@ -135,13 +135,15 @@ interface Props {
   windowData: ManagedWindow;
   initialPath?: string;      // Made optional as it has a default
   initialMount?: string;     // Made optional as it has a default
-  closeSelf: () => void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   initialPath: '',
   initialMount: 'userdata',
 });
+
+// Define emits
+const emit = defineEmits(['cancelled']);
 
 // Reactive state
 const mounts = ref<Array<{ name: string, path: string }>>([]);
@@ -333,7 +335,7 @@ const saveFile = () => {
   if (parentId) {
     log(NS, `Sending 'save' message to parent ${parentId}: Mount=${selectedMount.value}, Path=${pathToSend}`);
     eventBus.post(props.windowData.id, parentId, { mount: selectedMount.value, path: pathToSend, mode: 'save' });
-    props.closeSelf(); // Close file manager after sending message
+    emit('cancelled'); // Close file manager after sending message
   } else {
     log(NS, 'Cannot send save message: No parent window ID found.', true);
     // Handle case where there is no parent (e.g., show error or log)
@@ -347,7 +349,7 @@ const emitCancel = () => {
     log(NS, `Unsubscribing parent window ${parentWindowId} on cancel.`);
     eventBus.unsubscribe(parentWindowId);
   }
-  props.closeSelf();
+  emit('cancelled');
 };
 
 // Watch for changes
