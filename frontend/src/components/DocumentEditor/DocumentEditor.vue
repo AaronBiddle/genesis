@@ -20,47 +20,42 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue';
+import { ref } from 'vue';
 import { addWindow } from '@/components/WindowSystem/WindowManager';
 import { apps } from '@/components/WindowSystem/apps';
-import eventBus from '@/components/WindowSystem/eventBus';
 import { log } from '@/components/Logger/loggerStore';
 
 const NS = 'DocumentEditor.vue';
 
 const content = ref('');
-const props = defineProps<{
-  windowData: {
-    id: number;
-    [key: string]: any;
+
+const handleMessage = (senderId: number, message: { path: string, mode: string }) => {
+  log(NS, `Received message from sender (${senderId}): ${JSON.stringify(message)}`);
+  // Add logic here based on the message, e.g., load file content if message.path exists
+  if (message.path && message.mode === 'open') {
+    // Placeholder: Log that we would load the file
+    log(NS, `Received path to open: ${message.path}`);
+    // In a real scenario: fetch(message.path).then(...) -> content.value = ...
+  } else if (message.mode === 'save') {
+    // Placeholder: Log that we would save the file
+    log(NS, `Received request to save to: ${message.path ?? 'path not provided'}`);
+    // In a real scenario: saveContentToFile(content.value, message.path) ...
   }
-}>();
-
-// Get the real window ID from the windowData prop
-const windowId = props.windowData.id;
-
-const handleFileManagerMessage = (senderId: number, message: { path: string, mode: string }) => {
-  log(NS, `Received message from FileManager (${senderId}): ${JSON.stringify(message)}`);
 };
 
 function openFileManager(mode: 'open' | 'save' | 'none') {
   const fileManagerApp = apps.find(app => app.id === 'file-manager');
   if (fileManagerApp) {
-    eventBus.subscribe(windowId, handleFileManagerMessage);
-    log(NS, `Subscribed to eventBus for window ${windowId}.`);
 
     addWindow(fileManagerApp, {
-      parentId: windowId,
       launchOptions: { mode }
     });
   }
 }
 
-onUnmounted(() => {
-  // Unsubscribe without the callback, force defaults to false
-  eventBus.unsubscribe(windowId);
-  log(NS, `Unsubscribed from eventBus for window ${windowId}.`);
-});
+// Expose the handleMessage function so Window.vue can access it
+defineExpose({ handleMessage });
+
 </script>
 
 <style scoped>

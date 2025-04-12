@@ -37,6 +37,7 @@
     <!-- Content Area -->
     <div class="content-area flex-grow bg-white overflow-auto">
       <component 
+        ref="appComponentRef"
         :is="windowData.appComponent" 
         :sendParent="sendParent"
         @cancelled="handleClose" 
@@ -58,8 +59,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted, shallowRef, watch } from 'vue';
 import type { ManagedWindow } from '@/components/WindowSystem/WindowManager';
+import type { ComponentPublicInstance } from 'vue';
 import {
   bringToFront,
   moveWindow,
@@ -88,6 +90,9 @@ const initialX = ref(0); // Store initial window bounds for resizing
 const initialY = ref(0);
 const initialWidth = ref(0);
 const initialHeight = ref(0);
+
+// Ref to hold the app component instance
+const appComponentRef = shallowRef<ComponentPublicInstance | null>(null);
 
 const windowStyle = computed(() => ({
   left: `${props.windowData.x}px`,
@@ -202,6 +207,21 @@ function sendParent(message: any) {
     console.warn(`Window ${props.windowData.id} tried to send to parent, but parentId is undefined.`);
   }
 }
+
+// Lifecycle hook: Subscribe to eventBus if the component has handleMessage
+onMounted(() => {
+  // We need to wait for the component instance to be available.
+  // Using watch on the ref ensures we act when it's mounted.
+  watch(appComponentRef, (newInstance) => {
+    if (newInstance && typeof (newInstance as any).handleMessage === 'function') {
+      const callback = (newInstance as any).handleMessage as (senderId: number, message: any) => void;
+      // Subscribe with keepAlive: false by default. 
+      // If an app NEEDS persistent listening, it would need a different mechanism.
+      eventBus.subscribe(props.windowData.id, callback, false);
+      console.log(`Window ${props.windowData.id}: Subscribed eventBus for component with handleMessage.`);
+    }
+  }, { immediate: true }); // immediate: true checks right away if ref is already set
+});
 
 </script>
 
