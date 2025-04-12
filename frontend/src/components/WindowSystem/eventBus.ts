@@ -51,15 +51,15 @@ const eventBus = reactive({
     }
   },
 
-  publish(senderId: number, receiverId: number, message: any) {
+  post(senderId: number, receiverId: number, message: any) {
     if (this.listeners[receiverId]) {
       // Iterate through listener entries and invoke their callbacks
       this.listeners[receiverId].forEach(entry => {
         entry.callback(senderId, message);
       });
-      console.log(`EventBus: Message from window ${senderId} delivered to window ${receiverId}`);
+      console.log(`EventBus: Message from window ${senderId} posted to window ${receiverId}`);
     } else {
-      console.warn(`EventBus: No listeners found for window ID: ${receiverId}`);
+      console.warn(`EventBus: No listeners found for window ID: ${receiverId} to post message from ${senderId}`);
     }
   }
 });

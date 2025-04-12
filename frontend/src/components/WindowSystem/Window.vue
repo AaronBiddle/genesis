@@ -38,7 +38,7 @@
     <div class="content-area flex-grow bg-white overflow-auto">
       <component 
         :is="windowData.appComponent" 
-        :windowData="windowData"
+        :sendParent="sendParent"
         @cancelled="handleClose" 
       />
     </div>
@@ -66,6 +66,7 @@ import {
   updateWindowBounds,
   closeWindow
 } from '@/components/WindowSystem/WindowManager';
+import eventBus from '@/components/WindowSystem/eventBus'; // Import eventBus
 import { svgIcons } from '@/components/Icons/SvgIcons';
 
 // Type alias for resize handle directions
@@ -190,6 +191,16 @@ function stopResize() {
 // Handle Closing the Window
 function handleClose() {
   closeWindow(props.windowData.id);
+}
+
+// Function to send a message to the parent window
+function sendParent(message: any) {
+  if (props.windowData.parentId !== undefined) {
+    eventBus.post(props.windowData.id, props.windowData.parentId, message);
+    console.log(`Window ${props.windowData.id} sending message to parent ${props.windowData.parentId}`);
+  } else {
+    console.warn(`Window ${props.windowData.id} tried to send to parent, but parentId is undefined.`);
+  }
 }
 
 </script>
