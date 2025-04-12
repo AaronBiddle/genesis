@@ -314,8 +314,8 @@ const openFile = async (fileName: string) => {
   log(NS, `Attempting to open file: ${fileName} from path: ${currentPath.value} on mount: ${selectedMount.value}`);
   // Example using sendParent:
   props.sendParent({ 
-    type: 'fileOpened', 
-    payload: { mount: selectedMount.value, path: currentPath.value, name: fileName }
+    type: 'file', 
+    payload: { mode: 'open', mount: selectedMount.value, path: currentPath.value, name: fileName }
   });
 
   emit('close'); // Close after sending
@@ -334,8 +334,8 @@ const saveFile = () => {
 
   log(NS, `Sending 'save' message via sendParent: Mount=${selectedMount.value}, Path=${pathToSend}`);
   props.sendParent({
-    type: 'saveFile', 
-    payload: { mount: selectedMount.value, path: pathToSend }
+    type: 'file', 
+    payload: { mode: 'save', mount: selectedMount.value, path: pathToSend }
   });
   emit('close'); // Close file manager after sending message
 };

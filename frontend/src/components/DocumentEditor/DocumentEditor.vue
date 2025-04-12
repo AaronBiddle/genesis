@@ -31,17 +31,36 @@ const NS = 'DocumentEditor.vue';
 
 const content = ref('');
 
-const handleMessage = (senderId: number, message: { path: string, mode: string }) => {
+interface FileMessagePayload {
+  mode: 'open' | 'save';
+  mount: string;
+  path: string;
+  name?: string; // Present in 'open' mode
+}
+
+interface FileMessage {
+  type: 'file';
+  payload: FileMessagePayload;
+}
+
+const handleMessage = (senderId: number, message: FileMessage | any) => { // Allow 'any' for flexibility or future message types
   log(NS, `Received message from sender (${senderId}): ${JSON.stringify(message)}`);
-  // Add logic here based on the message, e.g., load file content if message.path exists
-  if (message.path && message.mode === 'open') {
-    // Placeholder: Log that we would load the file
-    log(NS, `Received path to open: ${message.path}`);
-    // In a real scenario: fetch(message.path).then(...) -> content.value = ...
-  } else if (message.mode === 'save') {
-    // Placeholder: Log that we would save the file
-    log(NS, `Received request to save to: ${message.path ?? 'path not provided'}`);
-    // In a real scenario: saveContentToFile(content.value, message.path) ...
+
+  if (message.type === 'file') {
+    const payload = message.payload as FileMessagePayload;
+    const fullPath = payload.name ? `${payload.path}/${payload.name}` : payload.path;
+
+    if (payload.mode === 'open') {
+      // Placeholder: Log that we would load the file
+      log(NS, `Received request to open: Mount=${payload.mount}, Path=${payload.path}, Name=${payload.name}. Full path: ${fullPath}`);
+      // In a real scenario: fetch(fullPath).then(...) -> content.value = ...
+    } else if (payload.mode === 'save') {
+      // Placeholder: Log that we would save the file
+      log(NS, `Received request to save to: Mount=${payload.mount}, Full Path=${payload.path}`);
+      // In a real scenario: saveContentToFile(content.value, payload.path) ...
+    }
+  } else {
+    log(NS, `Received unhandled message type: ${message.type ?? 'unknown'}`);
   }
 };
 
