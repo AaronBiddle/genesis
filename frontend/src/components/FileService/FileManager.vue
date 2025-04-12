@@ -336,7 +336,7 @@ const saveFile = () => {
   const parentId = props.windowData?.parentId;
   if (parentId) {
     log(NS, `Sending 'save' message to parent ${parentId}: Mount=${selectedMount.value}, Path=${pathToSend}`);
-    eventBus.publish(props.windowData.id, parentId, { mount: selectedMount.value, path: pathToSend, mode: 'save' });
+    eventBus.post(props.windowData.id, parentId, { mount: selectedMount.value, path: pathToSend, mode: 'save' });
     emit('cancelled'); // Close file manager after sending message
   } else {
     log(NS, 'Cannot send save message: No parent window ID found.', true);
