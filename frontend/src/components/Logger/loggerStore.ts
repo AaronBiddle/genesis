@@ -82,7 +82,9 @@ const clearNamespaceSettings = () => {
 
 export function useLogger() {
     const filteredLogs = computed(() => {
-      return allLogs.value.filter(log => isNamespaceEnabled(log.namespace));
+      return allLogs.value.filter(log => 
+        log.isError || isNamespaceEnabled(log.namespace)
+      );
     });
 
     const isNamespaceEnabled = (namespace: string): boolean => {
@@ -135,13 +137,11 @@ export const log = (namespace: string, message: string, isError: boolean = false
     }
   }
 
-  // Also log to console if enabled
-  if (enabledNamespaces[namespace] !== false) { // Check explicitly for false
-    if (isError) {
-      console.error(`[${namespace}]`, message);
-    } else {
-      console.log(`[${namespace}]`, message);
-    }
+  // Always log errors to console, regardless of namespace setting
+  if (isError) {
+    console.error(`[${namespace}]`, message);
+  } else if (enabledNamespaces[namespace] !== false) { // Check explicitly for false
+    console.log(`[${namespace}]`, message);
   }
 };
 
