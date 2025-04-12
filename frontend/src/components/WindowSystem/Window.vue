@@ -41,7 +41,6 @@
         :is="windowData.appComponent" 
         :sendParent="sendParent"
         :getLaunchOptions="getLaunchOptions" 
-        :closeSelf="closeSelf"
         @cancelled="handleClose" 
       />
     </div>
@@ -198,11 +197,6 @@ function stopResize() {
 // Handle Closing the Window
 function handleClose() {
   closeWindow(props.windowData.id);
-}
-
-// Function to be passed as a prop for the child component to close itself
-function closeSelf() {
-  handleClose();
 }
 
 // Function to send a message to the parent window

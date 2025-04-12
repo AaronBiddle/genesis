@@ -2,7 +2,7 @@
   <div class="file-manager">
     <div class="file-manager-header">
       <h3>{{ modeTitle }}</h3>
-      <div v-if="props.parentApplication" class="close-button" @click="emitCancel">×</div>
+      <div class="close-button" @click="emitCancel">×</div>
     </div>
 
     <!-- Mount Selection -->
@@ -133,19 +133,15 @@ const NS = 'FileManager.vue';
 // Define props using TypeScript generic
 interface Props {
   windowData: ManagedWindow;
-  parentApplication?: boolean; // Made optional as it has a default
   initialPath?: string;      // Made optional as it has a default
   initialMount?: string;     // Made optional as it has a default
+  closeSelf: () => void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  parentApplication: false, // Assuming default is false
   initialPath: '',
   initialMount: 'userdata',
 });
-
-// Define emits
-const emit = defineEmits(['cancelled']);
 
 // Reactive state
 const mounts = ref<Array<{ name: string, path: string }>>([]);
@@ -337,7 +333,7 @@ const saveFile = () => {
   if (parentId) {
     log(NS, `Sending 'save' message to parent ${parentId}: Mount=${selectedMount.value}, Path=${pathToSend}`);
     eventBus.post(props.windowData.id, parentId, { mount: selectedMount.value, path: pathToSend, mode: 'save' });
-    emit('cancelled'); // Close file manager after sending message
+    props.closeSelf(); // Close file manager after sending message
   } else {
     log(NS, 'Cannot send save message: No parent window ID found.', true);
     // Handle case where there is no parent (e.g., show error or log)
@@ -351,7 +347,7 @@ const emitCancel = () => {
     log(NS, `Unsubscribing parent window ${parentWindowId} on cancel.`);
     eventBus.unsubscribe(parentWindowId);
   }
-  emit('cancelled');
+  props.closeSelf();
 };
 
 // Watch for changes
@@ -362,7 +358,7 @@ watch(effectiveMode, () => { // Watch the computed property directly
 
 // Initialize component
 onMounted(async () => {
-  log(NS, `Component mounted. Mode: ${effectiveMode.value}, Parent: ${props.parentApplication}, Initial Mount: ${props.initialMount}, Initial Path: '${props.initialPath}'`);
+  log(NS, `Component mounted. Mode: ${effectiveMode.value}, Initial Mount: ${props.initialMount}, Initial Path: '${props.initialPath}'`);
   await loadMounts();
   await loadCurrentDirectory();
 });
