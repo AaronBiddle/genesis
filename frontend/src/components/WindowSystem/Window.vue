@@ -41,7 +41,7 @@
         :is="windowData.appComponent" 
         :sendParent="sendParent"
         :getLaunchOptions="getLaunchOptions" 
-        @cancelled="handleClose" 
+        @close="handleClose" 
       />
     </div>
 

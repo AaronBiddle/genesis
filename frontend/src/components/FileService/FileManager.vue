@@ -143,7 +143,7 @@ interface Props {
 const props = defineProps<Props>();
 
 // Define emits
-const emit = defineEmits(['cancelled']);
+const emit = defineEmits(['close']);
 
 // Get launch options and set initial state
 const launchOptions = props.getLaunchOptions() ?? { mode: 'none' }; // Default if options are null/undefined
@@ -318,7 +318,7 @@ const openFile = async (fileName: string) => {
     payload: { mount: selectedMount.value, path: currentPath.value, name: fileName }
   });
 
-  emit('cancelled'); // Close after sending
+  emit('close'); // Close after sending
 };
 
 const openActiveFile = () => {
@@ -337,12 +337,12 @@ const saveFile = () => {
     type: 'saveFile', 
     payload: { mount: selectedMount.value, path: pathToSend }
   });
-  emit('cancelled'); // Close file manager after sending message
+  emit('close'); // Close file manager after sending message
 };
 
 const emitCancel = () => {
-  log(NS, 'File manager cancelled.');
-  emit('cancelled');
+  log(NS, 'File manager closed.');
+  emit('close');
 };
 
 // Watch for changes
