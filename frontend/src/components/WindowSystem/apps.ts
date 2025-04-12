@@ -44,6 +44,8 @@ export const apps: App[] = [
     titleBarColor: 'bg-blue-200', // Tailwind class
     titleColor: 'text-gray-800', // Tailwind class
     category: 'Utilities',
+    initialWidth: 200,
+    initialHeight: 400
   },
   {
     id: "http-inspector",
