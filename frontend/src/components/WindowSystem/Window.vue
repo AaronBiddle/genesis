@@ -74,7 +74,7 @@ import {
 import eventBus from '@/components/WindowSystem/eventBus'; // Import eventBus
 import { svgIcons } from '@/components/Icons/SvgIcons';
 import { log } from '@/components/Logger/loggerStore';
-import type { App } from '@/components/WindowSystem/apps'; // Keep this import
+import { apps } from '@/components/WindowSystem/apps'; // Import apps array
 
 const NS = 'Window.vue';
 
@@ -220,10 +220,15 @@ function getLaunchOptions(): any {
   return props.windowData.launchOptions;
 }
 
-// Function to be passed down to the child component for launching new windows
-function newWindow(app: App, launchOptions?: any) {
-  addWindow(app, { parentId: props.windowData.id, launchOptions });
-  log(NS, `Window ${props.windowData.id} requested to launch new window for app ${app.id}`);
+// Function to be passed down for launching new windows by ID
+function newWindow(appId: string, launchOptions?: any) {
+  const appToLaunch = apps.find(app => app.id === appId);
+  if (appToLaunch) {
+    addWindow(appToLaunch, { parentId: props.windowData.id, launchOptions });
+    log(NS, `Window ${props.windowData.id} requested to launch new window for app ID ${appId}`);
+  } else {
+    log(NS, `Window ${props.windowData.id} requested to launch unknown app ID: ${appId}`, true);
+  }
 }
 
 // Lifecycle hook: Subscribe to eventBus if the component has handleMessage

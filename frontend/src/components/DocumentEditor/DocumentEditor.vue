@@ -21,9 +21,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { addWindow } from '@/components/WindowSystem/WindowManager';
-import { apps } from '@/components/WindowSystem/apps';
 import { log } from '@/components/Logger/loggerStore';
+
+const props = defineProps<{
+  newWindow: (appId: string, launchOptions?: any) => void;
+}>();
 
 const NS = 'DocumentEditor.vue';
 
@@ -44,20 +46,10 @@ const handleMessage = (senderId: number, message: { path: string, mode: string }
 };
 
 function openFileManager(mode: 'open' | 'save' | 'none') {
-  const fileManagerApp = apps.find(app => app.id === 'file-manager');
-  if (fileManagerApp) {
-
-    addWindow(fileManagerApp, {
-      launchOptions: { mode }
-    });
-  }
+  props.newWindow("file-manager", { mode });
 }
 
 // Expose the handleMessage function so Window.vue can access it
 defineExpose({ handleMessage });
 
 </script>
-
-<style scoped>
-/* Add any component-specific styles here */
-</style> 
