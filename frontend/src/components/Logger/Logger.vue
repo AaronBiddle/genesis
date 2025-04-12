@@ -49,7 +49,7 @@
 import { ref, watch, nextTick } from 'vue';
 import { useLogger } from './loggerStore';
 
-const { availableNamespaces, enabledNamespaces, filteredLogs, isNamespaceEnabled, toggleNamespace, clearLogs, clearNamespaceSettings } = useLogger();
+const { availableNamespaces, filteredLogs, isNamespaceEnabled, toggleNamespace, clearLogs, clearNamespaceSettings } = useLogger();
 
 const logContainer = ref<HTMLElement | null>(null);
 
