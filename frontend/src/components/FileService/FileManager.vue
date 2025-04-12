@@ -123,17 +123,21 @@ import {
   deleteDirectory,
   getMounts,
 } from '@/services/FileClient';
-import type { ManagedWindow } from '@/components/WindowSystem/WindowManager';
-import eventBus from '@/components/WindowSystem/eventBus';
 import { log } from '@/components/Logger/loggerStore';
 
 const NS = 'FileManager.vue';
 
+// Define expected structure for launch options
+interface FileManagerOptions {
+  mode: 'open' | 'save' | 'none';
+  initialPath?: string;
+  initialMount?: string;
+}
+
 // Define props using TypeScript generic
 interface Props {
-  windowData: ManagedWindow;
-  initialPath?: string;      // Made optional as it has a default
-  initialMount?: string;     // Made optional as it has a default
+  getLaunchOptions: () => FileManagerOptions | undefined | null;
+  sendParent: (message: any) => void;
 }
 
 const props = defineProps<Props>();
@@ -141,11 +145,16 @@ const props = defineProps<Props>();
 // Define emits
 const emit = defineEmits(['cancelled']);
 
+// Get launch options and set initial state
+const launchOptions = props.getLaunchOptions() ?? { mode: 'none' }; // Default if options are null/undefined
+const initialMode = launchOptions.mode ?? 'none';
+const initialMountProp = launchOptions.initialMount ?? 'userdata';
+const initialPathProp = launchOptions.initialPath ?? '';
+
 // Reactive state
 const mounts = ref<Array<{ name: string, path: string }>>([]);
-// Use optional props with defaults
-const selectedMount = ref<string>(props.initialMount ?? 'userdata');
-const currentPath = ref<string>(props.initialPath ?? '');
+const selectedMount = ref<string>(initialMountProp);
+const currentPath = ref<string>(initialPathProp);
 const items = ref<Array<{ name: string, isDirectory: boolean }>>([]);
 const selectedItem = ref<string | null>(null);
 const loading = ref<boolean>(true);
@@ -156,7 +165,7 @@ const activeFileName = ref<string>('');
 
 // Computed properties
 const effectiveMode = computed<'open' | 'save' | 'none'>(() => {
-  return props.windowData?.launchOptions?.mode ?? 'none';
+  return initialMode; // Use the mode determined at launch
 });
 
 const modeTitle = computed(() => {
@@ -303,18 +312,13 @@ const deleteItem = async (item: { name: string, isDirectory: boolean }) => {
 
 const openFile = async (fileName: string) => {
   log(NS, `Attempting to open file: ${fileName} from path: ${currentPath.value} on mount: ${selectedMount.value}`);
-  const parentWindowId = props.windowData?.parentId;
-  // TODO: Implement actual open logic, likely emitting an event to the parent
-  // emit('fileOpened', { mount: selectedMount.value, path: currentPath.value, name: fileName });
-  
-  // Unsubscribe the parent *after* emitting the result
-  if (parentWindowId !== undefined) {
-      log(NS, `Unsubscribing parent window ${parentWindowId} after Open action.`);
-      eventBus.unsubscribe(parentWindowId);
-  }
-  
-  // Possibly close the FileManager window itself after emitting
-  // closeWindow(props.windowData.id); 
+  // Example using sendParent:
+  props.sendParent({ 
+    type: 'fileOpened', 
+    payload: { mount: selectedMount.value, path: currentPath.value, name: fileName }
+  });
+
+  emit('cancelled'); // Close after sending
 };
 
 const openActiveFile = () => {
@@ -327,24 +331,17 @@ const saveFile = () => {
   const fileName = activeFileName.value.trim();
   if (!fileName) return;
   const pathToSend = currentPath.value ? `${currentPath.value}/${fileName}` : fileName;
-  const parentId = props.windowData?.parentId;
-  if (parentId) {
-    log(NS, `Sending 'save' message to parent ${parentId}: Mount=${selectedMount.value}, Path=${pathToSend}`);
-    eventBus.post(props.windowData.id, parentId, { mount: selectedMount.value, path: pathToSend, mode: 'save' });
-    emit('cancelled'); // Close file manager after sending message
-  } else {
-    log(NS, 'Cannot send save message: No parent window ID found.', true);
-    // Handle case where there is no parent (e.g., show error or log)
-  }
+
+  log(NS, `Sending 'save' message via sendParent: Mount=${selectedMount.value}, Path=${pathToSend}`);
+  props.sendParent({
+    type: 'saveFile', 
+    payload: { mount: selectedMount.value, path: pathToSend }
+  });
+  emit('cancelled'); // Close file manager after sending message
 };
 
 const emitCancel = () => {
-  log(NS, `File manager cancelled. Parent window ID: ${props.windowData?.parentId}`);
-  const parentWindowId = props.windowData?.parentId;
-  if (parentWindowId !== undefined) {
-    log(NS, `Unsubscribing parent window ${parentWindowId} on cancel.`);
-    eventBus.unsubscribe(parentWindowId);
-  }
+  log(NS, 'File manager cancelled.');
   emit('cancelled');
 };
 
@@ -356,7 +353,7 @@ watch(effectiveMode, () => { // Watch the computed property directly
 
 // Initialize component
 onMounted(async () => {
-  log(NS, `Component mounted. Mode: ${effectiveMode.value}, Initial Mount: ${props.initialMount}, Initial Path: '${props.initialPath}'`);
+  log(NS, `Component mounted. Mode: ${initialMode}, Initial Mount: ${initialMountProp}, Initial Path: '${initialPathProp}'`);
   await loadMounts();
   await loadCurrentDirectory();
 });

@@ -31,7 +31,7 @@ const eventBus = reactive({
     // Replace the existing listeners array with a new array containing only the new entry
     this.listeners[windowId] = [newListenerEntry];
     
-    log("eventBus.ts", `Window ${windowId} registered listener. Final keepAlive: ${finalKeepAlive} (Previous: ${existingEntry?.keepAlive ?? 'N/A'}, New: ${keepAlive})`);
+    log("eventBus.ts", `Window ${windowId} registered listener. Final keepAlive: ${finalKeepAlive}`);
   },
 
   // Updated unsubscribe method: removes based on windowId, respects keepAlive unless forced
