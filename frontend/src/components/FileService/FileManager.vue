@@ -124,7 +124,6 @@ import {
   getMounts,
 } from '@/services/FileClient';
 import type { ManagedWindow } from '@/components/WindowSystem/WindowManager';
-import { withDefaults } from 'vue';
 import eventBus from '@/components/WindowSystem/eventBus';
 import { log } from '@/components/Logger/loggerStore';
 
@@ -137,10 +136,7 @@ interface Props {
   initialMount?: string;     // Made optional as it has a default
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  initialPath: '',
-  initialMount: 'userdata',
-});
+const props = defineProps<Props>();
 
 // Define emits
 const emit = defineEmits(['cancelled']);
@@ -148,8 +144,8 @@ const emit = defineEmits(['cancelled']);
 // Reactive state
 const mounts = ref<Array<{ name: string, path: string }>>([]);
 // Use optional props with defaults
-const selectedMount = ref<string>(props.initialMount);
-const currentPath = ref<string>(props.initialPath);
+const selectedMount = ref<string>(props.initialMount ?? 'userdata');
+const currentPath = ref<string>(props.initialPath ?? '');
 const items = ref<Array<{ name: string, isDirectory: boolean }>>([]);
 const selectedItem = ref<string | null>(null);
 const loading = ref<boolean>(true);
