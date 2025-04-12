@@ -2,15 +2,17 @@
   <div class="p-4 flex flex-col h-full bg-gray-50">
     <div class="mb-4 pb-2 border-b border-gray-300">
       <h3 class="text-lg font-semibold mb-2">Namespace Filters</h3>
-      <div v-for="ns in availableNamespaces" :key="ns" class="flex items-center mb-1">
-        <input
-          type="checkbox"
-          :id="`ns-${ns}`"
-          :checked="isNamespaceEnabled(ns)"
-          @change="toggleNamespace(ns)"
-          class="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-        />
-        <label :for="`ns-${ns}`" class="text-sm text-gray-700">{{ ns }}</label>
+      <div class="grid grid-cols-3 gap-2">
+        <div v-for="ns in availableNamespaces" :key="ns" class="flex items-center">
+          <input
+            type="checkbox"
+            :id="`ns-${ns}`"
+            :checked="isNamespaceEnabled(ns)"
+            @change="toggleNamespace(ns)"
+            class="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <label :for="`ns-${ns}`" class="text-sm text-gray-700">{{ ns }}</label>
+        </div>
       </div>
       <div class="mt-2 space-x-2"> <button
           @click="clearLogs"
