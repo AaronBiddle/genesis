@@ -16,14 +16,45 @@ const renderedMarkdown = computed(() => md.render(props.source || ''));
 
 <style scoped>
 /* Add any specific styles for the rendered Markdown container here */
+:deep(h1) {
+  font-size: 2em;
+  margin-top: 0.67em;
+  margin-bottom: 0.33em;
+}
+:deep(h2) {
+  font-size: 1.5em;
+  margin-top: 0.83em;
+  margin-bottom: 0.41em;
+}
+:deep(h3) {
+  font-size: 1.17em;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+:deep(h4) {
+  font-size: 1em;
+  margin-top: 1.33em;
+  margin-bottom: 0.67em;
+}
+:deep(h5) {
+  font-size: 0.83em;
+  margin-top: 1.67em;
+  margin-bottom: 0.83em;
+}
+:deep(h6) {
+  font-size: 0.67em;
+  margin-top: 2.33em;
+  margin-bottom: 1.17em;
+}
+
+/* Shared margin adjustments for all headers (can be kept if desired) */
 :deep(h1),
 :deep(h2),
 :deep(h3),
 :deep(h4),
 :deep(h5),
 :deep(h6) {
-  margin-top: 1em;
-  margin-bottom: 0.5em;
+  font-weight: bold; /* Also adding bold font weight */
 }
 
 :deep(p) {
@@ -57,6 +88,18 @@ const renderedMarkdown = computed(() => md.render(props.source || ''));
   padding-left: 2em;
 }
 
+/* Add specific list-style-types for nested unordered lists */
+:deep(ul) {
+  list-style-type: disc;
+}
+:deep(ul ul) {
+  list-style-type: circle;
+  margin-bottom: 0; /* Prevent extra space between nested list items */
+}
+:deep(ul ul ul) {
+  list-style-type: square;
+}
+
 :deep(li) {
   margin-bottom: 0.5em;
 }
@@ -75,5 +118,10 @@ const renderedMarkdown = computed(() => md.render(props.source || ''));
 
 :deep(a:hover) {
   text-decoration: underline;
+}
+
+/* Remove top margin from the very first element rendered */
+:deep(> :first-child) {
+  margin-top: 0;
 }
 </style> 
