@@ -14,7 +14,7 @@
       <!-- Added Eye Toggle Button -->
       <button 
         class="p-1 hover:bg-gray-200 rounded ml-auto h-7 w-7 flex items-center justify-center" 
-        :class="{ 'text-blue-500': isPreviewActive }" 
+        :class="isPreviewActive ? 'text-blue-500' : 'text-gray-500'" 
         @click="togglePreview"
         v-html="eyeIconSvg"
       >
