@@ -1,6 +1,9 @@
 <template>
   <div class="p-2 pt-0 h-full w-full flex flex-col">
     <div class="toolbar flex items-center p-1 mb-0">
+      <button class="p-1 hover:bg-gray-200 rounded" @click="createNewFile">
+        <img src="@/components/Icons/icons8/icons8-new-file-80.png" alt="New File" class="h-6 w-6">
+      </button>
       <button class="p-1 hover:bg-gray-200 rounded" @click="openFileManager('open')">
         <img src="@/components/Icons/icons8/icons8-open-file-80.png" alt="Open" class="h-6 w-6">
       </button>
@@ -118,6 +121,13 @@ function togglePreview() {
   isPreviewActive.value = !isPreviewActive.value;
   log(NS, `Preview mode toggled: ${isPreviewActive.value}`);
   // Add logic here for what happens when preview is toggled on/off
+}
+
+function createNewFile() {
+  content.value = '';
+  currentFilePath.value = null;
+  // Keep the currentFileMount.value as is for convenience
+  log(NS, 'Created new file, cleared editor content');
 }
 
 // Expose the handleMessage function so Window.vue can access it
