@@ -157,20 +157,22 @@ const renderedMarkdown = computed(() => md.render(props.source || ''));
 :deep(th),
 :deep(td) {
   border: 1px solid #ccc;
-  padding: 0.5em 0.75em;
+  padding: 0.5em 1em; /* Increased horizontal padding */
   text-align: left;
 }
 
 :deep(th) {
-  background-color: #f0f0f0;
-  font-weight: bold;
+  background-color: #607D8B; /* Blue-grey background */
+  color: white; /* White text for contrast */
+  font-weight: 600; /* Semibold font weight */
 }
 
-:deep(tr:nth-child(even)) {
-  background-color: #f9f9f9; /* Light grey for even rows */
+/* Style for table body rows */
+:deep(tbody tr) {
+  background-color: #ECEFF1; /* Lighter blue-grey */
 }
 
-:deep(tr:nth-child(odd)) {
-  background-color: #ffffff; /* White for odd rows */
+:deep(tbody tr:hover) {
+  background-color: #CFD8DC; /* Slightly darker on hover */
 }
 </style> 
