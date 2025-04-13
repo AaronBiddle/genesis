@@ -7,8 +7,17 @@
       <button class="p-1 hover:bg-gray-200 rounded" @click="openFileManager('open')">
         <img src="@/components/Icons/icons8/icons8-open-file-80.png" alt="Open" class="h-6 w-6">
       </button>
-      <button class="p-1 hover:bg-gray-200 rounded ml-1" @click="openFileManager('save')">
-        <img src="@/components/Icons/icons8/icons8-save-80.png" alt="Save" class="h-6 w-6">
+      <button 
+        class="p-1 hover:bg-gray-200 rounded ml-1 disabled:opacity-50 disabled:hover:bg-transparent"
+        @click="handleSaveClick"
+        :disabled="isSaveDisabled"
+      >
+        <img 
+          src="@/components/Icons/icons8/icons8-save-80.png" 
+          alt="Save" 
+          class="h-6 w-6"
+          :class="{ 'icon-disabled': isSaveDisabled }"
+        >
       </button>
       <button class="p-1 hover:bg-gray-200 rounded ml-1" @click="openFileManager('save')">
         <img src="@/components/Icons/icons8/icons8-save-as-80.png" alt="Save As" class="h-6 w-6">
@@ -56,6 +65,9 @@ const content = ref('');
 const currentFilePath = ref<string | null>(null);
 const currentFileMount = ref<string | null>(null);
 const isPreviewActive = ref(false); // State for the preview toggle
+
+// Computed property to determine if the save button should be disabled
+const isSaveDisabled = computed(() => !currentFilePath.value || !currentFileMount.value);
 
 // Get the eye icon SVG, remove fixed size/color classes for dynamic control
 const eyeIconSvg = computed(() => {
@@ -112,6 +124,24 @@ const handleMessage = async (senderId: number, message: FileMessage | any) => {
   }
 };
 
+// Function to handle the Save button click
+async function handleSaveClick() {
+  if (currentFilePath.value && currentFileMount.value) {
+    log(NS, `Attempting to save directly to: Mount=${currentFileMount.value}, Path=${currentFilePath.value}`);
+    try {
+      await writeFile(currentFileMount.value, currentFilePath.value, content.value);
+      log(NS, `Successfully saved file directly to: ${currentFilePath.value}`);
+    } catch (error: any) {
+      log(NS, `Error saving file directly to ${currentFilePath.value}: ${error.message}`, true);
+      // Optionally, open the save dialog as a fallback on error?
+      // openFileManager('save'); 
+    }
+  } else {
+    log(NS, 'No current file path/mount. Opening save dialog.');
+    openFileManager('save');
+  }
+}
+
 function openFileManager(mode: 'open' | 'save' | 'none') {
   props.newWindow("file-manager", { mode });
 }
@@ -134,3 +164,9 @@ function createNewFile() {
 defineExpose({ handleMessage });
 
 </script>
+
+<style scoped>
+.icon-disabled {
+  filter: grayscale(1) opacity(0.9);
+}
+</style>
