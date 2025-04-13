@@ -20,11 +20,19 @@
       >
       </button>
     </div>
-    <textarea
-      v-model="content"
-      class="flex-grow w-full h-full border p-2 border-gray-300 rounded resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
-      placeholder="Start typing..."
-    ></textarea>
+    <!-- Conditionally render textarea or Markdown preview -->
+    <template v-if="!isPreviewActive">
+      <textarea
+        v-model="content"
+        class="flex-grow w-full h-full border p-2 border-gray-300 rounded resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+        placeholder="Start typing..."
+      ></textarea>
+    </template>
+    <template v-else>
+      <div class="flex-grow w-full h-full border p-2 border-gray-300 rounded overflow-y-auto">
+        <MarkdownRenderer :source="content" />
+      </div>
+    </template>
   </div>
 </template>
 
@@ -33,6 +41,7 @@ import { ref, computed } from 'vue';
 import { log } from '@/components/Logger/loggerStore';
 import { readFile, writeFile } from '@/services/FileClient';
 import { svgIcons } from '@/components/Icons/SvgIcons'; // Import svgIcons
+import MarkdownRenderer from '@/components/Markdown/MarkdownRenderer.vue'; // Import MarkdownRenderer
 
 const props = defineProps<{
   newWindow: (appId: string, launchOptions?: any) => void;
