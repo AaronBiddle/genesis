@@ -51,6 +51,7 @@
           v-for="item in items" 
           :key="item.name" 
           @click="handleItemClick(item)"
+          @dblclick="handleItemDoubleClick(item)"
           :class="['file-item', { 'selected': selectedItem === item.name }]"
         >
           <div class="file-icon">{{ item.isDirectory ? '📁' : '📄' }}</div>
@@ -267,6 +268,13 @@ const handleItemClick = (item: { name: string, isDirectory: boolean }) => {
   } else {
     // For files (in any mode), select and populate the filename input
     activeFileName.value = item.name;
+  }
+};
+
+const handleItemDoubleClick = (item: { name: string, isDirectory: boolean }) => {
+  if (effectiveMode.value === 'open' && !item.isDirectory) {
+    log(NS, `Double-clicked file '${item.name}', attempting to open.`);
+    openFile(item.name);
   }
 };
 
