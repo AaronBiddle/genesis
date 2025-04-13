@@ -35,7 +35,7 @@
     </div>
 
     <!-- Content Area -->
-    <div class="content-area flex-grow bg-white overflow-auto">
+    <div class="content-area flex-grow bg-white">
       <component 
         ref="appComponentRef"
         :is="windowData.appComponent" 

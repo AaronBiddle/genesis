@@ -24,12 +24,12 @@
     <template v-if="!isPreviewActive">
       <textarea
         v-model="content"
-        class="flex-grow w-full h-full border p-2 border-gray-300 rounded resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+        class="flex-grow w-full h-full border p-2 border-gray-300 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
         placeholder="Start typing..."
       ></textarea>
     </template>
     <template v-else>
-      <div class="flex-grow w-full h-full border p-2 border-gray-300 rounded overflow-y-auto">
+      <div class="flex-grow w-full h-full border p-2 border-gray-300 overflow-y-auto">
         <MarkdownRenderer :source="content" />
       </div>
     </template>
