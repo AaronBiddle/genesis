@@ -90,5 +90,12 @@ export const svgIcons: Map<string, string> = new Map([
              stroke-linejoin="round"
              class="w-5 h-5"> <rect x="3" y="7" width="15" height="11" rx="1"/> <rect x="7" y="3" width="14" height="11" rx="1"/>
         </svg>`
+  ],
+  [
+    "eye",
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="w-16 h-16 text-blue-500">
+        <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z"/>
+        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/>
+    </svg>`
   ]
 ]); 

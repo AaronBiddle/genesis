@@ -10,6 +10,15 @@
       <button class="p-1 hover:bg-gray-200 rounded ml-1" @click="openFileManager('save')">
         <img src="@/components/Icons/icons8/icons8-save-as-80.png" alt="Save As" class="h-6 w-6">
       </button>
+
+      <!-- Added Eye Toggle Button -->
+      <button 
+        class="p-1 hover:bg-gray-200 rounded ml-auto h-7 w-7 flex items-center justify-center" 
+        :class="{ 'text-blue-500': isPreviewActive }" 
+        @click="togglePreview"
+        v-html="eyeIconSvg"
+      >
+      </button>
     </div>
     <textarea
       v-model="content"
@@ -20,9 +29,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { log } from '@/components/Logger/loggerStore';
 import { readFile, writeFile } from '@/services/FileClient';
+import { svgIcons } from '@/components/Icons/SvgIcons'; // Import svgIcons
 
 const props = defineProps<{
   newWindow: (appId: string, launchOptions?: any) => void;
@@ -33,6 +43,14 @@ const NS = 'DocumentEditor.vue';
 const content = ref('');
 const currentFilePath = ref<string | null>(null);
 const currentFileMount = ref<string | null>(null);
+const isPreviewActive = ref(false); // State for the preview toggle
+
+// Get the eye icon SVG, remove fixed size/color classes for dynamic control
+const eyeIconSvg = computed(() => {
+  const rawSvg = svgIcons.get('eye') || '';
+  // Remove the entire class attribute to allow dynamic styling via the button
+  return rawSvg.replace(/ class=".*?"/, ''); 
+});
 
 interface FileMessagePayload {
   mode: 'open' | 'save';
@@ -84,6 +102,13 @@ const handleMessage = async (senderId: number, message: FileMessage | any) => {
 
 function openFileManager(mode: 'open' | 'save' | 'none') {
   props.newWindow("file-manager", { mode });
+}
+
+// Function to toggle the preview state
+function togglePreview() {
+  isPreviewActive.value = !isPreviewActive.value;
+  log(NS, `Preview mode toggled: ${isPreviewActive.value}`);
+  // Add logic here for what happens when preview is toggled on/off
 }
 
 // Expose the handleMessage function so Window.vue can access it
