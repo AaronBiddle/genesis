@@ -100,6 +100,26 @@ const renderedMarkdown = computed(() => md.render(props.source || ''));
   list-style-type: square;
 }
 
+/* Add specific list-style-types for nested ordered lists */
+:deep(ol) {
+  list-style-type: decimal;
+}
+:deep(ol ol) {
+  list-style-type: lower-alpha;
+  margin-bottom: 0;
+}
+:deep(ol ol ol) {
+  list-style-type: lower-roman;
+}
+
+/* Reset margins for all nested lists */
+:deep(ul ul),
+:deep(ul ol),
+:deep(ol ul),
+:deep(ol ol) {
+  margin-bottom: 0;
+}
+
 :deep(li) {
   margin-bottom: 0.5em;
 }
@@ -123,5 +143,34 @@ const renderedMarkdown = computed(() => md.render(props.source || ''));
 /* Remove top margin from the very first element rendered */
 :deep(> :first-child) {
   margin-top: 0;
+}
+
+/* Table Styles */
+:deep(table) {
+  width: auto; /* Or 100% if you want full width */
+  border-collapse: collapse;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  border: 1px solid #ccc;
+}
+
+:deep(th),
+:deep(td) {
+  border: 1px solid #ccc;
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+
+:deep(th) {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
+
+:deep(tr:nth-child(even)) {
+  background-color: #f9f9f9; /* Light grey for even rows */
+}
+
+:deep(tr:nth-child(odd)) {
+  background-color: #ffffff; /* White for odd rows */
 }
 </style> 
