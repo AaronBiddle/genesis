@@ -7,6 +7,7 @@ import FileManager from '@/components/FileService/FileManager.vue'; // Import Fi
 import EventBusInspector from './EventBusInspector.vue'; // Import EventBusInspector
 import Logger from '@/components/Logger/Logger.vue'; // Import Logger
 import WindowInspector from './WindowInspector.vue'; // Import the new Window Inspector
+import ChatApp from '@/components/ChatApp/ChatApp.vue'; // Import ChatApp
 
 export interface App {
   id: string; // Unique identifier (e.g., 'text-editor', 'web-browser') - Essential
@@ -32,8 +33,22 @@ export const apps: App[] = [
     title: "Document Editor",
     iconId: "document", // Assuming 'docs' icon exists
     appComponent: DocumentEditor,
+    iconColor: 'text-blue-600', // Blue theme for icon
+    titleBarColor: 'bg-blue-100', // Light blue for title bar
+    titleColor: 'text-blue-900', // Dark blue for title text
     initialWidth: 450,
     initialHeight: 500,
+  },
+  {
+    id: "chat-app",
+    title: "Chat App",
+    iconId: "chat", // Use 'chat' icon
+    appComponent: ChatApp,
+    iconColor: 'text-cyan-600', // Cyan theme
+    titleBarColor: 'bg-cyan-100',
+    titleColor: 'text-cyan-900',
+    initialWidth: 400,
+    initialHeight: 500,    
   },
   {
     id: "icons",
@@ -119,5 +134,5 @@ export const apps: App[] = [
     initialHeight: 350,
     category: 'Utilities',
     allowMultipleInstances: false, // Only allow one instance
-  }
+  },
 ];
