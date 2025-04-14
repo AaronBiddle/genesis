@@ -4,6 +4,7 @@ import os
 from ai_models import AI_MODELS
 import json # Added for pretty printing the output dictionary
 import google.generativeai as genai # Added for Gemini
+from .ai_extraction import extract_response_data # Import the new function
 
 # Load environment variables
 load_dotenv()
@@ -61,8 +62,8 @@ def generate_response(model: str, messages: list, system_prompt: str = None):
         system_prompt: An optional system prompt string.
 
     Returns:
-        A dictionary containing the response details (content, tokens, etc.)
-        or None if an error occurs.
+        A dictionary containing the extracted response details (content, tokens, etc.)
+        or None if an error occurs or extraction is not yet implemented (Gemini).
     """
     all_models = get_models()
     if not all_models:
@@ -76,8 +77,6 @@ def generate_response(model: str, messages: list, system_prompt: str = None):
     model_details = all_models[model]
     provider = model_details['provider']
     has_thinking = model_details['has_thinking']
-
-    response_data = {}
 
     try:
         if provider == 'deepseek':
@@ -94,37 +93,15 @@ def generate_response(model: str, messages: list, system_prompt: str = None):
                 model=model,
                 messages=final_messages_deepseek # Use Deepseek formatted messages
             )
-
-            # Extract data using getattr for safety
-            choice = response.choices[0] if response.choices else None
-            usage = response.usage
-
-            if not choice or not usage:
-                 print(f"Error: Invalid response structure received from DeepSeek API for model {model}.")
-                 return None
-
-            response_data['content'] = getattr(choice.message, 'content', '')
-            response_data['reasoning_content'] = getattr(choice.message, 'reasoning_content', '')
-            response_data['finish_reason'] = getattr(choice, 'finish_reason', 'unknown')
-
-            response_data['completion_tokens'] = getattr(usage, 'completion_tokens', 0)
-            response_data['prompt_tokens'] = getattr(usage, 'prompt_tokens', 0)
-
-            # Safely access nested reasoning_tokens
-            reasoning_tokens_val = 0
-            if hasattr(usage, 'completion_tokens_details') and usage.completion_tokens_details:
-                 reasoning_tokens_val = getattr(usage.completion_tokens_details, 'reasoning_tokens', 0)
-            response_data['reasoning_tokens'] = reasoning_tokens_val
-
-            response_data['total_tokens'] = getattr(usage, 'total_tokens', 0)
-            response_data['cache_hit_tokens'] = getattr(usage, 'prompt_cache_hit_tokens', 0)
-            response_data['cache_miss_tokens'] = getattr(usage, 'prompt_cache_miss_tokens', 0)
-
-            # Adjust for non-thinking models
-            if not has_thinking:
-                response_data['reasoning_content'] = ""
-                response_data['reasoning_tokens'] = 0
-
+            
+            # Call the extraction function
+            response_data = extract_response_data(response, provider, has_thinking)
+            
+            # The extractor returns None on failure
+            if response_data is None:
+                print(f"Failed to extract data for DeepSeek model {model}.")
+                return None
+                
         elif provider == 'gemini':
             # Check if Gemini was configured successfully
             if not GEMINI_API_KEY: # Basic check, configure might have failed
@@ -132,26 +109,37 @@ def generate_response(model: str, messages: list, system_prompt: str = None):
                  return None
                  
             try:
-                # Instantiate the model using GenerativeModel (based on working example)
+                # Instantiate the model using GenerativeModel
                 gemini_model = genai.GenerativeModel(
-                    # Model name doesn't need 'models/' prefix here
                     model_name=model, 
-                    # Pass system prompt if provided
                     system_instruction=system_prompt if system_prompt else None 
                 )
                 
-                # Generate content using the messages list directly
-                # Assumes 'messages' is in the format [{role: 'user', content: '...'}, {role: 'model', content: '...'}, ...]
-                gemini_response = gemini_model.generate_content(messages)
+                # --- Convert messages to the format expected by generate_content --- 
+                # Based on the working example (list of strings) and the error message,
+                # we need to adapt the input format. 
+                # For simple, single user messages, we extract the content string.
+                # TODO: Implement proper multi-turn conversion if needed, 
+                # likely to [{role: 'user', parts: [{text: '...'}]}, {role: 'model', parts: [{text: '...'}]}]
                 
-                # Print the raw response object as requested
-                print("--- RAW GEMINI RESPONSE START ---")
-                print(gemini_response)
-                print("--- RAW GEMINI RESPONSE END ---")
+                if not messages or not isinstance(messages, list) or not messages[-1].get('content'):
+                     print("Error: Invalid or empty messages format for Gemini call.")
+                     return None
                 
-                # End immediately after printing, as requested
-                print(f"(Terminating call for Gemini model '{model}' after printing raw response)")
-                return None # Stop processing here for now
+                # Extract content from the last message for the simple list-of-strings format
+                contents_for_gemini = [messages[-1]['content']] 
+                
+                # Generate content using the converted contents
+                gemini_response = gemini_model.generate_content(contents_for_gemini)
+                
+                # Call the extraction function (which currently prints raw response and returns None)
+                response_data = extract_response_data(gemini_response, provider, has_thinking)
+                
+                # Since extractor returns None for Gemini currently, we return None here as well
+                # This maintains the previous behavior of stopping after printing raw Gemini response.
+                if response_data is None: 
+                    print(f"(Terminating call for Gemini model '{model}' after handling in extractor)")
+                    return None
                 
             except Exception as e:
                 print(f"Error during Gemini API call for model {model}: {e}")
@@ -167,6 +155,7 @@ def generate_response(model: str, messages: list, system_prompt: str = None):
         print(f"Error generating response for model {model}: {e}")
         return None
 
+    # Return the dictionary populated by the extractor function
     return response_data
 
 # Example usage removed - moved to test.py
