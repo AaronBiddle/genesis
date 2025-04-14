@@ -2,6 +2,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import os
 from ai_models import AI_MODELS
+import json # Added for pretty printing the output dictionary
 
 # Load environment variables
 load_dotenv()
@@ -31,33 +32,104 @@ def get_models():
 
     return ai_models_dict
 
-client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
+# Initialize clients (only DeepSeek for now)
+# Ensure API key is loaded before initializing
+if DEEPSEEK_API_KEY:
+    deepseek_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
+else:
+    print("Warning: DEEPSEEK_API_KEY not found in environment variables. DeepSeek client not initialized.")
+    deepseek_client = None
 
-# Round 1
-messages = [{"role": "user", "content": "9.11 and 9.8, which is greater?"}]
-response = client.chat.completions.create(
-    model="deepseek-reasoner",
-    messages=messages
-)
+# Placeholder for Gemini client initialization
+# gemini_client = ...
 
-content = response.choices[0].message.content
-reasoning_content = response.choices[0].message.reasoning_content
-completion_tokens = response.usage.completion_tokens
-prompt_tokens = response.usage.prompt_tokens
-reasoning_tokens = response.usage.completion_tokens_details.reasoning_tokens
-total_tokens = response.usage.total_tokens
-cache_hit_tokens = response.usage.prompt_cache_hit_tokens
-cache_miss_tokens = response.usage.prompt_cache_miss_tokens
-finish_reason = response.choices[0].finish_reason
+def generate_response(model: str, messages: list, system_prompt: str = None):
+    """
+    Generates a response from the specified AI model.
 
-print(f"Content: {content}\n\n")
-print(f"Reasoning Content: {reasoning_content}\n\n")
-print("-------------------------------------\n\n")
-print(f"Completion Tokens: {completion_tokens}")
-print(f"Prompt Tokens: {prompt_tokens}")
-print(f"Reasoning Tokens: {reasoning_tokens}")
-print(f"Total Tokens: {total_tokens}")
-print(f"Cache Hit Tokens: {cache_hit_tokens}")
-print(f"Cache Miss Tokens: {cache_miss_tokens}")
-print(f"Finish Reason: {finish_reason}")
+    Args:
+        model: The name of the model to use (e.g., "deepseek-reasoner").
+        messages: A list of message dictionaries.
+        system_prompt: An optional system prompt string.
+
+    Returns:
+        A dictionary containing the response details (content, tokens, etc.)
+        or None if an error occurs.
+    """
+    all_models = get_models()
+    if not all_models:
+        print("Error: No models available. Check AI_MODELS definition and loading.")
+        return None
+        
+    if model not in all_models:
+        print(f"Error: Model '{model}' not found in available models.")
+        return None
+
+    model_details = all_models[model]
+    provider = model_details['provider']
+    has_thinking = model_details['has_thinking']
+
+    # Prepare messages with optional system prompt
+    final_messages = []
+    if system_prompt:
+        final_messages.append({"role": "system", "content": system_prompt})
+    final_messages.extend(messages)
+
+    response_data = {}
+
+    try:
+        if provider == 'deepseek':
+            if not deepseek_client:
+                print("Error: DeepSeek client is not initialized (check API key).")
+                return None
+            response = deepseek_client.chat.completions.create(
+                model=model,
+                messages=final_messages
+            )
+
+            # Extract data using getattr for safety
+            choice = response.choices[0] if response.choices else None
+            usage = response.usage
+
+            if not choice or not usage:
+                 print(f"Error: Invalid response structure received from DeepSeek API for model {model}.")
+                 return None
+
+            response_data['content'] = getattr(choice.message, 'content', '')
+            response_data['reasoning_content'] = getattr(choice.message, 'reasoning_content', '')
+            response_data['finish_reason'] = getattr(choice, 'finish_reason', 'unknown')
+
+            response_data['completion_tokens'] = getattr(usage, 'completion_tokens', 0)
+            response_data['prompt_tokens'] = getattr(usage, 'prompt_tokens', 0)
+
+            # Safely access nested reasoning_tokens
+            reasoning_tokens_val = 0
+            if hasattr(usage, 'completion_tokens_details') and usage.completion_tokens_details:
+                 reasoning_tokens_val = getattr(usage.completion_tokens_details, 'reasoning_tokens', 0)
+            response_data['reasoning_tokens'] = reasoning_tokens_val
+
+            response_data['total_tokens'] = getattr(usage, 'total_tokens', 0)
+            response_data['cache_hit_tokens'] = getattr(usage, 'prompt_cache_hit_tokens', 0)
+            response_data['cache_miss_tokens'] = getattr(usage, 'prompt_cache_miss_tokens', 0)
+
+            # Adjust for non-thinking models
+            if not has_thinking:
+                response_data['reasoning_content'] = ""
+                response_data['reasoning_tokens'] = 0
+
+        elif provider == 'gemini':
+            # Placeholder for Gemini client call
+            print(f"Error: Gemini provider ('{model}') not yet implemented.")
+            return None
+        else:
+            print(f"Error: Unknown provider '{provider}' for model '{model}'.")
+            return None
+
+    except Exception as e:
+        print(f"Error during API call for model {model}: {e}")
+        return None
+
+    return response_data
+
+# Example usage removed - moved to test.py
 
