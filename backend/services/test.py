@@ -55,5 +55,31 @@ def run_tests():
     else:
         print(f"Error: Expected no response for non-existent model, but got: {json.dumps(result_3, indent=2)}")
 
+    # Example 4: Gemini Pro model (will print raw response and return None)
+    print("\n" + "="*20 + " TESTING GEMINI PRO MODEL " + "="*20)
+    test_messages_4 = [{"role": "user", "content": "Write a short poem about coding."}]
+    # Assuming 'gemini-2.5-pro-preview-03-25' exists in ai_models.py
+    test_model_4 = "gemini-2.5-pro-preview-03-25"
+    print(f"--- Calling model: {test_model_4} ---")
+    result_4 = generate_response(model=test_model_4, messages=test_messages_4)
+    if result_4 is None:
+        print(f"Call to {test_model_4} completed (expected None after printing raw response).")
+    else:
+        # This part should ideally not be reached based on current ai_operations.py logic
+        print(f"Error: Expected None response for Gemini model, but got: {json.dumps(result_4, indent=2)}")
+
+    # Example 5: Gemini Flash model (will print raw response and return None)
+    print("\n" + "="*20 + " TESTING GEMINI FLASH MODEL " + "="*20)
+    test_messages_5 = [{"role": "user", "content": "What is 10 + 5?"}]
+    # Assuming 'gemini-2.0-flash' exists in ai_models.py
+    test_model_5 = "gemini-2.0-flash"
+    print(f"--- Calling model: {test_model_5} ---")
+    result_5 = generate_response(model=test_model_5, messages=test_messages_5)
+    if result_5 is None:
+        print(f"Call to {test_model_5} completed (expected None after printing raw response).")
+    else:
+        # This part should ideally not be reached based on current ai_operations.py logic
+        print(f"Error: Expected None response for Gemini model, but got: {json.dumps(result_5, indent=2)}")
+
 if __name__ == "__main__":
     run_tests() 

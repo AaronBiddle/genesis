@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import os
 from ai_models import AI_MODELS
 import json # Added for pretty printing the output dictionary
+import google.generativeai as genai # Added for Gemini
 
 # Load environment variables
 load_dotenv()
@@ -40,15 +41,22 @@ else:
     print("Warning: DEEPSEEK_API_KEY not found in environment variables. DeepSeek client not initialized.")
     deepseek_client = None
 
-# Placeholder for Gemini client initialization
-# gemini_client = ...
+# Configure Gemini using genai.configure (based on working example)
+if GEMINI_API_KEY:
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        print("Gemini API configured successfully via genai.configure().")
+    except Exception as e:
+        print(f"Error configuring Gemini API via genai.configure(): {e}")
+else:
+    print("Warning: GEMINI_API_KEY not found in environment variables. Gemini models will not be available.")
 
 def generate_response(model: str, messages: list, system_prompt: str = None):
     """
     Generates a response from the specified AI model.
 
     Args:
-        model: The name of the model to use (e.g., "deepseek-reasoner").
+        model: The name of the model to use (e.g., "deepseek-reasoner", "gemini-2.5-pro-preview-03-25").
         messages: A list of message dictionaries.
         system_prompt: An optional system prompt string.
 
@@ -69,12 +77,6 @@ def generate_response(model: str, messages: list, system_prompt: str = None):
     provider = model_details['provider']
     has_thinking = model_details['has_thinking']
 
-    # Prepare messages with optional system prompt
-    final_messages = []
-    if system_prompt:
-        final_messages.append({"role": "system", "content": system_prompt})
-    final_messages.extend(messages)
-
     response_data = {}
 
     try:
@@ -82,9 +84,15 @@ def generate_response(model: str, messages: list, system_prompt: str = None):
             if not deepseek_client:
                 print("Error: DeepSeek client is not initialized (check API key).")
                 return None
+            # Prepare messages specifically for DeepSeek (OpenAI format)
+            final_messages_deepseek = []
+            if system_prompt:
+                final_messages_deepseek.append({"role": "system", "content": system_prompt})
+            final_messages_deepseek.extend(messages)
+            
             response = deepseek_client.chat.completions.create(
                 model=model,
-                messages=final_messages
+                messages=final_messages_deepseek # Use Deepseek formatted messages
             )
 
             # Extract data using getattr for safety
@@ -118,15 +126,45 @@ def generate_response(model: str, messages: list, system_prompt: str = None):
                 response_data['reasoning_tokens'] = 0
 
         elif provider == 'gemini':
-            # Placeholder for Gemini client call
-            print(f"Error: Gemini provider ('{model}') not yet implemented.")
-            return None
+            # Check if Gemini was configured successfully
+            if not GEMINI_API_KEY: # Basic check, configure might have failed
+                 print("Error: Gemini API key not found or configuration failed. Cannot call Gemini model.")
+                 return None
+                 
+            try:
+                # Instantiate the model using GenerativeModel (based on working example)
+                gemini_model = genai.GenerativeModel(
+                    # Model name doesn't need 'models/' prefix here
+                    model_name=model, 
+                    # Pass system prompt if provided
+                    system_instruction=system_prompt if system_prompt else None 
+                )
+                
+                # Generate content using the messages list directly
+                # Assumes 'messages' is in the format [{role: 'user', content: '...'}, {role: 'model', content: '...'}, ...]
+                gemini_response = gemini_model.generate_content(messages)
+                
+                # Print the raw response object as requested
+                print("--- RAW GEMINI RESPONSE START ---")
+                print(gemini_response)
+                print("--- RAW GEMINI RESPONSE END ---")
+                
+                # End immediately after printing, as requested
+                print(f"(Terminating call for Gemini model '{model}' after printing raw response)")
+                return None # Stop processing here for now
+                
+            except Exception as e:
+                print(f"Error during Gemini API call for model {model}: {e}")
+                # You might want to print more details from the exception 'e' for debugging
+                return None
+
         else:
             print(f"Error: Unknown provider '{provider}' for model '{model}'.")
             return None
 
     except Exception as e:
-        print(f"Error during API call for model {model}: {e}")
+        # This outer try-except catches errors before provider check or client issues
+        print(f"Error generating response for model {model}: {e}")
         return None
 
     return response_data
