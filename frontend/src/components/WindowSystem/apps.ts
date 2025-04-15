@@ -2,7 +2,7 @@ import type { Component } from 'vue'; // Import Component type
 import IconViewer from '@/components/Icons/IconViewer.vue'; // Import IconViewer
 import DocumentEditor from '@/components/DocumentEditor/DocumentEditor.vue'; // Import DocumentEditor
 import HttpInspector from '@/components/HTTP/HttpInspector.vue'; // Import HttpInspector
-import FileServiceTester from '@/components/HTTP/FileServiceTester.vue'; // Import FileServiceTester
+import HttpServiceTester from '@/components/HTTP/HTTPServiceTester.vue'; // Import FileServiceTester
 import FileManager from '@/components/FileService/FileManager.vue'; // Import FileManager
 import EventBusInspector from './EventBusInspector.vue'; // Import EventBusInspector
 import Logger from '@/components/Logger/Logger.vue'; // Import Logger
@@ -59,7 +59,7 @@ export const apps: App[] = [
     titleBarColor: 'bg-blue-200', // Tailwind class
     titleColor: 'text-gray-800', // Tailwind class
     category: 'Utilities',
-    initialWidth: 200,
+    initialWidth: 300,
     initialHeight: 400
   },
   {
@@ -75,15 +75,15 @@ export const apps: App[] = [
     category: 'Utilities',
   },
   {
-    id: "file-service-tester",
-    title: "File Service Tester",
+    id: "http-service-tester",
+    title: "HTTP Service Tester",
     iconId: "file", // Use 'file' icon
-    appComponent: FileServiceTester,
+    appComponent: HttpServiceTester,
     iconColor: 'text-green-600', // Green theme
     titleBarColor: 'bg-green-200',
     titleColor: 'text-green-900',
     initialWidth: 500,
-    initialHeight: 550,
+    initialHeight: 700,
     category: 'Utilities',
   },
   {

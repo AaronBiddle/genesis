@@ -57,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import {
   readFile,
   writeFile,
@@ -89,6 +89,12 @@ const dirPathInput = ref<string>('');
 const fileContentInput = ref<string>('This is the file content.\nHello World!'); 
 const executionResult = ref<string | null>(null);
 const isErrorResult = ref<boolean>(false);
+
+// Watch for changes in selectedTest to clear previous results
+watch(selectedTest, () => {
+  executionResult.value = null;
+  isErrorResult.value = false;
+});
 
 // Computed property to get info about the selected test
 const selectedTestInfo = computed(() => {
