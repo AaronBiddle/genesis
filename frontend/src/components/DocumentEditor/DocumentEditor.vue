@@ -181,22 +181,27 @@ const handleMessage = async (senderId: number, message: FileMessage | any) => {
 
 // Function to handle the Save button click
 async function handleSaveClick() {
-  // Check if all necessary parts are available
-  if (currentDirectoryPath.value && currentFileName.value && currentFileMount.value) {
-    // Reconstruct the full path for saving
-    const fullPath = `${currentDirectoryPath.value}/${currentFileName.value}`.replace('//', '/'); // Basic handling for potential double slash at root
+  // Check if all necessary parts are available, consistent with isSaveDisabled
+  const dir = currentDirectoryPath.value;
+  const name = currentFileName.value;
+  const mount = currentFileMount.value;
 
-    log(NS, `Attempting to save directly to: Mount=${currentFileMount.value}, Path=${fullPath}`);
+  if (dir !== null && name && mount) { // Check dir !== null specifically
+    // Reconstruct the full path for saving
+    const fullPath = `${dir}/${name}`.replace('//', '/'); // Basic handling for potential double slash at root
+
+    log(NS, `Attempting to save directly to: Mount=${mount}, Path=${fullPath}`);
     try {
-      await writeFile(currentFileMount.value, fullPath, content.value);
+      await writeFile(mount, fullPath, content.value);
       hasUnsavedChanges.value = false; // Reset unsaved changes after saving
       log(NS, `Successfully saved file directly to: ${fullPath}`);
     } catch (error: any) {
       log(NS, `Error saving file directly to ${fullPath}: ${error.message}`, true);
     }
   } else {
-    log(NS, 'Missing directory, filename, or mount. Opening save dialog.');
-    // Fallback to "Save As" if essential info is missing (e.g., after "New File")
+    // This block should ideally not be reachable if the button is enabled,
+    // but keep the log/fallback just in case.
+    log(NS, `Save clicked but state is invalid? Dir=${dir}, Name=${name}, Mount=${mount}. Opening save dialog.`);
     openFileManager('save');
   }
 }
