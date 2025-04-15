@@ -49,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { log } from '@/components/Logger/loggerStore';
 import { readFile, writeFile } from '@/services/FileClient';
 import { svgIcons } from '@/components/Icons/SvgIcons'; // Import svgIcons
@@ -65,9 +65,10 @@ const content = ref('');
 const currentFilePath = ref<string | null>(null);
 const currentFileMount = ref<string | null>(null);
 const isPreviewActive = ref(false); // State for the preview toggle
+const hasUnsavedChanges = ref(false); // Track if content has been modified since last save
 
 // Computed property to determine if the save button should be disabled
-const isSaveDisabled = computed(() => !currentFilePath.value || !currentFileMount.value);
+const isSaveDisabled = computed(() => !currentFilePath.value || !currentFileMount.value || !hasUnsavedChanges.value);
 
 // Get the eye icon SVG, remove fixed size/color classes for dynamic control
 const eyeIconSvg = computed(() => {
@@ -103,6 +104,7 @@ const handleMessage = async (senderId: number, message: FileMessage | any) => {
         content.value = fileContent;
         currentFilePath.value = fullPath;
         currentFileMount.value = payload.mount;
+        hasUnsavedChanges.value = false; // Reset unsaved changes when opening a file
         log(NS, `Successfully opened and read file: ${fullPath}`);
       } catch (error: any) {
         log(NS, `Error opening file ${fullPath}: ${error.message}`, true);
@@ -114,6 +116,7 @@ const handleMessage = async (senderId: number, message: FileMessage | any) => {
         await writeFile(payload.mount, savePath, content.value);
         currentFilePath.value = savePath;
         currentFileMount.value = payload.mount;
+        hasUnsavedChanges.value = false; // Reset unsaved changes after saving
         log(NS, `Successfully saved file to: ${savePath}`);
       } catch (error: any) {
         log(NS, `Error saving file to ${savePath}: ${error.message}`, true);
@@ -130,11 +133,10 @@ async function handleSaveClick() {
     log(NS, `Attempting to save directly to: Mount=${currentFileMount.value}, Path=${currentFilePath.value}`);
     try {
       await writeFile(currentFileMount.value, currentFilePath.value, content.value);
+      hasUnsavedChanges.value = false; // Reset unsaved changes after saving
       log(NS, `Successfully saved file directly to: ${currentFilePath.value}`);
     } catch (error: any) {
       log(NS, `Error saving file directly to ${currentFilePath.value}: ${error.message}`, true);
-      // Optionally, open the save dialog as a fallback on error?
-      // openFileManager('save'); 
     }
   } else {
     log(NS, 'No current file path/mount. Opening save dialog.');
@@ -156,9 +158,15 @@ function togglePreview() {
 function createNewFile() {
   content.value = '';
   currentFilePath.value = null;
-  // Keep the currentFileMount.value as is for convenience
+  currentFileMount.value = null; // Reset mount when creating a new file
+  hasUnsavedChanges.value = false; // Reset unsaved changes when creating a new file
   log(NS, 'Created new file, cleared editor content');
 }
+
+// Watch for content changes
+watch(content, () => {
+  hasUnsavedChanges.value = true;
+});
 
 // Expose the handleMessage function so Window.vue can access it
 defineExpose({ handleMessage });
