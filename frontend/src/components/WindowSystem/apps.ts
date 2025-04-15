@@ -8,6 +8,7 @@ import EventBusInspector from './EventBusInspector.vue'; // Import EventBusInspe
 import Logger from '@/components/Logger/Logger.vue'; // Import Logger
 import WindowInspector from './WindowInspector.vue'; // Import the new Window Inspector
 import ChatApp from '@/components/ChatApp/ChatApp.vue'; // Import ChatApp
+import AIServiceTester from '@/components/AI/AIServiceTester.vue'; // Import AI Service Tester
 
 export interface App {
   id: string; // Unique identifier (e.g., 'text-editor', 'web-browser') - Essential
@@ -135,4 +136,16 @@ export const apps: App[] = [
     category: 'Utilities',
     allowMultipleInstances: false, // Only allow one instance
   },
+  {
+    id: "ai-service-tester",
+    title: "AI Service Tester",
+    iconId: "ai", // Assuming an 'ai' icon exists
+    appComponent: AIServiceTester,
+    iconColor: 'text-indigo-600', // Indigo theme
+    titleBarColor: 'bg-indigo-200',
+    titleColor: 'text-indigo-900',
+    initialWidth: 550,
+    initialHeight: 750,
+    category: 'Utilities',
+  }
 ];
