@@ -17,10 +17,15 @@
 
     <!-- Input Fields based on selected test -->
     <div v-if="selectedTestInfo" class="inputs-section">      
-      <!-- Mount Name Input (shown for tests that require it) -->
+      <!-- Mount Name Dropdown (shown for tests that require it) -->
       <div v-if="selectedTestInfo.requiresMount" class="control-group">
-        <label for="mount-name">Mount Name:</label>
-        <input type="text" id="mount-name" v-model="mountNameInput" placeholder="e.g., workspace" />
+        <label for="mount-select">Mount Name:</label>
+        <select id="mount-select" v-model="mountNameInput" class="mount-select">
+          <option disabled value="">Please select a mount</option>
+          <option v-for="mount in availableMounts" :key="mount.name" :value="mount.name">
+            {{ mount.name }}
+          </option>
+        </select>
       </div>
 
       <!-- File Path Input -->
@@ -52,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import {
   readFile,
   writeFile,
@@ -62,6 +67,7 @@ import {
   deleteDirectory,
   getMounts,
 } from '@/services/FileClient';
+import type { MountInfo } from '@/services/FileClient';
 
 // Define available tests with mount requirement
 const availableTests = [
@@ -76,10 +82,11 @@ const availableTests = [
 
 // Reactive state
 const selectedTest = ref<string>('');
-const mountNameInput = ref<string>('userdata/'); // Changed default from 'workspace' to 'userdata/'
-const filePathInput = ref<string>('test.txt'); // Default example path relative to mount
-const dirPathInput = ref<string>(''); // Changed default from 'new_folder' to empty string
-const fileContentInput = ref<string>('This is the file content.\nHello World!'); // Default example
+const mountNameInput = ref<string>('');
+const availableMounts = ref<MountInfo[]>([]);
+const filePathInput = ref<string>('test.txt'); 
+const dirPathInput = ref<string>(''); 
+const fileContentInput = ref<string>('This is the file content.\nHello World!'); 
 const executionResult = ref<string | null>(null);
 const isErrorResult = ref<boolean>(false);
 
@@ -98,6 +105,27 @@ const canExecuteTest = computed(() => {
   if (selectedTestInfo.value.requiresDirPath && !dirPathInput.value && selectedTestInfo.value.value !== 'listDirectory') return false;
   // Content can technically be empty for writeFile, so we don't check it here
   return true;
+});
+
+// Function to fetch available mounts
+const fetchMounts = async () => {
+  try {
+    const result = await getMounts();
+    if (result && Array.isArray(result)) {
+      availableMounts.value = result;
+      // Set the first mount as default if one exists and none is selected
+      if (availableMounts.value.length > 0 && !mountNameInput.value) {
+        mountNameInput.value = availableMounts.value[0].name;
+      }
+    }
+  } catch (error: any) {
+    console.error('Failed to fetch mounts:', error);
+  }
+};
+
+// Fetch mounts when component is mounted
+onMounted(() => {
+  fetchMounts();
 });
 
 // Function to execute the selected test
@@ -140,6 +168,10 @@ const executeTest = async () => {
       case 'getMounts':
         // getMounts does not require mountName
         result = await getMounts();
+        // Update available mounts when getMounts is executed
+        if (result && Array.isArray(result)) {
+          availableMounts.value = result;
+        }
         break;
       default:
         throw new Error('Invalid test selected');
@@ -203,6 +235,7 @@ h4 {
 }
 
 .test-select,
+.mount-select,
 input[type="text"],
 textarea {
   width: 100%;

@@ -2,7 +2,7 @@ import type { Component } from 'vue'; // Import Component type
 import IconViewer from '@/components/Icons/IconViewer.vue'; // Import IconViewer
 import DocumentEditor from '@/components/DocumentEditor/DocumentEditor.vue'; // Import DocumentEditor
 import HttpInspector from '@/components/HTTP/HttpInspector.vue'; // Import HttpInspector
-import FileServiceTester from '@/components/FileService/FileServiceTester.vue'; // Import FileServiceTester
+import FileServiceTester from '@/components/HTTP/FileServiceTester.vue'; // Import FileServiceTester
 import FileManager from '@/components/FileService/FileManager.vue'; // Import FileManager
 import EventBusInspector from './EventBusInspector.vue'; // Import EventBusInspector
 import Logger from '@/components/Logger/Logger.vue'; // Import Logger
