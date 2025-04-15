@@ -338,12 +338,17 @@ const openActiveFile = () => {
 const saveFile = () => {
   const fileName = activeFileName.value.trim();
   if (!fileName) return;
-  const pathToSend = currentPath.value ? `${currentPath.value}/${fileName}` : fileName;
+  const directoryPath = currentPath.value;
 
-  log(NS, `Sending 'save' message via sendParent: Mount=${selectedMount.value}, Path=${pathToSend}`);
+  log(NS, `Sending 'save' message via sendParent: Mount=${selectedMount.value}, Path=${directoryPath}, Name=${fileName}`);
   props.sendParent({
     type: 'file', 
-    payload: { mode: 'save', mount: selectedMount.value, path: pathToSend }
+    payload: { 
+      mode: 'save', 
+      mount: selectedMount.value, 
+      path: directoryPath,
+      name: fileName
+    }
   });
   emit('close'); // Close file manager after sending message
 };

@@ -61,14 +61,26 @@ const props = defineProps<{
 
 const NS = 'DocumentEditor.vue';
 
+let isLoadingFile = false; // Flag to prevent watcher during file load
+
 const content = ref('');
-const currentFilePath = ref<string | null>(null);
+const currentDirectoryPath = ref<string | null>(null);
+const currentFileName = ref<string | null>(null);
 const currentFileMount = ref<string | null>(null);
 const isPreviewActive = ref(false); // State for the preview toggle
 const hasUnsavedChanges = ref(false); // Track if content has been modified since last save
 
 // Computed property to determine if the save button should be disabled
-const isSaveDisabled = computed(() => !currentFilePath.value || !currentFileMount.value || !hasUnsavedChanges.value);
+const isSaveDisabled = computed(() => {
+  const dir = currentDirectoryPath.value;
+  const name = currentFileName.value;
+  const mount = currentFileMount.value;
+  const changes = hasUnsavedChanges.value;
+  // Check specifically for null/undefined for directory path
+  const isDisabled = dir === null || !name || !mount || !changes; 
+  log(NS, `isSaveDisabled check: Path='${dir}', Name='${name}', Mount='${mount}', Changes='${changes}' -> Disabled=${isDisabled}`);
+  return isDisabled;
+});
 
 // Get the eye icon SVG, remove fixed size/color classes for dynamic control
 const eyeIconSvg = computed(() => {
@@ -96,30 +108,57 @@ const handleMessage = async (senderId: number, message: FileMessage | any) => {
     const payload = message.payload as FileMessagePayload;
 
     if (payload.mode === 'open') {
-      const fullPath = payload.name ? `${payload.path}/${payload.name}` : payload.path;
-      log(NS, `Attempting to open: Mount=${payload.mount}, Path=${payload.path}, Name=${payload.name}. Full path: ${fullPath}`);
+      // Use payload.path as directory and payload.name as filename
+      const dirPath = payload.path;
+      const fileName = payload.name;
+      if (!fileName) {
+          log(NS, `Error: Received 'open' message without a filename. Path: ${dirPath}`, true);
+          // Decide how to handle this - maybe treat path as full path?
+          // For now, we'll skip opening.
+          return;
+      }
+      const fullPath = `${dirPath}/${fileName}`; // Reconstruct for logging/API call
+      log(NS, `Attempting to open: Mount=${payload.mount}, Path=${dirPath}, Name=${fileName}. Full path: ${fullPath}`);
       try {
         const fileContent = await readFile(payload.mount, fullPath);
         log(NS, `Raw file content received: [${fileContent}]`);
-        content.value = fileContent;
-        currentFilePath.value = fullPath;
+        
+        isLoadingFile = true; // Set flag before content assignment
+        content.value = fileContent; // This triggers the watcher
+        
+        // Update state *after* content assignment
+        currentDirectoryPath.value = dirPath; // Store directory
+        currentFileName.value = fileName;    // Store filename
         currentFileMount.value = payload.mount;
-        hasUnsavedChanges.value = false; // Reset unsaved changes when opening a file
+        hasUnsavedChanges.value = false; // Explicitly set to false after load
+        
+        isLoadingFile = false; // Reset flag *after* state is settled
+
         log(NS, `Successfully opened and read file: ${fullPath}`);
       } catch (error: any) {
         log(NS, `Error opening file ${fullPath}: ${error.message}`, true);
+        isLoadingFile = false; // Ensure flag is reset on error too
       }
     } else if (payload.mode === 'save') {
-      const savePath = payload.path;
-      log(NS, `Attempting to save content to: Mount=${payload.mount}, Path=${savePath}`);
+      // payload.path is now the directory, payload.name is the filename
+      const dirPath = payload.path;
+      const fileName = payload.name;
+      if (!fileName) {
+          log(NS, `Error: Received 'save' message without a filename. Path: ${dirPath}`, true);
+          return;
+      }
+      const saveFullPath = `${dirPath}/${fileName}`; // Reconstruct for API call and logging
+      log(NS, `Attempting to save content via File Manager to: Mount=${payload.mount}, Path=${dirPath}, Name=${fileName}. Full Path=${saveFullPath}`);
       try {
-        await writeFile(payload.mount, savePath, content.value);
-        currentFilePath.value = savePath;
-        currentFileMount.value = payload.mount;
-        hasUnsavedChanges.value = false; // Reset unsaved changes after saving
-        log(NS, `Successfully saved file to: ${savePath}`);
+        await writeFile(payload.mount, saveFullPath, content.value);
+        // const { dir, name } = splitPath(saveFullPath); // No longer needed
+        currentDirectoryPath.value = dirPath;   // Update directory from payload
+        currentFileName.value = fileName;     // Update filename from payload
+        currentFileMount.value = payload.mount; // Update mount
+        hasUnsavedChanges.value = false;
+        log(NS, `Successfully saved file to: ${saveFullPath}`);
       } catch (error: any) {
-        log(NS, `Error saving file to ${savePath}: ${error.message}`, true);
+        log(NS, `Error saving file to ${saveFullPath}: ${error.message}`, true);
       }
     }
   } else {
@@ -129,17 +168,22 @@ const handleMessage = async (senderId: number, message: FileMessage | any) => {
 
 // Function to handle the Save button click
 async function handleSaveClick() {
-  if (currentFilePath.value && currentFileMount.value) {
-    log(NS, `Attempting to save directly to: Mount=${currentFileMount.value}, Path=${currentFilePath.value}`);
+  // Check if all necessary parts are available
+  if (currentDirectoryPath.value && currentFileName.value && currentFileMount.value) {
+    // Reconstruct the full path for saving
+    const fullPath = `${currentDirectoryPath.value}/${currentFileName.value}`.replace('//', '/'); // Basic handling for potential double slash at root
+
+    log(NS, `Attempting to save directly to: Mount=${currentFileMount.value}, Path=${fullPath}`);
     try {
-      await writeFile(currentFileMount.value, currentFilePath.value, content.value);
+      await writeFile(currentFileMount.value, fullPath, content.value);
       hasUnsavedChanges.value = false; // Reset unsaved changes after saving
-      log(NS, `Successfully saved file directly to: ${currentFilePath.value}`);
+      log(NS, `Successfully saved file directly to: ${fullPath}`);
     } catch (error: any) {
-      log(NS, `Error saving file directly to ${currentFilePath.value}: ${error.message}`, true);
+      log(NS, `Error saving file directly to ${fullPath}: ${error.message}`, true);
     }
   } else {
-    log(NS, 'No current file path/mount. Opening save dialog.');
+    log(NS, 'Missing directory, filename, or mount. Opening save dialog.');
+    // Fallback to "Save As" if essential info is missing (e.g., after "New File")
     openFileManager('save');
   }
 }
@@ -157,15 +201,22 @@ function togglePreview() {
 
 function createNewFile() {
   content.value = '';
-  currentFilePath.value = null;
-  currentFileMount.value = null; // Reset mount when creating a new file
+  currentFileName.value = null; // Reset filename only
   hasUnsavedChanges.value = false; // Reset unsaved changes when creating a new file
-  log(NS, 'Created new file, cleared editor content');
+  // Keep currentDirectoryPath and currentFileMount to retain context
+  log(NS, `Created new file, cleared editor content. Kept directory context: ${currentDirectoryPath.value} on mount ${currentFileMount.value}`);
 }
 
 // Watch for content changes
-watch(content, () => {
+watch(content, (newValue, oldValue) => {
+  if (isLoadingFile) {
+    log(NS, 'Content changed during file load, ignoring for hasUnsavedChanges.');
+    return; // Do nothing if we are loading a file
+  }
+  // Only set unsaved changes if it's a user edit
+  log(NS, `Content changed (user edit). Old length: ${oldValue?.length ?? 'undefined'}, New length: ${newValue?.length ?? 'undefined'}. Setting hasUnsavedChanges to true.`);
   hasUnsavedChanges.value = true;
+  log(NS, `hasUnsavedChanges is now: ${hasUnsavedChanges.value}`); // Verify it's true
 });
 
 // Expose the handleMessage function so Window.vue can access it
