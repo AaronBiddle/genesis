@@ -1,10 +1,11 @@
 from openai import OpenAI
+import google.generativeai as genai
 from dotenv import load_dotenv
 import os
-from ai_models import AI_MODELS
-import json # Added for pretty printing the output dictionary
-import google.generativeai as genai # Added for Gemini
-from .ai_extraction import extract_response_data # Import the new function
+from backend.services.ai_models import AI_MODELS
+
+
+from backend.services.ai_extraction import extract_response_data # Import the new function
 
 # Load environment variables
 load_dotenv()

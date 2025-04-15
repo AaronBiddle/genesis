@@ -1,5 +1,3 @@
-import json
-
 def extract_gemini_data(gemini_response, has_thinking):
     """
     Extracts relevant data from a Gemini GenerateContentResponse object
