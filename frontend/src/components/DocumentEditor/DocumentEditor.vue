@@ -120,23 +120,36 @@ const handleMessage = async (senderId: number, message: FileMessage | any) => {
       const fullPath = `${dirPath}/${fileName}`; // Reconstruct for logging/API call
       log(NS, `Attempting to open: Mount=${payload.mount}, Path=${dirPath}, Name=${fileName}. Full path: ${fullPath}`);
       try {
+        log(NS, '[handleMessage:open] Fetching file content...');
         const fileContent = await readFile(payload.mount, fullPath);
-        log(NS, `Raw file content received: [${fileContent}]`);
+        log(NS, `[handleMessage:open] Raw file content received: [${fileContent}]`);
         
-        isLoadingFile = true; // Set flag before content assignment
+        log(NS, '[handleMessage:open] Setting isLoadingFile = true');
+        isLoadingFile = true;
+        log(NS, `[handleMessage:open] isLoadingFile is now: ${isLoadingFile}`);
+        
+        log(NS, '[handleMessage:open] Assigning content.value...');
         content.value = fileContent; // This triggers the watcher
+        log(NS, '[handleMessage:open] Assigned content.value.');
         
         // Update state *after* content assignment
-        currentDirectoryPath.value = dirPath; // Store directory
-        currentFileName.value = fileName;    // Store filename
+        log(NS, '[handleMessage:open] Updating path/name/mount refs.');
+        currentDirectoryPath.value = dirPath;
+        currentFileName.value = fileName;
         currentFileMount.value = payload.mount;
-        hasUnsavedChanges.value = false; // Explicitly set to false after load
-        
-        isLoadingFile = false; // Reset flag *after* state is settled
 
-        log(NS, `Successfully opened and read file: ${fullPath}`);
+        log(NS, '[handleMessage:open] Explicitly setting hasUnsavedChanges = false');
+        hasUnsavedChanges.value = false;
+        log(NS, `[handleMessage:open] hasUnsavedChanges is now: ${hasUnsavedChanges.value}`);
+        
+        log(NS, '[handleMessage:open] Resetting isLoadingFile = false');
+        isLoadingFile = false;
+        log(NS, `[handleMessage:open] isLoadingFile is now: ${isLoadingFile}`);
+
+        log(NS, `[handleMessage:open] Successfully opened and read file: ${fullPath}`);
       } catch (error: any) {
-        log(NS, `Error opening file ${fullPath}: ${error.message}`, true);
+        log(NS, `[handleMessage:open] Error opening file ${fullPath}: ${error.message}`, true);
+        log(NS, '[handleMessage:open:error] Resetting isLoadingFile = false');
         isLoadingFile = false; // Ensure flag is reset on error too
       }
     } else if (payload.mode === 'save') {
@@ -209,15 +222,20 @@ function createNewFile() {
 
 // Watch for content changes
 watch(content, (newValue, oldValue) => {
+  log(NS, '[watch] Watcher triggered.');
+  log(NS, `[watch] Checking isLoadingFile value: ${isLoadingFile}`);
+  
   if (isLoadingFile) {
-    log(NS, 'Content changed during file load, ignoring for hasUnsavedChanges.');
+    log(NS, '[watch] isLoadingFile is true. Ignoring change for hasUnsavedChanges.');
     return; // Do nothing if we are loading a file
   }
+  
   // Only set unsaved changes if it's a user edit
-  log(NS, `Content changed (user edit). Old length: ${oldValue?.length ?? 'undefined'}, New length: ${newValue?.length ?? 'undefined'}. Setting hasUnsavedChanges to true.`);
+  log(NS, '[watch] isLoadingFile is false. Processing as user edit.');
+  log(NS, `[watch] Content changed. Old length: ${oldValue?.length ?? 'undefined'}, New length: ${newValue?.length ?? 'undefined'}. Setting hasUnsavedChanges = true.`);
   hasUnsavedChanges.value = true;
-  log(NS, `hasUnsavedChanges is now: ${hasUnsavedChanges.value}`); // Verify it's true
-});
+  log(NS, `[watch] hasUnsavedChanges is now: ${hasUnsavedChanges.value}`);
+}, { flush: 'sync' });
 
 // Expose the handleMessage function so Window.vue can access it
 defineExpose({ handleMessage });
