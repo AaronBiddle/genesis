@@ -68,7 +68,6 @@ import type {
   ModelDetails,
   GetModelsResponse,
   GenerateRequest,
-  GenerateResponse,
   Message,
 } from '@/services/AIClient';
 
