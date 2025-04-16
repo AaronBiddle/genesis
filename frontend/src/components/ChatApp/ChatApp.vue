@@ -55,33 +55,42 @@
           </div>
         </div>
       </div>
-      <div class="flex items-center pt-2">
-        <textarea
-          v-model="newMessage"
-          placeholder="Type your message (Shift+Enter for newline)..."
-          class="flex-grow border rounded-l-md p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
-          @keydown.enter.exact.prevent="sendMessage"
-          :disabled="isLoading"
-          rows="4"
-        ></textarea>
-        <button
-          @click="sendMessage"
-          :disabled="!newMessage.trim() || isLoading"
-          class="bg-blue-500 text-white px-3 py-2 rounded-r-md hover:bg-blue-600 disabled:bg-gray-300 flex items-center justify-center h-full transition-colors duration-200 ease-in-out"
-          style="height: calc(4 * 1.5rem + 1rem + 2px);"
+      <div class="pt-2"> 
+        <div 
+          class="flex items-center" 
+          @focusin="handleFocusIn" 
+          @focusout="handleFocusOut"
+          :class="{ 'ring-2 ring-cyan-500 rounded-md': isInputAreaFocused }"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6">
-            <path
-              fill-rule="evenodd"
-              d="M3 16.5 L12 16.5 L12 22.5 L21 12 L12 1.5 L12 7.5 L3 7.5 Z"
-              clip-rule="evenodd"
-              stroke="currentColor"
-              stroke-width="1.5" 
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
+          <textarea
+            ref="textareaRef" 
+            v-model="newMessage"
+            placeholder="Type your message (Shift+Enter for newline)..."
+            class="flex-grow border rounded-l-md p-2 focus:outline-none resize-none"
+            @keydown.enter.exact.prevent="sendMessage"
+            :disabled="isLoading"
+            rows="4"
+          ></textarea>
+          <button
+            ref="sendButtonRef"
+            @click="sendMessage"
+            :disabled="!newMessage.trim() || isLoading"
+            class="bg-blue-500 text-white px-3 py-2 rounded-r-md hover:bg-blue-600 disabled:bg-gray-300 flex items-center justify-center h-full transition-colors duration-200 ease-in-out focus:outline-none"
+            style="height: calc(4 * 1.5rem + 1rem + 2px);"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6">
+              <path
+                fill-rule="evenodd"
+                d="M3 16.5 L12 16.5 L12 22.5 L21 12 L12 1.5 L12 7.5 L3 7.5 Z"
+                clip-rule="evenodd"
+                stroke="currentColor"
+                stroke-width="1.5" 
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -109,6 +118,9 @@ const messages = ref<AIMessage[]>([]);
 const newMessage = ref('');
 const messageContainer = ref<HTMLElement | null>(null);
 const isLoading = ref(false);
+const isInputAreaFocused = ref(false); // State for combined focus
+const textareaRef = ref<HTMLTextAreaElement | null>(null); // Ref for textarea
+const sendButtonRef = ref<HTMLButtonElement | null>(null); // Ref for button
 
 const availableModels = ref<Record<string, ModelDetails>>({});
 const selectedModel = ref<string>('');
@@ -153,6 +165,22 @@ const sendMessage = async () => {
     isLoading.value = false;
   }
 };
+
+// --- Focus Handling for Input Area ---
+const handleFocusIn = () => {
+  isInputAreaFocused.value = true;
+};
+
+const handleFocusOut = () => {
+  // Use setTimeout to allow focus to shift within the group before checking
+  setTimeout(() => {
+    if (document.activeElement !== textareaRef.value && 
+        document.activeElement !== sendButtonRef.value) {
+      isInputAreaFocused.value = false;
+    }
+  }, 0);
+};
+// --- End Focus Handling ---
 
 const getMessageClass = (message: AIMessage) => {
   return message.role === 'user' ? 'flex justify-end' : 'flex justify-start';
