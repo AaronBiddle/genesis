@@ -6,13 +6,13 @@
         id="model-select"
         v-model="selectedModel"
         :disabled="modelsLoading || !!modelsError || Object.keys(availableModels).length === 0"
-        class="block w-full pl-3 pr-10 py-1.5 text-base border border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md"
+        class="block w-64 pl-3 pr-10 py-1.5 text-base border border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md"
       >
         <option v-if="modelsLoading" value="">Loading models...</option>
         <option v-else-if="modelsError" value="">Error loading models</option>
         <option v-else-if="Object.keys(availableModels).length === 0" value="">No models available</option>
         <option v-for="(details, key) in availableModels" :key="key" :value="key">
-          {{ details.display_name }} ({{ details.provider }})
+          {{ details.display_name }}
         </option>
       </select>
       <span v-if="modelsError" class="text-red-600 text-sm">!</span>
@@ -25,7 +25,7 @@
           </div>
         </div>
       </div>
-      <div class="flex items-center border-t pt-2">
+      <div class="flex items-center">
         <input
           type="text"
           v-model="newMessage"
@@ -62,8 +62,6 @@ import {
   type ModelDetails
 } from '@/services/AIClient';
 
-interface Message extends AIMessage {}
-
 const messages = ref<AIMessage[]>([]);
 const newMessage = ref('');
 const messageContainer = ref<HTMLElement | null>(null);
@@ -88,7 +86,6 @@ const sendMessage = async () => {
   if (!text || isLoading.value) return;
 
   addMessage(text, 'user');
-  const currentMessage = newMessage.value;
   newMessage.value = '';
   isLoading.value = true;
 
