@@ -30,26 +30,32 @@
           </div>
         </div>
       </div>
-      <div class="flex items-end border-t pt-2">
+      <div class="flex items-center border-t pt-2">
         <textarea
           v-model="newMessage"
           placeholder="Type your message (Shift+Enter for newline)..."
           class="flex-grow border rounded-l-md p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
           @keydown.enter.exact.prevent="sendMessage"
           :disabled="isLoading"
-          rows="3"
+          rows="4"
         ></textarea>
         <button
           @click="sendMessage"
           :disabled="!newMessage.trim() || isLoading"
-          class="bg-cyan-600 text-white px-4 py-2 rounded-r-md hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-          style="min-width: 80px;"
+          class="bg-blue-500 text-white px-3 py-2 rounded-r-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center h-full transition-colors duration-200 ease-in-out"
+          style="height: calc(4 * 1.5rem + 1rem + 2px);"
         >
-          <svg v-if="isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6">
+            <path
+              fill-rule="evenodd"
+              d="M3 16.5 L12 16.5 L12 22.5 L21 12 L12 1.5 L12 7.5 L3 7.5 Z"
+              clip-rule="evenodd"
+              stroke="currentColor"
+              stroke-width="1.5" 
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
-          <span v-else>Send</span>
         </button>
       </div>
     </div>
