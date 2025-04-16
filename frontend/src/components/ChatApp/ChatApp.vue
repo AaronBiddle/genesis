@@ -116,6 +116,7 @@ import {
 
 const props = defineProps<{
   log: (namespace: string, message: string, isError?: boolean) => void;
+  newWindow: (appId: string, launchOptions?: any) => void;
 }>();
 
 const NS = 'ChatApp.vue'; // Namespace for logging
@@ -127,6 +128,11 @@ const isLoading = ref(false);
 const isInputAreaFocused = ref(false); // State for combined focus
 const textareaRef = ref<HTMLTextAreaElement | null>(null); // Ref for textarea
 const sendButtonRef = ref<HTMLButtonElement | null>(null); // Ref for button
+
+// State for current file context
+const currentFileName = ref<string | null>(null);
+const currentDirectoryPath = ref<string | null>(null);
+const currentFileMount = ref<string | null>(null);
 
 const availableModels = ref<Record<string, ModelDetails>>({});
 const selectedModel = ref<string>('');
@@ -201,12 +207,18 @@ const getMessageBubbleClass = (message: AIMessage) => {
 // --- Toolbar Button Stubs ---
 function handleNewClick() {
   props.log(NS, '"New Chat" button clicked');
-  // TODO: Implement actual new chat logic
+  messages.value = []; // Clear message history
+  newMessage.value = ''; // Optional: clear the input field as well
+  currentFileName.value = null;
+  currentDirectoryPath.value = null;
+  currentFileMount.value = null;
+  props.log(NS, 'Chat history and file context cleared.');
 }
 
 function handleOpenClick() {
   props.log(NS, '"Open Chat" button clicked');
-  // TODO: Implement actual open chat logic (likely needs file manager)
+  // TODO: Add initialMount/initialPath if needed
+  props.newWindow('file-manager', { mode: 'open' }); 
 }
 
 function handleSaveClick() {
@@ -216,9 +228,56 @@ function handleSaveClick() {
 
 function handleSaveAsClick() {
   props.log(NS, '"Save Chat As" button clicked');
-  // TODO: Implement actual save chat as logic (likely needs file manager)
+  // TODO: Add initialMount/initialPath if needed
+  props.newWindow('file-manager', { mode: 'save' }); 
 }
 // --- End Toolbar Button Stubs ---
+
+// --- File Handling --- 
+interface FileMessagePayload {
+  mode: 'open' | 'save';
+  mount: string;
+  path: string; // Directory path
+  name?: string; // Filename (present in 'open' and 'save' confirmations)
+}
+
+interface FileMessage {
+  type: 'file';
+  payload: FileMessagePayload;
+}
+
+async function handleMessage(senderId: number, message: FileMessage | any) {
+  props.log(NS, `Received message from window ${senderId}: type=${message?.type}`);
+
+  if (message.type === 'file' && message.payload) {
+    const payload = message.payload as FileMessagePayload;
+
+    if (payload.mode === 'open' && payload.name) {
+      props.log(NS, `File Manager response (Open): Mount=${payload.mount}, Path=${payload.path}, Name=${payload.name}`);
+      // TODO: Implement file reading logic using payload.mount, payload.path, payload.name
+      currentFileMount.value = payload.mount;
+      currentDirectoryPath.value = payload.path;
+      currentFileName.value = payload.name;
+      // You would typically load the chat history from the file here
+      // e.g., const history = await readFile(payload.mount, `${payload.path}/${payload.name}`);
+      // messages.value = JSON.parse(history);
+    } else if (payload.mode === 'save' && payload.name) {
+      props.log(NS, `File Manager response (Save): Mount=${payload.mount}, Path=${payload.path}, Name=${payload.name}`);
+      // TODO: Implement file writing logic using payload.mount, payload.path, payload.name
+      currentFileMount.value = payload.mount;
+      currentDirectoryPath.value = payload.path;
+      currentFileName.value = payload.name;
+      // You would typically save the current chat history to the file here
+      // e.g., await writeFile(payload.mount, `${payload.path}/${payload.name}`, JSON.stringify(messages.value));
+    }
+  } else {
+    props.log(NS, `Received unhandled message type: ${message?.type ?? 'unknown'}`);
+  }
+}
+
+// Expose handleMessage for Window.vue
+defineExpose({ handleMessage });
+// --- End File Handling ---
 
 onMounted(async () => {
   modelsLoading.value = true;
