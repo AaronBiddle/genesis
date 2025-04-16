@@ -1,40 +1,66 @@
 <template>
-  <div class="flex flex-col h-full bg-gray-50 p-2">
-    <div ref="messageContainer" class="flex-grow overflow-y-auto mb-2 space-y-2 pr-2">
-      <div v-for="(message, index) in messages" :key="index" :class="getMessageClass(message)">
-        <div class="px-3 py-2 rounded-lg max-w-xs" :class="getMessageBubbleClass(message)">
-          {{ message.content }}
+  <div class="flex flex-col h-full">
+    <div class="bg-gray-100 p-2 border-b flex items-center space-x-2">
+      <label for="model-select" class="text-sm font-medium text-gray-700">Model:</label>
+      <select
+        id="model-select"
+        v-model="selectedModel"
+        :disabled="modelsLoading || !!modelsError || Object.keys(availableModels).length === 0"
+        class="block w-full pl-3 pr-10 py-1.5 text-base border border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md"
+      >
+        <option v-if="modelsLoading" value="">Loading models...</option>
+        <option v-else-if="modelsError" value="">Error loading models</option>
+        <option v-else-if="Object.keys(availableModels).length === 0" value="">No models available</option>
+        <option v-for="(details, key) in availableModels" :key="key" :value="key">
+          {{ details.display_name }} ({{ details.provider }})
+        </option>
+      </select>
+      <span v-if="modelsError" class="text-red-600 text-sm">!</span>
+    </div>
+    <div class="flex flex-col flex-grow h-full bg-gray-50 p-2 overflow-hidden">
+      <div ref="messageContainer" class="flex-grow overflow-y-auto mb-2 space-y-2 pr-2">
+        <div v-for="(message, index) in messages" :key="index" :class="getMessageClass(message)">
+          <div class="px-3 py-2 rounded-lg max-w-xs" :class="getMessageBubbleClass(message)">
+            {{ message.content }}
+          </div>
         </div>
       </div>
-    </div>
-    <div class="flex items-center border-t pt-2">
-      <input
-        type="text"
-        v-model="newMessage"
-        placeholder="Type your message..."
-        class="flex-grow border rounded-l-md p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-        @keyup.enter="sendMessage"
-        :disabled="isLoading"
-      />
-      <button
-        @click="sendMessage"
-        :disabled="!newMessage.trim() || isLoading"
-        class="bg-cyan-600 text-white px-4 py-2 rounded-r-md hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-        style="min-width: 80px;"
-      >
-        <svg v-if="isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <span v-else>Send</span>
-      </button>
+      <div class="flex items-center border-t pt-2">
+        <input
+          type="text"
+          v-model="newMessage"
+          placeholder="Type your message..."
+          class="flex-grow border rounded-l-md p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+          @keyup.enter="sendMessage"
+          :disabled="isLoading"
+        />
+        <button
+          @click="sendMessage"
+          :disabled="!newMessage.trim() || isLoading"
+          class="bg-cyan-600 text-white px-4 py-2 rounded-r-md hover:bg-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          style="min-width: 80px;"
+        >
+          <svg v-if="isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span v-else>Send</span>
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, nextTick, onMounted } from 'vue';
-import { generateResponse, type Message as AIMessage, type GenerateRequest } from '@/services/AIClient';
+import {
+  generateResponse,
+  getModels,
+  type Message as AIMessage,
+  type GenerateRequest,
+  type GetModelsResponse,
+  type ModelDetails
+} from '@/services/AIClient';
 
 interface Message extends AIMessage {}
 
@@ -42,6 +68,11 @@ const messages = ref<AIMessage[]>([]);
 const newMessage = ref('');
 const messageContainer = ref<HTMLElement | null>(null);
 const isLoading = ref(false);
+
+const availableModels = ref<Record<string, ModelDetails>>({});
+const selectedModel = ref<string>('');
+const modelsLoading = ref(true);
+const modelsError = ref<string | null>(null);
 
 const addMessage = (content: string, role: 'user' | 'assistant') => {
   messages.value.push({ content, role });
@@ -63,7 +94,7 @@ const sendMessage = async () => {
 
   try {
     const requestData: GenerateRequest = {
-      model: 'default',
+      model: selectedModel.value,
       messages: messages.value.map(m => ({ role: m.role, content: m.content })),
     };
 
@@ -93,10 +124,22 @@ const getMessageBubbleClass = (message: AIMessage) => {
     : 'bg-gray-200 text-gray-800';
 };
 
-onMounted(() => {
-  setTimeout(() => {
-    addMessage("Hello! How can I help you today?", 'assistant');
-  }, 500);
+onMounted(async () => {
+  modelsLoading.value = true;
+  modelsError.value = null;
+  try {
+    const response: GetModelsResponse = await getModels();
+    availableModels.value = response.models;
+    const modelKeys = Object.keys(response.models);
+    if (modelKeys.length > 0) {
+      selectedModel.value = modelKeys[0];
+    }
+  } catch (error: any) {
+    console.error('Failed to fetch models:', error);
+    modelsError.value = error.message || 'Unknown error fetching models';
+  } finally {
+    modelsLoading.value = false;
+  }
 });
 
 </script>
