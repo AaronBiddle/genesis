@@ -20,20 +20,20 @@
     <div class="flex flex-col flex-grow h-full bg-gray-50 p-2 overflow-hidden">
       <div ref="messageContainer" class="flex-grow overflow-y-auto mb-2 space-y-2 pr-2">
         <div v-for="(message, index) in messages" :key="index" :class="getMessageClass(message)">
-          <div class="px-3 py-2 rounded-lg max-w-xs" :class="getMessageBubbleClass(message)">
+          <div class="px-3 py-2 rounded-lg max-w-xl" :class="getMessageBubbleClass(message)">
             {{ message.content }}
           </div>
         </div>
       </div>
-      <div class="flex items-center">
-        <input
-          type="text"
+      <div class="flex items-end border-t pt-2">
+        <textarea
           v-model="newMessage"
-          placeholder="Type your message..."
-          class="flex-grow border rounded-l-md p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-          @keyup.enter="sendMessage"
+          placeholder="Type your message (Shift+Enter for newline)..."
+          class="flex-grow border rounded-l-md p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+          @keydown.enter.exact.prevent="sendMessage"
           :disabled="isLoading"
-        />
+          rows="3"
+        ></textarea>
         <button
           @click="sendMessage"
           :disabled="!newMessage.trim() || isLoading"
