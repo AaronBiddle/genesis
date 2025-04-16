@@ -60,13 +60,16 @@
           class="flex items-center" 
           @focusin="handleFocusIn" 
           @focusout="handleFocusOut"
-          :class="{ 'ring-2 ring-cyan-500 rounded-md': isInputAreaFocused }"
         >
           <textarea
             ref="textareaRef" 
             v-model="newMessage"
             placeholder="Type your message (Shift+Enter for newline)..."
-            class="flex-grow border rounded-l-md p-2 focus:outline-none resize-none"
+            class="flex-grow p-2 resize-none outline-none"
+            :class="{ 
+              'border border-black rounded-l-md': !isInputAreaFocused, 
+              'border-2 border-cyan-500 rounded-l-md': isInputAreaFocused 
+            }"
             @keydown.enter.exact.prevent="sendMessage"
             :disabled="isLoading"
             rows="4"
@@ -75,8 +78,11 @@
             ref="sendButtonRef"
             @click="sendMessage"
             :disabled="!newMessage.trim() || isLoading"
-            class="bg-blue-500 text-white px-3 py-2 rounded-r-md hover:bg-blue-600 disabled:bg-gray-300 flex items-center justify-center h-full transition-colors duration-200 ease-in-out focus:outline-none"
-            style="height: calc(4 * 1.5rem + 1rem + 2px);"
+            class="bg-blue-500 text-white px-3 py-2 hover:bg-blue-600 disabled:bg-gray-300 flex items-center justify-center self-stretch outline-none"
+            :class="{ 
+              'border border-l-0 border-black rounded-r-md': !isInputAreaFocused, 
+              'border-2 border-l-0 border-cyan-500 rounded-r-md': isInputAreaFocused 
+            }"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6">
               <path
