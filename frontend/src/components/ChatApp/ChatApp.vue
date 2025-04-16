@@ -30,7 +30,7 @@
           </div>
         </div>
       </div>
-      <div class="flex items-center border-t pt-2">
+      <div class="flex items-center pt-2">
         <textarea
           v-model="newMessage"
           placeholder="Type your message (Shift+Enter for newline)..."
