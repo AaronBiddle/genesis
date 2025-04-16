@@ -17,7 +17,7 @@ interface RequestLogEntry {
   url: string;
   options: RequestInit;
   body?: any; // Store body before stringification if possible
-  status: 'sent' | 'blocked' | 'logged_only'; // Status of the request attempt
+  status: 'sending' | 'sent' | 'blocked' | 'error'; // Status of the request attempt - Added 'sending' and 'error'
   responseStatus?: number; // HTTP status code of the response
   responseStatusText?: string; // HTTP status text of the response
   responseHeaders?: Record<string, string>; // Response headers
@@ -39,29 +39,34 @@ const addLogEntry = (entry: RequestLogEntry) => {
 const request = async (path: string, options: RequestInit = {}): Promise<Response> => {
   const url = `${BASE_URL}${path}`;
   const method = options.method || 'GET'; // Default to GET if not specified
-  
+
   // Prepare log entry - always prepare, logging is now always active
   const originalBody = (options as any)._originalBodyForLogging;
-  let logEntry: Partial<RequestLogEntry> = {
-    id: Date.now() + Math.random(), // Add random element for higher uniqueness chance
+  // Generate ID outside the object for easier reference
+  const entryId = Date.now() + Math.random(); 
+  let logEntry: RequestLogEntry = {
+    id: entryId,
     timestamp: new Date().toISOString(),
     method: method,
     path: path,
     url: url,
     options: { ...options }, // Clone options
     body: originalBody !== undefined ? originalBody : options.body,
-    status: sendRequests.value ? 'sent' : 'blocked',
+    // Initial status depends on whether we intend to send
+    status: sendRequests.value ? 'sending' : 'blocked', 
   };
   // Clean up the temporary property from the options clone
   if (logEntry.options && (logEntry.options as any)._originalBodyForLogging !== undefined) {
     delete (logEntry.options as any)._originalBodyForLogging;
   }
 
+  // Add the initial entry to the log immediately
+  addLogEntry(logEntry);
+
   // Decide whether to actually send the request
   if (!sendRequests.value) {
     console.warn(`HTTP request blocked by client control: ${method} ${url}`);
-    logEntry.status = 'blocked';
-    addLogEntry(logEntry as RequestLogEntry); // Add the blocked entry to the log
+    // No need to add again, already added with 'blocked' status
     // Return a mock response
     return new Response(JSON.stringify({ message: "Request blocked by client-side control" }), {
       status: 418, // I'm a teapot
@@ -70,7 +75,7 @@ const request = async (path: string, options: RequestInit = {}): Promise<Respons
     });
   }
 
-  // If we are sending, proceed with the actual fetch
+  // --- If we are sending, proceed with the actual fetch ---
   const defaultHeaders = {
     'Content-Type': 'application/json',
     ...options.headers,
@@ -82,12 +87,23 @@ const request = async (path: string, options: RequestInit = {}): Promise<Respons
       headers: defaultHeaders,
     });
 
+    // Find the existing log entry to update it
+    const existingEntryIndex = requestLog.value.findIndex(e => e.id === entryId);
+    if (existingEntryIndex === -1) {
+        console.error("Could not find log entry to update after request success:", entryId);
+        // Fallback: Add as a new entry (shouldn't happen ideally)
+        // logEntry.status = 'sent'; 
+        // addLogEntry(logEntry); 
+        // Or just return? Decide error handling strategy.
+        // For now, we'll proceed assuming it will be found, but log the error.
+    }
+    
     // Capture response data for logging
-   
     const responseHeaders: Record<string, string> = {};
     res.headers.forEach((value, key) => { responseHeaders[key] = value; });
 
     let responseBody: any = null;
+    const responseTime = Date.now(); // Capture time before async body reading
     try {
       const contentType = res.headers.get('content-type');
       const resClone = res.clone(); // Clone before reading
@@ -103,39 +119,60 @@ const request = async (path: string, options: RequestInit = {}): Promise<Respons
       responseBody = "Could not parse response body";
     }
 
-    // Add response info to the log entry
-    logEntry.status = 'sent';
-    logEntry.responseStatus = res.status;
-    logEntry.responseStatusText = res.statusText;
-    logEntry.responseHeaders = responseHeaders;
-    logEntry.responseBody = responseBody;
-    logEntry.responseTime = Date.now();
+    // Update the existing log entry with response info
+    if (existingEntryIndex !== -1) {
+        const entryToUpdate = requestLog.value[existingEntryIndex];
+        entryToUpdate.status = 'sent'; // Mark as completed
+        entryToUpdate.responseStatus = res.status;
+        entryToUpdate.responseStatusText = res.statusText;
+        entryToUpdate.responseHeaders = responseHeaders;
+        entryToUpdate.responseBody = responseBody;
+        entryToUpdate.responseTime = responseTime;
 
-    addLogEntry(logEntry as RequestLogEntry); // Add the completed entry to the log
+        // If response was not OK, add error details too
+        if (!res.ok) {
+          entryToUpdate.status = 'error'; // More specific status
+          let errorBody = '';
+          try {
+            // Try to read body again for error message (if not already read)
+            errorBody = typeof responseBody === 'string' ? responseBody : await res.text();
+          } catch (e) { /* Ignore */ }
+          entryToUpdate.error = `HTTP error! status: ${res.status} ${res.statusText}. ${errorBody}`.trim();
+          // No need to throw here within the update logic, let the outer check handle it
+        }
+    } 
+    // Removed the separate addLogEntry call here
 
     if (!res.ok) {
-      let errorBody = '';
-      try {
-        errorBody = await res.text();
-      } catch (e) { /* Ignore */ }
-      // Update log entry with error status if available
-      if (logEntry.responseStatus) { // Check if it was added already
-         const existingEntryIndex = requestLog.value.findIndex(e => e.id === logEntry!.id);
-         if(existingEntryIndex !== -1) {
-           requestLog.value[existingEntryIndex].error = `HTTP error! status: ${res.status} ${res.statusText}. ${errorBody}`.trim();
-         }
+      // Find the entry again to ensure error message is set if previous update failed
+      const errorEntryIndex = requestLog.value.findIndex(e => e.id === entryId);
+      let errorMessage = `HTTP error! status: ${res.status} ${res.statusText}.`;
+      if (errorEntryIndex !== -1) {
+          errorMessage = requestLog.value[errorEntryIndex].error || errorMessage; // Use detailed error if available
       }
-      throw new Error(`HTTP error! status: ${res.status} ${res.statusText}. ${errorBody}`.trim());
+      throw new Error(errorMessage);
     }
     return res; // Return the actual response
 
   } catch (err: any) {
     console.error(`Error making request to ${url}:`, err.message);
-    // Log the error if it's a network error (before response handling)
-    logEntry.status = 'sent'; // Attempt was made
-    logEntry.error = err.message;
-    logEntry.responseTime = Date.now();
-    addLogEntry(logEntry as RequestLogEntry); // Add the error entry to the log
+    // Find the existing log entry to update with error details
+    const errorEntryIndex = requestLog.value.findIndex(e => e.id === entryId);
+
+    if (errorEntryIndex !== -1) {
+        const entryToUpdate = requestLog.value[errorEntryIndex];
+        entryToUpdate.status = 'error'; // Mark as error
+        entryToUpdate.error = err.message || 'Network request failed. Is the backend server running?';
+        entryToUpdate.responseTime = Date.now();
+    } else {
+        console.error("Could not find log entry to update after request error:", entryId);
+        // Fallback? Maybe add a new minimal error entry?
+        // logEntry.status = 'error';
+        // logEntry.error = err.message;
+        // logEntry.responseTime = Date.now();
+        // addLogEntry(logEntry); // Add the error entry if original wasn't found
+    }
+    // Removed the separate addLogEntry call here
     throw new Error(err.message || 'Network request failed. Is the backend server running?');
   }
 };

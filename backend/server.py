@@ -6,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware # Import CORS middleware
 from backend.routers import http_frontend_echo
 # Import the new filesystem router
 from backend.routers import http_frontend_fs 
+# Import the new AI router
+from backend.routers import http_frontend_ai
 
 # List of allowed origins (clients that can make requests)
 # Add your frontend development server URL here
@@ -42,6 +44,11 @@ app.include_router(
     http_frontend_fs.router, 
     prefix="/frontend/fs",    # Define full prefix here
     tags=["Frontend File System"] # Ensure tag is set
+)
+app.include_router(
+    http_frontend_ai.router,
+    prefix="/frontend/ai",    # Define full prefix here
+    tags=["Frontend AI"]      # Add a tag for the AI endpoints
 )
 
 @app.get("/", tags=["Root"])

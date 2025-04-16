@@ -6,6 +6,7 @@ export interface LogEntry {
   message: string;
   isError: boolean;
   timestamp: number;
+  windowId?: string | number; // Added optional windowId
 }
 
 const STORAGE_KEY = 'logger_enabled_namespaces';
@@ -119,12 +120,13 @@ export function useLogger() {
     };
 }
 
-export const log = (namespace: string, message: string, isError: boolean = false) => {
+export const log = (namespace: string, message: string, isError: boolean = false, windowId?: string | number) => {
   const newLog: LogEntry = {
       namespace,
       message,
       isError,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      windowId
   };
   allLogs.value.push(newLog);
 
@@ -137,11 +139,14 @@ export const log = (namespace: string, message: string, isError: boolean = false
     }
   }
 
+  // Construct the log prefix based on whether windowId is provided
+  const logPrefix = windowId !== undefined ? `[${namespace}:${windowId}]` : `[${namespace}]`;
+
   // Always log errors to console, regardless of namespace setting
   if (isError) {
-    console.error(`[${namespace}]`, message);
+    console.error(logPrefix, message);
   } else if (enabledNamespaces[namespace] !== false) { // Check explicitly for false
-    console.log(`[${namespace}]`, message);
+    console.log(logPrefix, message);
   }
 };
 

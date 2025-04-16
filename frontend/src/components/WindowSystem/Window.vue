@@ -3,6 +3,7 @@
     class="window-container border border-gray-400 bg-gray-100 flex flex-col"
     :style="windowStyle"
     :class="{ 'resizable': windowData.resizable }"
+    @mousedown="bringWindowToFront"
   >
     <!-- Title Bar -->
     <div
@@ -42,6 +43,7 @@
         :sendParent="sendParent"
         :getLaunchOptions="getLaunchOptions" 
         :newWindow="newWindow"
+        :log="logFromChild"
         @close="handleClose" 
       />
     </div>
@@ -119,7 +121,6 @@ const iconSvg = computed(() => {
 function startDrag(event: MouseEvent) {
   // Only check if resizing is in progress, allow clicking on title text/etc.
   if (isResizing.value) return;
-  bringToFront(props.windowData.id);
   isDragging.value = true;
   dragOffsetX.value = event.clientX - props.windowData.x;
   dragOffsetY.value = event.clientY - props.windowData.y;
@@ -140,6 +141,11 @@ function stopDrag() {
     window.removeEventListener('mousemove', doDrag);
     window.removeEventListener('mouseup', stopDrag);
   }
+}
+
+// Function to handle the root mousedown event
+function bringWindowToFront() {
+  bringToFront(props.windowData.id);
 }
 
 // Start Resizing (Handles)
@@ -229,6 +235,11 @@ function newWindow(appId: string, launchOptions?: any) {
   } else {
     log(NS, `Window ${props.windowData.id} requested to launch unknown app ID: ${appId}`, true);
   }
+}
+
+// Function to be passed down for logging from the child component
+function logFromChild(namespace: string, message: string, isError: boolean = false) {
+  log(namespace, message, isError, props.windowData.id); // Add windowId automatically
 }
 
 // Lifecycle hook: Subscribe to eventBus if the component has handleMessage

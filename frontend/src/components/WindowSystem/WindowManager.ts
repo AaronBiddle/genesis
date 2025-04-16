@@ -18,6 +18,8 @@ export interface ManagedWindow {
   resizable: boolean;
   maximizable: boolean;
   minimizable: boolean;
+  minimumWidth?: number;
+  minimumHeight?: number;
   iconColor?: string;
   titleBarColor?: string;
   titleColor?: string;
@@ -81,6 +83,8 @@ export function addWindow(app: App, options?: { parentId?: number; launchOptions
     iconColor: app.iconColor,
     titleBarColor: app.titleBarColor,
     titleColor: app.titleColor,
+    minimumWidth: app.minimumWidth ?? MIN_WIDTH,
+    minimumHeight: app.minimumHeight ?? MIN_HEIGHT,
     launchOptions: options?.launchOptions,
     parentId: options?.parentId,
   };
@@ -132,8 +136,8 @@ export function updateWindowBounds(windowId: number, newX: number, newY: number,
     const windowToUpdate = windows.value[windowIndex];
 
     // Apply constraints
-    const finalWidth = Math.max(MIN_WIDTH, newWidth);
-    const finalHeight = Math.max(MIN_HEIGHT, newHeight);
+    const finalWidth = Math.max(windowToUpdate.minimumWidth ?? MIN_WIDTH, newWidth);
+    const finalHeight = Math.max(windowToUpdate.minimumHeight ?? MIN_HEIGHT, newHeight);
     const finalY = Math.max(0, newY); // Prevent moving above top edge
     // No specific constraint for finalX currently, but could be added (e.g., prevent moving entirely off-screen left)
     const finalX = newX;

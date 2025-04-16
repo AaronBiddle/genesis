@@ -7,6 +7,8 @@ import FileManager from '@/components/FileService/FileManager.vue'; // Import Fi
 import EventBusInspector from './EventBusInspector.vue'; // Import EventBusInspector
 import Logger from '@/components/Logger/Logger.vue'; // Import Logger
 import WindowInspector from './WindowInspector.vue'; // Import the new Window Inspector
+import ChatApp from '@/components/ChatApp/ChatApp.vue'; // Import ChatApp
+import AIServiceTester from '@/components/AI/AIServiceTester.vue'; // Import AI Service Tester
 
 export interface App {
   id: string; // Unique identifier (e.g., 'text-editor', 'web-browser') - Essential
@@ -18,6 +20,8 @@ export interface App {
   titleColor?: string; // Optional Tailwind class for the title text color (e.g., 'text-gray-800')
   initialWidth?: number; // Optional starting width in pixels
   initialHeight?: number; // Optional starting height in pixels
+  minimumWidth?: number; // Optional minimum width in pixels
+  minimumHeight?: number; // Optional minimum height in pixels
   resizable?: boolean; // Can the window be resized? (Default: true)
   maximizable?: boolean; // Can the window be maximized? (Default: true)
   minimizable?: boolean; // Can the window be minimized? (Default: true)
@@ -32,8 +36,23 @@ export const apps: App[] = [
     title: "Document Editor",
     iconId: "document", // Assuming 'docs' icon exists
     appComponent: DocumentEditor,
+    iconColor: 'text-blue-600', // Blue theme for icon
+    titleBarColor: 'bg-blue-100', // Light blue for title bar
+    titleColor: 'text-blue-900', // Dark blue for title text
     initialWidth: 450,
     initialHeight: 500,
+  },
+  {
+    id: "chat-app",
+    title: "Chat App",
+    iconId: "chat", // Use 'chat' icon
+    appComponent: ChatApp,
+    iconColor: 'text-cyan-600', // Cyan theme
+    titleBarColor: 'bg-cyan-100',
+    titleColor: 'text-cyan-900',
+    initialWidth: 450,
+    initialHeight: 500,
+    minimumWidth: 450,
   },
   {
     id: "icons",
@@ -44,7 +63,7 @@ export const apps: App[] = [
     titleBarColor: 'bg-blue-200', // Tailwind class
     titleColor: 'text-gray-800', // Tailwind class
     category: 'Utilities',
-    initialWidth: 200,
+    initialWidth: 300,
     initialHeight: 400
   },
   {
@@ -68,7 +87,7 @@ export const apps: App[] = [
     titleBarColor: 'bg-green-200',
     titleColor: 'text-green-900',
     initialWidth: 500,
-    initialHeight: 550,
+    initialHeight: 700,
     category: 'Utilities',
   },
   {
@@ -119,5 +138,17 @@ export const apps: App[] = [
     initialHeight: 350,
     category: 'Utilities',
     allowMultipleInstances: false, // Only allow one instance
+  },
+  {
+    id: "ai-service-tester",
+    title: "AI Service Tester",
+    iconId: "ai", // Assuming an 'ai' icon exists
+    appComponent: AIServiceTester,
+    iconColor: 'text-indigo-600', // Indigo theme
+    titleBarColor: 'bg-indigo-200',
+    titleColor: 'text-indigo-900',
+    initialWidth: 550,
+    initialHeight: 750,
+    category: 'Utilities',
   }
 ];

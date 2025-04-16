@@ -35,6 +35,8 @@
     <!-- Conditionally render textarea or Markdown preview -->
     <template v-if="!isPreviewActive">
       <textarea
+        id="document-editor-textarea"
+        name="documentContent"
         v-model="content"
         class="flex-grow w-full h-full border p-2 border-gray-300 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
         placeholder="Start typing..."
@@ -49,25 +51,37 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { log } from '@/components/Logger/loggerStore';
+import { ref, computed, watch } from 'vue';
 import { readFile, writeFile } from '@/services/FileClient';
 import { svgIcons } from '@/components/Icons/SvgIcons'; // Import svgIcons
 import MarkdownRenderer from '@/components/Markdown/MarkdownRenderer.vue'; // Import MarkdownRenderer
 
 const props = defineProps<{
   newWindow: (appId: string, launchOptions?: any) => void;
+  log: (namespace: string, message: string, isError?: boolean) => void;
 }>();
 
 const NS = 'DocumentEditor.vue';
 
+let isLoadingFile = false; // Flag to prevent watcher during file load
+
 const content = ref('');
-const currentFilePath = ref<string | null>(null);
+const currentDirectoryPath = ref<string | null>(null);
+const currentFileName = ref<string | null>(null);
 const currentFileMount = ref<string | null>(null);
 const isPreviewActive = ref(false); // State for the preview toggle
+const hasUnsavedChanges = ref(false); // Track if content has been modified since last save
 
 // Computed property to determine if the save button should be disabled
-const isSaveDisabled = computed(() => !currentFilePath.value || !currentFileMount.value);
+const isSaveDisabled = computed(() => {
+  const dir = currentDirectoryPath.value;
+  const name = currentFileName.value;
+  const mount = currentFileMount.value;
+  const changes = hasUnsavedChanges.value;
+  // Check specifically for null/undefined for directory path
+  const isDisabled = dir === null || !name || !mount || !changes;
+  return isDisabled;
+});
 
 // Get the eye icon SVG, remove fixed size/color classes for dynamic control
 const eyeIconSvg = computed(() => {
@@ -89,55 +103,86 @@ interface FileMessage {
 }
 
 const handleMessage = async (senderId: number, message: FileMessage | any) => {
-  log(NS, `Received message from sender (${senderId}): ${JSON.stringify(message)}`);
+  props.log(NS, `Received message from sender (${senderId}): type=${message?.type}`);
 
   if (message.type === 'file') {
     const payload = message.payload as FileMessagePayload;
 
     if (payload.mode === 'open') {
-      const fullPath = payload.name ? `${payload.path}/${payload.name}` : payload.path;
-      log(NS, `Attempting to open: Mount=${payload.mount}, Path=${payload.path}, Name=${payload.name}. Full path: ${fullPath}`);
+      // Use payload.path as directory and payload.name as filename
+      const dirPath = payload.path;
+      const fileName = payload.name;
+      if (!fileName) {
+          props.log(NS, `Error: Received 'open' message without a filename. Path: ${dirPath}`, true);
+          // Decide how to handle this - maybe treat path as full path?
+          // For now, we'll skip opening.
+          return;
+      }
+      const fullPath = `${dirPath}/${fileName}`; // Reconstruct for logging/API call
+      props.log(NS, `Attempting to open: Mount=${payload.mount}, Path=${fullPath}`);
       try {
         const fileContent = await readFile(payload.mount, fullPath);
-        log(NS, `Raw file content received: [${fileContent}]`);
-        content.value = fileContent;
-        currentFilePath.value = fullPath;
+        isLoadingFile = true;
+        content.value = fileContent; // This triggers the watcher
+        currentDirectoryPath.value = dirPath;
+        currentFileName.value = fileName;
         currentFileMount.value = payload.mount;
-        log(NS, `Successfully opened and read file: ${fullPath}`);
+        hasUnsavedChanges.value = false;
+        isLoadingFile = false;
+        props.log(NS, `Successfully opened file: ${fullPath}`);
       } catch (error: any) {
-        log(NS, `Error opening file ${fullPath}: ${error.message}`, true);
+        props.log(NS, `Error opening file ${fullPath}: ${error.message}`, true);
+        isLoadingFile = false; // Ensure flag is reset on error too
       }
     } else if (payload.mode === 'save') {
-      const savePath = payload.path;
-      log(NS, `Attempting to save content to: Mount=${payload.mount}, Path=${savePath}`);
+      // payload.path is now the directory, payload.name is the filename
+      const dirPath = payload.path;
+      const fileName = payload.name;
+      if (!fileName) {
+          props.log(NS, `Error: Received 'save' message without a filename. Path: ${dirPath}`, true);
+          return;
+      }
+      const saveFullPath = `${dirPath}/${fileName}`; // Reconstruct for API call and logging
+      props.log(NS, `Attempting to save content via File Manager to: Mount=${payload.mount}, Path=${saveFullPath}`);
       try {
-        await writeFile(payload.mount, savePath, content.value);
-        currentFilePath.value = savePath;
-        currentFileMount.value = payload.mount;
-        log(NS, `Successfully saved file to: ${savePath}`);
+        await writeFile(payload.mount, saveFullPath, content.value);
+        currentDirectoryPath.value = dirPath;   // Update directory from payload
+        currentFileName.value = fileName;     // Update filename from payload
+        currentFileMount.value = payload.mount; // Update mount
+        hasUnsavedChanges.value = false;
+        props.log(NS, `Successfully saved file to: ${saveFullPath}`);
       } catch (error: any) {
-        log(NS, `Error saving file to ${savePath}: ${error.message}`, true);
+        props.log(NS, `Error saving file to ${saveFullPath}: ${error.message}`, true);
       }
     }
   } else {
-    log(NS, `Received unhandled message type: ${message.type ?? 'unknown'}`);
+    props.log(NS, `Received unhandled message type: ${message.type ?? 'unknown'}`);
   }
 };
 
 // Function to handle the Save button click
 async function handleSaveClick() {
-  if (currentFilePath.value && currentFileMount.value) {
-    log(NS, `Attempting to save directly to: Mount=${currentFileMount.value}, Path=${currentFilePath.value}`);
+  // Check if all necessary parts are available, consistent with isSaveDisabled
+  const dir = currentDirectoryPath.value;
+  const name = currentFileName.value;
+  const mount = currentFileMount.value;
+
+  if (dir !== null && name && mount) { // Check dir !== null specifically
+    // Reconstruct the full path for saving
+    const fullPath = `${dir}/${name}`.replace('//', '/'); // Basic handling for potential double slash at root
+
+    props.log(NS, `Attempting to save directly to: Mount=${mount}, Path=${fullPath}`);
     try {
-      await writeFile(currentFileMount.value, currentFilePath.value, content.value);
-      log(NS, `Successfully saved file directly to: ${currentFilePath.value}`);
+      await writeFile(mount, fullPath, content.value);
+      hasUnsavedChanges.value = false; // Reset unsaved changes after saving
+      props.log(NS, `Successfully saved file directly to: ${fullPath}`);
     } catch (error: any) {
-      log(NS, `Error saving file directly to ${currentFilePath.value}: ${error.message}`, true);
-      // Optionally, open the save dialog as a fallback on error?
-      // openFileManager('save'); 
+      props.log(NS, `Error saving file directly to ${fullPath}: ${error.message}`, true);
     }
   } else {
-    log(NS, 'No current file path/mount. Opening save dialog.');
+    // This block should ideally not be reachable if the button is enabled,
+    // but keep the log/fallback just in case.
+    props.log(NS, `Save clicked but state is invalid? Dir=${dir}, Name=${name}, Mount=${mount}. Opening save dialog.`, true);
     openFileManager('save');
   }
 }
@@ -149,16 +194,27 @@ function openFileManager(mode: 'open' | 'save' | 'none') {
 // Function to toggle the preview state
 function togglePreview() {
   isPreviewActive.value = !isPreviewActive.value;
-  log(NS, `Preview mode toggled: ${isPreviewActive.value}`);
+  props.log(NS, `Preview mode toggled: ${isPreviewActive.value}`);
   // Add logic here for what happens when preview is toggled on/off
 }
 
 function createNewFile() {
   content.value = '';
-  currentFilePath.value = null;
-  // Keep the currentFileMount.value as is for convenience
-  log(NS, 'Created new file, cleared editor content');
+  currentFileName.value = null; // Reset filename only
+  hasUnsavedChanges.value = false; // Reset unsaved changes when creating a new file
+  // Keep currentDirectoryPath and currentFileMount to retain context
+  props.log(NS, `Created new file, cleared editor content. Kept directory context: ${currentDirectoryPath.value} on mount ${currentFileMount.value}`);
 }
+
+// Watch for content changes
+watch(content, () => {
+  if (isLoadingFile) {
+    return; // Do nothing if we are loading a file
+  }
+  
+  // Only set unsaved changes if it's a user edit
+  hasUnsavedChanges.value = true;
+}, { flush: 'sync' });
 
 // Expose the handleMessage function so Window.vue can access it
 defineExpose({ handleMessage });
