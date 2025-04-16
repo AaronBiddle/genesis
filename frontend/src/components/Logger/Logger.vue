@@ -35,7 +35,9 @@
         :key="logEntry.timestamp + '-' + index"
         :class="['text-xs font-mono mb-1 p-1 rounded', logEntry.isError ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800']"
       >
-        <span class="font-semibold mr-2">[{{ logEntry.namespace }}]</span>
+        <span class="font-semibold mr-2">
+          [{{ logEntry.namespace }}{{ logEntry.windowId !== undefined ? ':' + logEntry.windowId : '' }}]
+        </span>
         <span>{{ logEntry.message }}</span>
       </div>
        <div v-if="filteredLogs.length === 0" class="text-xs text-gray-500 italic">

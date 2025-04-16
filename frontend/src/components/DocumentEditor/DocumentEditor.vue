@@ -35,6 +35,8 @@
     <!-- Conditionally render textarea or Markdown preview -->
     <template v-if="!isPreviewActive">
       <textarea
+        id="document-editor-textarea"
+        name="documentContent"
         v-model="content"
         class="flex-grow w-full h-full border p-2 border-gray-300 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
         placeholder="Start typing..."

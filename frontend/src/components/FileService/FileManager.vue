@@ -68,6 +68,8 @@
       <!-- Unified filename input for Open and Save modes -->
       <input 
         v-if="effectiveMode === 'open' || effectiveMode === 'save'"
+        id="file-name-input" 
+        name="fileName"
         v-model="activeFileName"
         :placeholder="effectiveMode === 'open' ? 'Select or type filename to open' : 'Enter filename to save'"
         class="filename-input"
