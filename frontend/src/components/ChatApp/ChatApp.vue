@@ -11,13 +11,13 @@
       <button 
         class="p-1 hover:bg-gray-200 rounded ml-1 disabled:opacity-50 disabled:hover:bg-transparent"
         @click="handleSaveClick"
-        :disabled="true" 
+        :disabled="!canSaveDirectly" 
       >
         <img 
           src="@/components/Icons/icons8/icons8-save-80.png" 
           alt="Save Chat" 
           class="h-6 w-6"
-          :class="{ 'icon-disabled': true }"
+          :class="{ 'icon-disabled': !canSaveDirectly }"
         >
       </button>
       <button class="p-1 hover:bg-gray-200 rounded ml-1" @click="handleSaveAsClick">
@@ -103,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onMounted } from 'vue';
+import { ref, nextTick, onMounted, computed } from 'vue';
 import MarkdownRenderer from '@/components/Markdown/MarkdownRenderer.vue';
 import {
   generateResponse,
@@ -113,6 +113,7 @@ import {
   type GetModelsResponse,
   type ModelDetails
 } from '@/services/AIClient';
+import { readFile, writeFile } from '@/services/FileClient';
 
 const props = defineProps<{
   log: (namespace: string, message: string, isError?: boolean) => void;
@@ -133,6 +134,11 @@ const sendButtonRef = ref<HTMLButtonElement | null>(null); // Ref for button
 const currentFileName = ref<string | null>(null);
 const currentDirectoryPath = ref<string | null>(null);
 const currentFileMount = ref<string | null>(null);
+
+// Computed property to determine if Save is possible
+const canSaveDirectly = computed(() => {
+  return !!currentFileName.value && currentDirectoryPath.value !== null && !!currentFileMount.value;
+});
 
 const availableModels = ref<Record<string, ModelDetails>>({});
 const selectedModel = ref<string>('');
@@ -223,7 +229,26 @@ function handleOpenClick() {
 
 function handleSaveClick() {
   props.log(NS, '"Save Chat" button clicked');
-  // TODO: Implement actual save chat logic
+  if (!canSaveDirectly.value) {
+    props.log(NS, 'Save button clicked, but no valid file context exists.', true);
+    return; // Should not happen if button is disabled correctly, but good practice
+  }
+
+  const mount = currentFileMount.value!;
+  const path = currentDirectoryPath.value!;
+  const name = currentFileName.value!;
+  const fullPath = `${path}/${name}`.replace('//', '/');
+
+  props.log(NS, `Attempting to save directly to: Mount=${mount}, Path=${fullPath}`);
+  try {
+    const contentToSave = JSON.stringify(messages.value, null, 2);
+    writeFile(mount, fullPath, contentToSave); // Note: await is removed as it's not strictly needed here if we don't block UI
+    props.log(NS, `Successfully initiated save to ${fullPath}`);
+    // Optionally, you could add tracking for unsaved changes and reset it here
+  } catch (error: any) {
+    props.log(NS, `Error saving chat file directly to ${fullPath}: ${error.message}`, true);
+    // Optionally show user error
+  }
 }
 
 function handleSaveAsClick() {
@@ -254,21 +279,38 @@ async function handleMessage(senderId: number, message: FileMessage | any) {
 
     if (payload.mode === 'open' && payload.name) {
       props.log(NS, `File Manager response (Open): Mount=${payload.mount}, Path=${payload.path}, Name=${payload.name}`);
-      // TODO: Implement file reading logic using payload.mount, payload.path, payload.name
-      currentFileMount.value = payload.mount;
-      currentDirectoryPath.value = payload.path;
-      currentFileName.value = payload.name;
-      // You would typically load the chat history from the file here
-      // e.g., const history = await readFile(payload.mount, `${payload.path}/${payload.name}`);
-      // messages.value = JSON.parse(history);
+      const fullPath = `${payload.path}/${payload.name}`.replace('//', '/'); // Basic handling for root
+      try {
+        const fileContent = await readFile(payload.mount, fullPath);
+        const loadedMessages = JSON.parse(fileContent);
+        // Basic validation: Check if it's an array
+        if (Array.isArray(loadedMessages)) {
+          messages.value = loadedMessages;
+          currentFileMount.value = payload.mount;
+          currentDirectoryPath.value = payload.path;
+          currentFileName.value = payload.name;
+          props.log(NS, `Successfully loaded chat history from ${fullPath}`);
+        } else {
+          throw new Error('Invalid chat history format in file.');
+        }
+      } catch (error: any) {
+        props.log(NS, `Error opening/reading chat file ${fullPath}: ${error.message}`, true);
+        // Optionally clear state or show user error
+      }
     } else if (payload.mode === 'save' && payload.name) {
       props.log(NS, `File Manager response (Save): Mount=${payload.mount}, Path=${payload.path}, Name=${payload.name}`);
-      // TODO: Implement file writing logic using payload.mount, payload.path, payload.name
-      currentFileMount.value = payload.mount;
-      currentDirectoryPath.value = payload.path;
-      currentFileName.value = payload.name;
-      // You would typically save the current chat history to the file here
-      // e.g., await writeFile(payload.mount, `${payload.path}/${payload.name}`, JSON.stringify(messages.value));
+      const fullPath = `${payload.path}/${payload.name}`.replace('//', '/');
+      try {
+        const contentToSave = JSON.stringify(messages.value, null, 2); // Pretty print JSON
+        await writeFile(payload.mount, fullPath, contentToSave);
+        currentFileMount.value = payload.mount;
+        currentDirectoryPath.value = payload.path;
+        currentFileName.value = payload.name;
+        props.log(NS, `Successfully saved chat history to ${fullPath}`);
+      } catch (error: any) {
+        props.log(NS, `Error saving chat file to ${fullPath}: ${error.message}`, true);
+        // Optionally show user error
+      }
     }
   } else {
     props.log(NS, `Received unhandled message type: ${message?.type ?? 'unknown'}`);
