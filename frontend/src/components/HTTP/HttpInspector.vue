@@ -55,7 +55,12 @@
             <div class="method" :class="entry.method.toLowerCase()">{{ entry.method }}</div>
             <div class="path">{{ entry.path }}</div>
             <div class="timestamp">{{ formatTime(entry.timestamp) }}</div>
-            <div class="status-badge" :class="entry.status">{{ entry.status }}</div>
+            <div class="status-badge" :class="entry.status">
+                {{ entry.status === 'sending' ? 'Sending...' : 
+                   entry.status === 'error' ? 'Error' : 
+                   entry.status === 'blocked' ? 'Blocked' : 
+                   entry.status === 'sent' ? 'Sent' : entry.status }}
+            </div>
             <div class="expand-icon">{{ expandedEntries[index] ? '▼' : '►' }}</div>
           </div>
           
@@ -376,6 +381,17 @@ button:hover {
   color: #b71c1c;
 }
 
+.status-badge.sending {
+  background-color: #e1f5fe; /* Light blue */
+  color: #0277bd; /* Darker blue */
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+.status-badge.error {
+    background-color: #ffebee; /* Same as blocked for consistency */
+    color: #b71c1c;
+}
+
 .expand-icon {
   margin-left: 8px;
   color: #586069;
@@ -525,5 +541,12 @@ pre {
 .status-live {
   background-color: #e8f5e9;
   color: #1b5e20;
+}
+
+/* Add keyframes for pulse animation */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
 }
 </style> 

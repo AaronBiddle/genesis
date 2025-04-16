@@ -25,7 +25,7 @@
               <MarkdownRenderer :source="message.content" />
             </template>
             <template v-else>
-              {{ message.content }}
+              <div class="whitespace-pre-wrap">{{ message.content }}</div>
             </template>
           </div>
         </div>
