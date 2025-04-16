@@ -1,12 +1,37 @@
 <template>
   <div class="flex flex-col h-full">
     <div class="bg-gray-100 p-2 border-b flex items-center space-x-2">
+      <!-- Added Toolbar Buttons -->
+      <button class="p-1 hover:bg-gray-200 rounded" @click="handleNewClick">
+        <img src="@/components/Icons/icons8/icons8-new-file-80.png" alt="New Chat" class="h-6 w-6">
+      </button>
+      <button class="p-1 hover:bg-gray-200 rounded" @click="handleOpenClick">
+        <img src="@/components/Icons/icons8/icons8-open-file-80.png" alt="Open Chat" class="h-6 w-6">
+      </button>
+      <button 
+        class="p-1 hover:bg-gray-200 rounded ml-1 disabled:opacity-50 disabled:hover:bg-transparent"
+        @click="handleSaveClick"
+        :disabled="true" 
+      >
+        <img 
+          src="@/components/Icons/icons8/icons8-save-80.png" 
+          alt="Save Chat" 
+          class="h-6 w-6"
+          :class="{ 'icon-disabled': true }"
+        >
+      </button>
+      <button class="p-1 hover:bg-gray-200 rounded ml-1" @click="handleSaveAsClick">
+        <img src="@/components/Icons/icons8/icons8-save-as-80.png" alt="Save Chat As" class="h-6 w-6">
+      </button>
+
+      <div class="w-px h-6 bg-gray-300 mx-2"></div> <!-- Separator -->
+
       <label for="model-select" class="text-sm font-medium text-gray-700">Model:</label>
       <select
         id="model-select"
         v-model="selectedModel"
         :disabled="modelsLoading || !!modelsError || Object.keys(availableModels).length === 0"
-        class="block w-64 pl-3 pr-10 py-1.5 text-base border border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md"
+        class="block w-48 pl-3 pr-10 py-1.5 text-base border border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md"
       >
         <option v-if="modelsLoading" value="">Loading models...</option>
         <option v-else-if="modelsError" value="">Error loading models</option>
@@ -42,7 +67,7 @@
         <button
           @click="sendMessage"
           :disabled="!newMessage.trim() || isLoading"
-          class="bg-blue-500 text-white px-3 py-2 rounded-r-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center h-full transition-colors duration-200 ease-in-out"
+          class="bg-blue-500 text-white px-3 py-2 rounded-r-md hover:bg-blue-600 disabled:bg-gray-300 flex items-center justify-center h-full transition-colors duration-200 ease-in-out"
           style="height: calc(4 * 1.5rem + 1rem + 2px);"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6">
@@ -73,6 +98,12 @@ import {
   type GetModelsResponse,
   type ModelDetails
 } from '@/services/AIClient';
+
+const props = defineProps<{
+  log: (namespace: string, message: string, isError?: boolean) => void;
+}>();
+
+const NS = 'ChatApp.vue'; // Namespace for logging
 
 const messages = ref<AIMessage[]>([]);
 const newMessage = ref('');
@@ -132,6 +163,28 @@ const getMessageBubbleClass = (message: AIMessage) => {
     ? 'bg-cyan-500 text-white'
     : 'bg-gray-200 text-gray-800';
 };
+
+// --- Toolbar Button Stubs ---
+function handleNewClick() {
+  props.log(NS, '"New Chat" button clicked');
+  // TODO: Implement actual new chat logic
+}
+
+function handleOpenClick() {
+  props.log(NS, '"Open Chat" button clicked');
+  // TODO: Implement actual open chat logic (likely needs file manager)
+}
+
+function handleSaveClick() {
+  props.log(NS, '"Save Chat" button clicked');
+  // TODO: Implement actual save chat logic
+}
+
+function handleSaveAsClick() {
+  props.log(NS, '"Save Chat As" button clicked');
+  // TODO: Implement actual save chat as logic (likely needs file manager)
+}
+// --- End Toolbar Button Stubs ---
 
 onMounted(async () => {
   modelsLoading.value = true;

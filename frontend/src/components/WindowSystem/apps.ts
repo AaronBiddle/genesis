@@ -20,6 +20,8 @@ export interface App {
   titleColor?: string; // Optional Tailwind class for the title text color (e.g., 'text-gray-800')
   initialWidth?: number; // Optional starting width in pixels
   initialHeight?: number; // Optional starting height in pixels
+  minimumWidth?: number; // Optional minimum width in pixels
+  minimumHeight?: number; // Optional minimum height in pixels
   resizable?: boolean; // Can the window be resized? (Default: true)
   maximizable?: boolean; // Can the window be maximized? (Default: true)
   minimizable?: boolean; // Can the window be minimized? (Default: true)
@@ -48,8 +50,9 @@ export const apps: App[] = [
     iconColor: 'text-cyan-600', // Cyan theme
     titleBarColor: 'bg-cyan-100',
     titleColor: 'text-cyan-900',
-    initialWidth: 400,
-    initialHeight: 500,    
+    initialWidth: 450,
+    initialHeight: 500,
+    minimumWidth: 450,
   },
   {
     id: "icons",
