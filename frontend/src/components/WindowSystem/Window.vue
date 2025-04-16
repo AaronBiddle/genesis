@@ -42,6 +42,7 @@
         :sendParent="sendParent"
         :getLaunchOptions="getLaunchOptions" 
         :newWindow="newWindow"
+        :log="logFromChild"
         @close="handleClose" 
       />
     </div>
@@ -229,6 +230,11 @@ function newWindow(appId: string, launchOptions?: any) {
   } else {
     log(NS, `Window ${props.windowData.id} requested to launch unknown app ID: ${appId}`, true);
   }
+}
+
+// Function to be passed down for logging from the child component
+function logFromChild(namespace: string, message: string, isError: boolean = false) {
+  log(namespace, message, isError, props.windowData.id); // Add windowId automatically
 }
 
 // Lifecycle hook: Subscribe to eventBus if the component has handleMessage

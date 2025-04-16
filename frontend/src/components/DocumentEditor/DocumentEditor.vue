@@ -50,13 +50,13 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { log } from '@/components/Logger/loggerStore';
 import { readFile, writeFile } from '@/services/FileClient';
 import { svgIcons } from '@/components/Icons/SvgIcons'; // Import svgIcons
 import MarkdownRenderer from '@/components/Markdown/MarkdownRenderer.vue'; // Import MarkdownRenderer
 
 const props = defineProps<{
   newWindow: (appId: string, launchOptions?: any) => void;
+  log: (namespace: string, message: string, isError?: boolean) => void;
 }>();
 
 const NS = 'DocumentEditor.vue';
@@ -78,7 +78,7 @@ const isSaveDisabled = computed(() => {
   const changes = hasUnsavedChanges.value;
   // Check specifically for null/undefined for directory path
   const isDisabled = dir === null || !name || !mount || !changes; 
-  log(NS, `isSaveDisabled check: Path='${dir}', Name='${name}', Mount='${mount}', Changes='${changes}' -> Disabled=${isDisabled}`);
+  props.log(NS, `isSaveDisabled check: Path='${dir}', Name='${name}', Mount='${mount}', Changes='${changes}' -> Disabled=${isDisabled}`);
   return isDisabled;
 });
 
@@ -102,7 +102,7 @@ interface FileMessage {
 }
 
 const handleMessage = async (senderId: number, message: FileMessage | any) => {
-  log(NS, `Received message from sender (${senderId}): ${JSON.stringify(message)}`);
+  props.log(NS, `Received message from sender (${senderId}): ${JSON.stringify(message)}`);
 
   if (message.type === 'file') {
     const payload = message.payload as FileMessagePayload;
@@ -112,44 +112,44 @@ const handleMessage = async (senderId: number, message: FileMessage | any) => {
       const dirPath = payload.path;
       const fileName = payload.name;
       if (!fileName) {
-          log(NS, `Error: Received 'open' message without a filename. Path: ${dirPath}`, true);
+          props.log(NS, `Error: Received 'open' message without a filename. Path: ${dirPath}`, true);
           // Decide how to handle this - maybe treat path as full path?
           // For now, we'll skip opening.
           return;
       }
       const fullPath = `${dirPath}/${fileName}`; // Reconstruct for logging/API call
-      log(NS, `Attempting to open: Mount=${payload.mount}, Path=${dirPath}, Name=${fileName}. Full path: ${fullPath}`);
+      props.log(NS, `Attempting to open: Mount=${payload.mount}, Path=${dirPath}, Name=${fileName}. Full path: ${fullPath}`);
       try {
-        log(NS, '[handleMessage:open] Fetching file content...');
+        props.log(NS, '[handleMessage:open] Fetching file content...');
         const fileContent = await readFile(payload.mount, fullPath);
-        log(NS, `[handleMessage:open] Raw file content received: [${fileContent}]`);
+        props.log(NS, `[handleMessage:open] Raw file content received: [${fileContent}]`);
         
-        log(NS, '[handleMessage:open] Setting isLoadingFile = true');
+        props.log(NS, '[handleMessage:open] Setting isLoadingFile = true');
         isLoadingFile = true;
-        log(NS, `[handleMessage:open] isLoadingFile is now: ${isLoadingFile}`);
+        props.log(NS, `[handleMessage:open] isLoadingFile is now: ${isLoadingFile}`);
         
-        log(NS, '[handleMessage:open] Assigning content.value...');
+        props.log(NS, '[handleMessage:open] Assigning content.value...');
         content.value = fileContent; // This triggers the watcher
-        log(NS, '[handleMessage:open] Assigned content.value.');
+        props.log(NS, '[handleMessage:open] Assigned content.value.');
         
         // Update state *after* content assignment
-        log(NS, '[handleMessage:open] Updating path/name/mount refs.');
+        props.log(NS, '[handleMessage:open] Updating path/name/mount refs.');
         currentDirectoryPath.value = dirPath;
         currentFileName.value = fileName;
         currentFileMount.value = payload.mount;
 
-        log(NS, '[handleMessage:open] Explicitly setting hasUnsavedChanges = false');
+        props.log(NS, '[handleMessage:open] Explicitly setting hasUnsavedChanges = false');
         hasUnsavedChanges.value = false;
-        log(NS, `[handleMessage:open] hasUnsavedChanges is now: ${hasUnsavedChanges.value}`);
+        props.log(NS, `[handleMessage:open] hasUnsavedChanges is now: ${hasUnsavedChanges.value}`);
         
-        log(NS, '[handleMessage:open] Resetting isLoadingFile = false');
+        props.log(NS, '[handleMessage:open] Resetting isLoadingFile = false');
         isLoadingFile = false;
-        log(NS, `[handleMessage:open] isLoadingFile is now: ${isLoadingFile}`);
+        props.log(NS, `[handleMessage:open] isLoadingFile is now: ${isLoadingFile}`);
 
-        log(NS, `[handleMessage:open] Successfully opened and read file: ${fullPath}`);
+        props.log(NS, `[handleMessage:open] Successfully opened and read file: ${fullPath}`);
       } catch (error: any) {
-        log(NS, `[handleMessage:open] Error opening file ${fullPath}: ${error.message}`, true);
-        log(NS, '[handleMessage:open:error] Resetting isLoadingFile = false');
+        props.log(NS, `[handleMessage:open] Error opening file ${fullPath}: ${error.message}`, true);
+        props.log(NS, '[handleMessage:open:error] Resetting isLoadingFile = false');
         isLoadingFile = false; // Ensure flag is reset on error too
       }
     } else if (payload.mode === 'save') {
@@ -157,11 +157,11 @@ const handleMessage = async (senderId: number, message: FileMessage | any) => {
       const dirPath = payload.path;
       const fileName = payload.name;
       if (!fileName) {
-          log(NS, `Error: Received 'save' message without a filename. Path: ${dirPath}`, true);
+          props.log(NS, `Error: Received 'save' message without a filename. Path: ${dirPath}`, true);
           return;
       }
       const saveFullPath = `${dirPath}/${fileName}`; // Reconstruct for API call and logging
-      log(NS, `Attempting to save content via File Manager to: Mount=${payload.mount}, Path=${dirPath}, Name=${fileName}. Full Path=${saveFullPath}`);
+      props.log(NS, `Attempting to save content via File Manager to: Mount=${payload.mount}, Path=${dirPath}, Name=${fileName}. Full Path=${saveFullPath}`);
       try {
         await writeFile(payload.mount, saveFullPath, content.value);
         // const { dir, name } = splitPath(saveFullPath); // No longer needed
@@ -169,13 +169,13 @@ const handleMessage = async (senderId: number, message: FileMessage | any) => {
         currentFileName.value = fileName;     // Update filename from payload
         currentFileMount.value = payload.mount; // Update mount
         hasUnsavedChanges.value = false;
-        log(NS, `Successfully saved file to: ${saveFullPath}`);
+        props.log(NS, `Successfully saved file to: ${saveFullPath}`);
       } catch (error: any) {
-        log(NS, `Error saving file to ${saveFullPath}: ${error.message}`, true);
+        props.log(NS, `Error saving file to ${saveFullPath}: ${error.message}`, true);
       }
     }
   } else {
-    log(NS, `Received unhandled message type: ${message.type ?? 'unknown'}`);
+    props.log(NS, `Received unhandled message type: ${message.type ?? 'unknown'}`);
   }
 };
 
@@ -190,18 +190,18 @@ async function handleSaveClick() {
     // Reconstruct the full path for saving
     const fullPath = `${dir}/${name}`.replace('//', '/'); // Basic handling for potential double slash at root
 
-    log(NS, `Attempting to save directly to: Mount=${mount}, Path=${fullPath}`);
+    props.log(NS, `Attempting to save directly to: Mount=${mount}, Path=${fullPath}`);
     try {
       await writeFile(mount, fullPath, content.value);
       hasUnsavedChanges.value = false; // Reset unsaved changes after saving
-      log(NS, `Successfully saved file directly to: ${fullPath}`);
+      props.log(NS, `Successfully saved file directly to: ${fullPath}`);
     } catch (error: any) {
-      log(NS, `Error saving file directly to ${fullPath}: ${error.message}`, true);
+      props.log(NS, `Error saving file directly to ${fullPath}: ${error.message}`, true);
     }
   } else {
     // This block should ideally not be reachable if the button is enabled,
     // but keep the log/fallback just in case.
-    log(NS, `Save clicked but state is invalid? Dir=${dir}, Name=${name}, Mount=${mount}. Opening save dialog.`);
+    props.log(NS, `Save clicked but state is invalid? Dir=${dir}, Name=${name}, Mount=${mount}. Opening save dialog.`);
     openFileManager('save');
   }
 }
@@ -213,7 +213,7 @@ function openFileManager(mode: 'open' | 'save' | 'none') {
 // Function to toggle the preview state
 function togglePreview() {
   isPreviewActive.value = !isPreviewActive.value;
-  log(NS, `Preview mode toggled: ${isPreviewActive.value}`);
+  props.log(NS, `Preview mode toggled: ${isPreviewActive.value}`);
   // Add logic here for what happens when preview is toggled on/off
 }
 
@@ -222,24 +222,24 @@ function createNewFile() {
   currentFileName.value = null; // Reset filename only
   hasUnsavedChanges.value = false; // Reset unsaved changes when creating a new file
   // Keep currentDirectoryPath and currentFileMount to retain context
-  log(NS, `Created new file, cleared editor content. Kept directory context: ${currentDirectoryPath.value} on mount ${currentFileMount.value}`);
+  props.log(NS, `Created new file, cleared editor content. Kept directory context: ${currentDirectoryPath.value} on mount ${currentFileMount.value}`);
 }
 
 // Watch for content changes
 watch(content, (newValue, oldValue) => {
-  log(NS, '[watch] Watcher triggered.');
-  log(NS, `[watch] Checking isLoadingFile value: ${isLoadingFile}`);
+  props.log(NS, '[watch] Watcher triggered.');
+  props.log(NS, `[watch] Checking isLoadingFile value: ${isLoadingFile}`);
   
   if (isLoadingFile) {
-    log(NS, '[watch] isLoadingFile is true. Ignoring change for hasUnsavedChanges.');
+    props.log(NS, '[watch] isLoadingFile is true. Ignoring change for hasUnsavedChanges.');
     return; // Do nothing if we are loading a file
   }
   
   // Only set unsaved changes if it's a user edit
-  log(NS, '[watch] isLoadingFile is false. Processing as user edit.');
-  log(NS, `[watch] Content changed. Old length: ${oldValue?.length ?? 'undefined'}, New length: ${newValue?.length ?? 'undefined'}. Setting hasUnsavedChanges = true.`);
+  props.log(NS, '[watch] isLoadingFile is false. Processing as user edit.');
+  props.log(NS, `[watch] Content changed. Old length: ${oldValue?.length ?? 'undefined'}, New length: ${newValue?.length ?? 'undefined'}. Setting hasUnsavedChanges = true.`);
   hasUnsavedChanges.value = true;
-  log(NS, `[watch] hasUnsavedChanges is now: ${hasUnsavedChanges.value}`);
+  props.log(NS, `[watch] hasUnsavedChanges is now: ${hasUnsavedChanges.value}`);
 }, { flush: 'sync' });
 
 // Expose the handleMessage function so Window.vue can access it
