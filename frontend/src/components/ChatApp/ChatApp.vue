@@ -45,7 +45,14 @@
     <div class="flex flex-col flex-grow h-full bg-gray-50 p-2 overflow-hidden">
       <div ref="messageContainer" class="flex-grow overflow-y-auto mb-2 space-y-2 pr-2">
         <div v-for="(message, index) in messages" :key="index" :class="getMessageClass(message)">
-          <div class="px-3 py-2 rounded-lg max-w-xl" :class="getMessageBubbleClass(message)">
+          <div 
+            class="px-3 py-2 rounded-lg" 
+            :class="[
+              message.role === 'user' 
+                ? 'bg-cyan-500 text-white ml-12' 
+                : 'bg-gray-200 text-gray-800 mr-12'
+            ]"
+          >
             <template v-if="message.role === 'assistant'">
               <MarkdownRenderer :source="message.content" />
             </template>
@@ -202,12 +209,6 @@ const handleFocusOut = () => {
 
 const getMessageClass = (message: AIMessage) => {
   return message.role === 'user' ? 'flex justify-end' : 'flex justify-start';
-};
-
-const getMessageBubbleClass = (message: AIMessage) => {
-  return message.role === 'user'
-    ? 'bg-cyan-500 text-white'
-    : 'bg-gray-200 text-gray-800';
 };
 
 // --- Toolbar Button Stubs ---
