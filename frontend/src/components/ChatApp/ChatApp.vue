@@ -78,7 +78,7 @@
             ref="sendButtonRef"
             @click="sendMessage"
             :disabled="!newMessage.trim() || isLoading"
-            class="bg-blue-500 text-white px-3 py-2 hover:bg-blue-600 disabled:bg-gray-300 flex items-center justify-center self-stretch outline-none"
+            class="bg-cyan-500 text-white px-3 py-2 hover:bg-cyan-600 hover:border-cyan-600 disabled:bg-gray-300 flex items-center justify-center self-stretch outline-none"
             :class="{ 
               'border border-l-0 border-black rounded-r-md': !isInputAreaFocused, 
               'border-2 border-l-0 border-cyan-500 rounded-r-md': isInputAreaFocused 
