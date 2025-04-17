@@ -224,8 +224,16 @@ function handleNewClick() {
 
 function handleOpenClick() {
   props.log(NS, '"Open Chat" button clicked');
-  // TODO: Add initialMount/initialPath if needed
-  props.newWindow('file-manager', { mode: 'open' }); 
+  const launchOptions: any = { mode: 'open' };
+  // Pass the current path if available
+  if (currentFileMount.value && currentDirectoryPath.value) {
+    launchOptions.initialMount = currentFileMount.value;
+    launchOptions.initialPath = currentDirectoryPath.value;
+    props.log(NS, `Opening file manager with initial path: Mount=${launchOptions.initialMount}, Path=${launchOptions.initialPath}`);
+  } else {
+     props.log(NS, `Opening file manager at default location.`);
+  }
+  props.newWindow('file-manager', launchOptions);
 }
 
 function handleSaveClick() {
@@ -254,8 +262,16 @@ function handleSaveClick() {
 
 function handleSaveAsClick() {
   props.log(NS, '"Save Chat As" button clicked');
-  // TODO: Add initialMount/initialPath if needed
-  props.newWindow('file-manager', { mode: 'save' }); 
+  const launchOptions: any = { mode: 'save' };
+  // Pass the current path if available
+  if (currentFileMount.value && currentDirectoryPath.value) {
+    launchOptions.initialMount = currentFileMount.value;
+    launchOptions.initialPath = currentDirectoryPath.value;
+    props.log(NS, `Opening file manager for Save As with initial path: Mount=${launchOptions.initialMount}, Path=${launchOptions.initialPath}`);
+  } else {
+     props.log(NS, `Opening file manager for Save As at default location.`);
+  }
+  props.newWindow('file-manager', launchOptions);
 }
 // --- End Toolbar Button Stubs ---
 

@@ -120,8 +120,8 @@ def generate_response(model: str, messages: list, system_prompt: str = None, tem
                  return None
 
             try:
-                # Instantiate the client
-                gemini_client = genai.Client() # Use the client
+                # Instantiate the specific model instead of a generic client
+                model_instance = genai.GenerativeModel(model_name=model) 
 
                 # --- Convert messages to the format expected by generate_content ---
                 # Required format: [{'role': 'user'/'model', 'parts': [{'text': '...'}]}]
@@ -148,20 +148,18 @@ def generate_response(model: str, messages: list, system_prompt: str = None, tem
                 # --- Prepare the generation configuration --- 
                 generation_config_args = {}
                 if system_prompt:
-                    generation_config_args["system_instruction"] = system_prompt
+                    # Use 'system_instruction' as the key and format it as Content object
+                    generation_config_args["system_instruction"] = {'parts': [{'text': system_prompt}]}
                 if temperature is not None:
                     generation_config_args["temperature"] = temperature
                 if max_tokens is not None:
-                    generation_config_args["max_output_tokens"] = max_tokens # Add max_output_tokens for Gemini
+                    # Use 'max_output_tokens' as the key based on gemini docs
+                    generation_config_args["max_output_tokens"] = max_tokens
                 
-                generation_config = types.GenerateContentConfig(**generation_config_args)
-                # Add other config like ... if needed outside the constructor
-
-                # Generate content using the client, converted contents, and config
-                gemini_response = gemini_client.models.generate_content(
-                    model=model, 
+                # Generate content using the model instance, converted contents, and config dict
+                gemini_response = model_instance.generate_content(
                     contents=converted_contents, 
-                    generation_config=generation_config # Pass the config
+                    generation_config=generation_config_args # Pass the dict directly
                 )
 
                 # Call the extraction function (which currently prints raw response and returns None)
