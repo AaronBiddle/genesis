@@ -31,7 +31,7 @@
         id="model-select"
         v-model="selectedModel"
         :disabled="modelsLoading || !!modelsError || Object.keys(availableModels).length === 0"
-        class="block w-48 pl-3 pr-10 py-1.5 text-base border border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md"
+        class="pl-3 pr-3 py-1.5 text-base border border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md"
       >
         <option v-if="modelsLoading" value="">Loading models...</option>
         <option v-else-if="modelsError" value="">Error loading models</option>
