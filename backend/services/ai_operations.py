@@ -1,5 +1,6 @@
 from openai import OpenAI
 import google.generativeai as genai
+from google.generativeai import types # Add types import
 from dotenv import load_dotenv
 import os
 from backend.services.ai_models import AI_MODELS
@@ -53,7 +54,7 @@ if GEMINI_API_KEY:
 else:
     print("Warning: GEMINI_API_KEY not found in environment variables. Gemini models will not be available.")
 
-def generate_response(model: str, messages: list, system_prompt: str = None):
+def generate_response(model: str, messages: list, system_prompt: str = None, temperature: float = None, max_tokens: int = None):
     """
     Generates a response from the specified AI model.
 
@@ -61,6 +62,8 @@ def generate_response(model: str, messages: list, system_prompt: str = None):
         model: The name of the model to use (e.g., "deepseek-reasoner", "gemini-2.5-pro-preview-03-25").
         messages: A list of message dictionaries.
         system_prompt: An optional system prompt string.
+        temperature: An optional temperature for sampling (float).
+        max_tokens: An optional maximum number of tokens to generate (int).
 
     Returns:
         A dictionary containing the extracted response details (content, tokens, etc.)
@@ -90,10 +93,17 @@ def generate_response(model: str, messages: list, system_prompt: str = None):
                 final_messages_deepseek.append({"role": "system", "content": system_prompt})
             final_messages_deepseek.extend(messages)
             
-            response = deepseek_client.chat.completions.create(
-                model=model,
-                messages=final_messages_deepseek # Use Deepseek formatted messages
-            )
+            # Prepare DeepSeek API call arguments
+            deepseek_args = {
+                "model": model,
+                "messages": final_messages_deepseek
+            }
+            if temperature is not None:
+                 deepseek_args["temperature"] = temperature
+            if max_tokens is not None:
+                 deepseek_args["max_tokens"] = max_tokens # Add max_tokens for DeepSeek
+
+            response = deepseek_client.chat.completions.create(**deepseek_args)
             
             # Call the extraction function
             response_data = extract_response_data(response, provider, has_thinking)
@@ -108,31 +118,52 @@ def generate_response(model: str, messages: list, system_prompt: str = None):
             if not GEMINI_API_KEY: # Basic check, configure might have failed
                  print("Error: Gemini API key not found or configuration failed. Cannot call Gemini model.")
                  return None
-                 
+
             try:
-                # Instantiate the model using GenerativeModel
-                gemini_model = genai.GenerativeModel(
-                    model_name=model, 
-                    system_instruction=system_prompt if system_prompt else None 
-                )
-                
-                # --- Convert messages to the format expected by generate_content --- 
-                # Based on the working example (list of strings) and the error message,
-                # we need to adapt the input format. 
-                # For simple, single user messages, we extract the content string.
-                # TODO: Implement proper multi-turn conversion if needed, 
-                # likely to [{role: 'user', parts: [{text: '...'}]}, {role: 'model', parts: [{text: '...'}]}]
-                
-                if not messages or not isinstance(messages, list) or not messages[-1].get('content'):
+                # Instantiate the client
+                gemini_client = genai.Client() # Use the client
+
+                # --- Convert messages to the format expected by generate_content ---
+                # Required format: [{'role': 'user'/'model', 'parts': [{'text': '...'}]}]
+                converted_contents = []
+                if not messages or not isinstance(messages, list):
                      print("Error: Invalid or empty messages format for Gemini call.")
                      return None
+
+                for msg in messages:
+                    role = msg.get('role')
+                    content = msg.get('content')
+                    if not role or not content:
+                        print(f"Warning: Skipping invalid message format: {msg}")
+                        continue
+                    # Adjust role if necessary (e.g., 'assistant' to 'model')
+                    if role == 'assistant':
+                        role = 'model'
+                    converted_contents.append({'role': role, 'parts': [{'text': content}]})
+
+                if not converted_contents:
+                    print("Error: No valid messages found after conversion for Gemini call.")
+                    return None
+
+                # --- Prepare the generation configuration --- 
+                generation_config_args = {}
+                if system_prompt:
+                    generation_config_args["system_instruction"] = system_prompt
+                if temperature is not None:
+                    generation_config_args["temperature"] = temperature
+                if max_tokens is not None:
+                    generation_config_args["max_output_tokens"] = max_tokens # Add max_output_tokens for Gemini
                 
-                # Extract content from the last message for the simple list-of-strings format
-                contents_for_gemini = [messages[-1]['content']] 
-                
-                # Generate content using the converted contents
-                gemini_response = gemini_model.generate_content(contents_for_gemini)
-                
+                generation_config = types.GenerateContentConfig(**generation_config_args)
+                # Add other config like ... if needed outside the constructor
+
+                # Generate content using the client, converted contents, and config
+                gemini_response = gemini_client.models.generate_content(
+                    model=model, 
+                    contents=converted_contents, 
+                    generation_config=generation_config # Pass the config
+                )
+
                 # Call the extraction function (which currently prints raw response and returns None)
                 response_data = extract_response_data(gemini_response, provider, has_thinking)
                 
