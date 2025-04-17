@@ -19,6 +19,8 @@ class GenerateRequest(BaseModel):
     model: str = Field(..., description="Name of the AI model to use")
     messages: List[Message] = Field(..., description="List of message objects representing the conversation history")
     system_prompt: Optional[str] = Field(None, description="Optional system prompt to guide the AI")
+    temperature: Optional[float] = Field(None, description="Optional temperature for sampling", ge=0.0, le=2.0)
+    max_tokens: Optional[int] = Field(None, description="Optional maximum number of tokens to generate", gt=0)
 
 # Response model for generate_response (assuming ai_operations.generate_response returns a dict)
 # Adjust this based on the actual structure returned by extract_response_data
@@ -76,7 +78,9 @@ async def generate_ai_response(request: GenerateRequest = Body(...)):
         response_data = ai_operations.generate_response(
             model=request.model,
             messages=messages_dict_list,
-            system_prompt=request.system_prompt
+            system_prompt=request.system_prompt,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens
         )
 
         if response_data is None:

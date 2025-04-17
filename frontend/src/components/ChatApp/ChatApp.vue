@@ -31,7 +31,7 @@
         id="model-select"
         v-model="selectedModel"
         :disabled="modelsLoading || !!modelsError || Object.keys(availableModels).length === 0"
-        class="block w-48 pl-3 pr-10 py-1.5 text-base border border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md"
+        class="pl-3 pr-3 py-1.5 text-base border border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md"
       >
         <option v-if="modelsLoading" value="">Loading models...</option>
         <option v-else-if="modelsError" value="">Error loading models</option>
@@ -224,8 +224,16 @@ function handleNewClick() {
 
 function handleOpenClick() {
   props.log(NS, '"Open Chat" button clicked');
-  // TODO: Add initialMount/initialPath if needed
-  props.newWindow('file-manager', { mode: 'open' }); 
+  const launchOptions: any = { mode: 'open' };
+  // Pass the current path if available
+  if (currentFileMount.value && currentDirectoryPath.value) {
+    launchOptions.initialMount = currentFileMount.value;
+    launchOptions.initialPath = currentDirectoryPath.value;
+    props.log(NS, `Opening file manager with initial path: Mount=${launchOptions.initialMount}, Path=${launchOptions.initialPath}`);
+  } else {
+     props.log(NS, `Opening file manager at default location.`);
+  }
+  props.newWindow('file-manager', launchOptions);
 }
 
 function handleSaveClick() {
@@ -254,8 +262,16 @@ function handleSaveClick() {
 
 function handleSaveAsClick() {
   props.log(NS, '"Save Chat As" button clicked');
-  // TODO: Add initialMount/initialPath if needed
-  props.newWindow('file-manager', { mode: 'save' }); 
+  const launchOptions: any = { mode: 'save' };
+  // Pass the current path if available
+  if (currentFileMount.value && currentDirectoryPath.value) {
+    launchOptions.initialMount = currentFileMount.value;
+    launchOptions.initialPath = currentDirectoryPath.value;
+    props.log(NS, `Opening file manager for Save As with initial path: Mount=${launchOptions.initialMount}, Path=${launchOptions.initialPath}`);
+  } else {
+     props.log(NS, `Opening file manager for Save As at default location.`);
+  }
+  props.newWindow('file-manager', launchOptions);
 }
 // --- End Toolbar Button Stubs ---
 
