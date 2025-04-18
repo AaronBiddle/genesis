@@ -19,7 +19,7 @@ export function getWebSocketStatus(): WebSocketStatus {
 }
 
 // Function to connect to the WebSocket server
-export function connectWebSocket(url: string = "ws://127.0.0.1:8000/frontend/ws/echo"):
+export function connectWebSocket(url: string = "ws://127.0.0.1:8000/frontend/ws"):
 Promise<void> {
     return new Promise((resolve, reject) => {
         if (websocket && websocket.readyState === WebSocket.OPEN) {
