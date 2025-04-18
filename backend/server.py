@@ -47,8 +47,8 @@ app.include_router(
 )
 app.include_router(
     ws_frontend.router,
-    prefix="/frontend/ws/echo",
-    tags=["Frontend WebSocket Echo"]
+    prefix="/frontend/ws",
+    tags=["Frontend WebSocket"]
 )
 
 if __name__ == "__main__":

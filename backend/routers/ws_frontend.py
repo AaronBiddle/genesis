@@ -17,9 +17,6 @@ async def websocket_endpoint(websocket: WebSocket):
                     await websocket.send_json({"error": "Invalid payload format, expected a JSON object."})
                     continue
 
-                # Add the WebSocket URL to the received data
-                data["ws_url"] = ws_url
-
                 await websocket.send_json(data)
             except json.JSONDecodeError:
                 await websocket.send_json({"error": "Invalid JSON received."})

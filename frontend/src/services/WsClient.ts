@@ -1,4 +1,6 @@
-enum WebSocketStatus {
+import { reactive } from 'vue';
+
+export enum WebSocketStatus {
     Connecting,
     Connected,
     Disconnected,
@@ -7,6 +9,9 @@ enum WebSocketStatus {
 
 let websocket: WebSocket | null = null;
 let wsStatus: WebSocketStatus = WebSocketStatus.Disconnected;
+
+// Reactive state for received messages
+export const wsMessages = reactive<any[]>([]);
 
 // Function to get the current status
 export function getWebSocketStatus(): WebSocketStatus {
@@ -35,8 +40,16 @@ Promise<void> {
         };
 
         websocket.onmessage = (event: MessageEvent) => {
-            console.log("WebSocket message received:", event.data);
-            // Handle incoming messages if needed, e.g., update state or trigger callbacks
+            try {
+                const receivedData = JSON.parse(event.data);
+                console.log("WebSocket JSON received:", receivedData);
+                // Add the received message to the reactive array
+                wsMessages.push(receivedData);
+                // Optionally, you can limit the size of the message array
+                // if (wsMessages.length > 100) { wsMessages.shift(); }
+            } catch (error) {
+                console.error("Failed to parse WebSocket message:", error, "\nRaw data:", event.data);
+            }
         };
 
         websocket.onclose = (event: CloseEvent) => {
@@ -61,11 +74,16 @@ Promise<void> {
     });
 }
 
-// Function to send a message (echo)
-export function sendWebSocketMessage(message: string): void {
+// Function to send a JSON message (echo)
+export function sendWebSocketJsonMessage(message: Record<string, any>): void {
     if (websocket && websocket.readyState === WebSocket.OPEN) {
-        websocket.send(message);
-        console.log("WebSocket message sent:", message);
+        try {
+            const jsonString = JSON.stringify(message);
+            websocket.send(jsonString);
+            console.log("WebSocket JSON message sent:", message);
+        } catch (error) {
+            console.error("Failed to stringify message:", error, "\nOriginal message:", message);
+        }
     } else {
         console.error("WebSocket is not connected. Cannot send message.");
         // Optionally: Buffer the message or try to reconnect
