@@ -1,4 +1,14 @@
-import { reactive } from 'vue';
+import { ref } from 'vue';
+
+// Define the structure for messages passed to callbacks
+export interface InteractionMessage {
+    data?: any;
+    error?: any;
+    // Consider adding isComplete?: boolean if the backend will signal stream end
+}
+
+// Define the callback function signature
+export type InteractionCallback = (message: InteractionMessage) => void;
 
 export enum WebSocketStatus {
     Connecting,
@@ -8,92 +18,182 @@ export enum WebSocketStatus {
 }
 
 let websocket: WebSocket | null = null;
-let wsStatus: WebSocketStatus = WebSocketStatus.Disconnected;
+// Make status reactive for UI updates
+export const wsStatus = ref<WebSocketStatus>(WebSocketStatus.Disconnected);
 
-// Reactive state for received messages
-export const wsMessages = reactive<any[]>([]);
-
-// Function to get the current status
-export function getWebSocketStatus(): WebSocketStatus {
-    return wsStatus;
-}
+// Map to store ongoing interactions: interactionId -> callback
+let interactionsMap = new Map<number, InteractionCallback>();
+let nextInteractionId = 0;
 
 // Function to connect to the WebSocket server
 export function connectWebSocket(url: string = "ws://127.0.0.1:8000/frontend/ws"):
 Promise<void> {
-    return new Promise((resolve, reject) => {
-        if (websocket && websocket.readyState === WebSocket.OPEN) {
+    // Prevent multiple connection attempts
+    if (websocket || wsStatus.value === WebSocketStatus.Connecting) {
+        if (websocket?.readyState === WebSocket.OPEN) {
             console.log("WebSocket already connected.");
-            resolve();
-            return;
+            return Promise.resolve();
         }
+        if (wsStatus.value === WebSocketStatus.Connecting) {
+            console.log("WebSocket connection attempt already in progress.");
+            // Potentially return a promise that resolves when the current attempt finishes
+            // For simplicity now, just return a resolved promise
+            return Promise.resolve(); 
+        }
+    }
 
-        wsStatus = WebSocketStatus.Connecting;
+    // Reset state in case of reconnection
+    interactionsMap.clear();
+    nextInteractionId = 0;
+
+    return new Promise((resolve, reject) => {
+
+        wsStatus.value = WebSocketStatus.Connecting;
         console.log("Connecting to WebSocket...");
 
         websocket = new WebSocket(url);
 
         websocket.onopen = () => {
-            wsStatus = WebSocketStatus.Connected;
+            wsStatus.value = WebSocketStatus.Connected;
             console.log("WebSocket Connected");
-            resolve(); // Resolve the promise when connected
+            resolve();
         };
 
         websocket.onmessage = (event: MessageEvent) => {
             try {
-                const receivedData = JSON.parse(event.data);
-                console.log("WebSocket JSON received:", receivedData);
-                // Add the received message to the reactive array
-                wsMessages.push(receivedData);
-                // Optionally, you can limit the size of the message array
-                // if (wsMessages.length > 100) { wsMessages.shift(); }
+                const receivedMessage = JSON.parse(event.data);
+                console.debug("WebSocket raw message received:", receivedMessage);
+
+                // Check if it's a response to a specific interaction
+                if (typeof receivedMessage.responseId === 'number') {
+                    const callback = interactionsMap.get(receivedMessage.responseId);
+                    if (callback) {
+                        // Extract relevant parts for the callback
+                        const callbackMessage: InteractionMessage = {
+                            data: receivedMessage.data,
+                            error: receivedMessage.error,
+                            // Potentially add isComplete handling here
+                        };
+                        try {
+                            callback(callbackMessage);
+                        } catch (callbackError) {
+                            console.error(`Error in interaction callback for ID ${receivedMessage.responseId}:`, callbackError);
+                            // Optionally, notify the specific interaction of the callback error?
+                        }
+                    } else {
+                        // Received a response for an unknown/stopped interaction
+                        console.warn(`Received message for unknown or stopped interaction ID: ${receivedMessage.responseId}`);
+                    }
+                } else {
+                    // Handle messages not tied to a specific request (e.g., broadcasts)
+                    // This part needs specific application logic if required.
+                    console.log("WebSocket message received (not tied to a specific request):", receivedMessage);
+                }
+
             } catch (error) {
-                console.error("Failed to parse WebSocket message:", error, "\nRaw data:", event.data);
+                console.error("Failed to parse WebSocket message or process callback:", error, "\nRaw data:", event.data);
             }
         };
 
         websocket.onclose = (event: CloseEvent) => {
+            websocket = null; // Clear the instance
+            interactionsMap.clear(); // Clear interactions on close
+            nextInteractionId = 0;
+
             if (event.wasClean) {
                 console.log(`WebSocket Closed cleanly, code=${event.code} reason=${event.reason}`);
-                wsStatus = WebSocketStatus.Disconnected;
+                wsStatus.value = WebSocketStatus.Disconnected;
             } else {
-                // e.g. server process killed or network down
-                // event.code is usually 1006 in this case
-                console.error('WebSocket connection died');
-                wsStatus = WebSocketStatus.Error;
+                console.error('WebSocket connection died unexpectedly');
+                wsStatus.value = WebSocketStatus.Error;
             }
-            websocket = null; // Clear the instance on close
-            // Optionally: Implement reconnection logic here
         };
 
         websocket.onerror = (error: Event) => {
             console.error("WebSocket Error:", error);
-            wsStatus = WebSocketStatus.Error;
-            reject(error); // Reject the promise on error
+            // wsStatus is often set by onclose shortly after onerror
+            if (wsStatus.value !== WebSocketStatus.Disconnected) {
+                wsStatus.value = WebSocketStatus.Error;
+            }
+            // Ensure cleanup even if onclose isn't called immediately
+            if (websocket) {
+                 websocket = null;
+            }
+            interactionsMap.clear();
+            nextInteractionId = 0;
+            reject(error);
         };
     });
 }
 
-// Function to send a JSON message (echo)
-export function sendWebSocketJsonMessage(message: Record<string, any>): void {
-    if (websocket && websocket.readyState === WebSocket.OPEN) {
-        try {
-            const jsonString = JSON.stringify(message);
-            websocket.send(jsonString);
-            console.log("WebSocket JSON message sent:", message);
-        } catch (error) {
-            console.error("Failed to stringify message:", error, "\nOriginal message:", message);
-        }
-    } else {
-        console.error("WebSocket is not connected. Cannot send message.");
-        // Optionally: Buffer the message or try to reconnect
+// --- New Interaction Functions ---
+
+/**
+ * Starts an interaction over the WebSocket.
+ * Sends an initial message and registers a callback for subsequent messages.
+ * @param route The target route/endpoint on the backend.
+ * @param initialPayload The initial data payload to send.
+ * @param callback The function to call for every message received for this interaction.
+ * @returns The interaction ID (number) if successful, or null if not connected.
+ */
+export function startInteraction(
+    route: string,
+    initialPayload: any,
+    callback: InteractionCallback
+): number | null {
+    if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+        console.error("WebSocket is not connected. Cannot start interaction.");
+        return null;
+    }
+
+    const interactionId = nextInteractionId++;
+    interactionsMap.set(interactionId, callback);
+
+    const messageToSend = {
+        requestId: interactionId,
+        route: route,
+        payload: initialPayload,
+    };
+
+    try {
+        const jsonString = JSON.stringify(messageToSend);
+        websocket.send(jsonString);
+        console.debug(`WebSocket interaction ${interactionId} started:`, messageToSend);
+        return interactionId;
+    } catch (error) {
+        console.error("Failed to stringify or send interaction message:", error, "\nOriginal message:", messageToSend);
+        // Clean up the map entry if sending failed
+        interactionsMap.delete(interactionId);
+        // Roll back ID? Not strictly necessary if we just skip this ID.
+        return null;
     }
 }
 
-// Optional: Function to explicitly disconnect
+/**
+ * Stops listening for messages for a specific interaction.
+ * Removes the callback associated with the interaction ID.
+ * @param interactionId The ID of the interaction to stop.
+ */
+export function stopInteraction(interactionId: number): boolean {
+    const deleted = interactionsMap.delete(interactionId);
+    if (deleted) {
+        console.debug(`Stopped listening for interaction ID: ${interactionId}`);
+    } else {
+        console.warn(`Attempted to stop non-existent interaction ID: ${interactionId}`);
+    }
+    return deleted;
+}
+
+
+// --- Existing Control Functions ---
+
+// Optional: Function to explicitly disconnect the single WebSocket
 export function disconnectWebSocket(): void {
     if (websocket) {
+        console.log("Disconnecting WebSocket explicitly.");
+        // Setting the status might be premature here, onclose should handle it
+        // wsStatus.value = WebSocketStatus.Disconnected;
         websocket.close();
-        // onclose handler will update status and log
+        // onclose handler will update status, clear map, and reset ID
     }
 } 
