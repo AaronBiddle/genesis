@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.routers import http_frontend_echo
 from backend.routers import http_frontend_fs 
 from backend.routers import http_frontend_ai
-from backend.routers import ws_frontend_echo
+from backend.routers import ws_frontend
 
 origins = [
     "http://localhost:5173",
@@ -46,7 +46,7 @@ app.include_router(
     tags=["Frontend AI"]
 )
 app.include_router(
-    ws_frontend_echo.router,
+    ws_frontend.router,
     prefix="/frontend/ws/echo",
     tags=["Frontend WebSocket Echo"]
 )
