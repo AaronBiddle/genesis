@@ -9,6 +9,7 @@ import Logger from '@/components/Logger/Logger.vue'; // Import Logger
 import WindowInspector from './WindowInspector.vue'; // Import the new Window Inspector
 import ChatApp from '@/components/ChatApp/ChatApp.vue'; // Import ChatApp
 import AIServiceTester from '@/components/AI/AIServiceTester.vue'; // Import AI Service Tester
+import WsServiceTester from '@/components/WS/WsServiceTester.vue'; // Import WS Service Tester
 
 export interface App {
   id: string; // Unique identifier (e.g., 'text-editor', 'web-browser') - Essential
@@ -149,6 +150,18 @@ export const apps: App[] = [
     titleColor: 'text-indigo-900',
     initialWidth: 550,
     initialHeight: 750,
+    category: 'Utilities',
+  },
+  {
+    id: "ws-service-tester",
+    title: "WS Service Tester",
+    iconId: "ws", // Use the 'ws' icon
+    appComponent: WsServiceTester,
+    iconColor: 'text-sky-600', // Sky blue theme
+    titleBarColor: 'bg-sky-200',
+    titleColor: 'text-sky-900',
+    initialWidth: 650,
+    initialHeight: 600,
     category: 'Utilities',
   }
 ];

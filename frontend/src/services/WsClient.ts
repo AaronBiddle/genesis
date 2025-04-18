@@ -26,7 +26,7 @@ let interactionsMap = new Map<number, InteractionCallback>();
 let nextInteractionId = 0;
 
 // Function to connect to the WebSocket server
-export function connectWebSocket(url: string = "ws://127.0.0.1:8000/frontend/ws"):
+export function connectWebSocket(url: string = "ws://127.0.0.1:8000/frontend/ws/"):
 Promise<void> {
     // Prevent multiple connection attempts
     if (websocket || wsStatus.value === WebSocketStatus.Connecting) {
