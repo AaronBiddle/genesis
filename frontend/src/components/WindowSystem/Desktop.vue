@@ -5,6 +5,7 @@ import Window from './Window.vue'; // Import the Window component
 import { addWindow, windows } from './WindowManager'; // Import from WindowManager
 import { svgIcons } from "@/components/Icons/SvgIcons"; // Import the icons map
 import { categoryConfigs, defaultCategoryIcon } from './categories'; // Import category config
+import { log } from "@/components/Logger/loggerStore"; // Import the logger
 
 // Define types for the items in the dropdown list
 interface CategoryItem {
@@ -25,6 +26,9 @@ type DropdownItem = CategoryItem | AppItem;
 const showAppDropdown = ref(false);
 const expandedCategories = ref<Set<string>>(new Set()); // Track expanded categories
 
+// Define the namespace for this component
+const NS = "Desktop.vue";
+
 function toggleAppDropdown() {
   showAppDropdown.value = !showAppDropdown.value;
   if (!showAppDropdown.value) {
@@ -34,7 +38,7 @@ function toggleAppDropdown() {
 }
 
 function launchApp(app: App) {
-  console.log(`Launching ${app.title}`); // Use title
+  log(NS, `Launching app: ${app.title} (ID: ${app.id})`);
   addWindow(app); // Use WindowManager to add the window
   showAppDropdown.value = false; // Close dropdown after selection
 }

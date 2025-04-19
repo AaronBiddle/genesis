@@ -1,7 +1,4 @@
 import { createWebSocketClient } from './WsClientFactory';
 import type { WsClient } from './WsClientFactory';
 
-const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-const wsUrl = `${wsProtocol}//${window.location.host}/frontend/ws`;
-
-export const wsAiClient: WsClient = createWebSocketClient(wsUrl); 
+export const wsAiClient: WsClient = createWebSocketClient('ws://127.0.0.1:8000/frontend/ws/'); 

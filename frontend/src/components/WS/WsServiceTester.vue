@@ -45,16 +45,16 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue';
-import {
-  connectWebSocket,
-  disconnectWebSocket,
-  startInteraction,
-  stopInteraction,
-  wsStatus,
-  WebSocketStatus,
-  type InteractionCallback,
-  type InteractionMessage
-} from '@/services/WS/WsClientFactory'; // Adjust path if needed
+// Remove the old import block entirely
+
+// Import the client instance and types separately with correct path casing
+import { wsAiClient } from '@/services/WS/WsAiClient';
+import { WebSocketStatus } from '@/services/WS/types';
+import type { InteractionCallback, InteractionMessage } from '@/services/WS/types';
+import { log } from "@/components/Logger/loggerStore"; // Import the logger
+
+// Define the namespace for this component
+const NS = "WsServiceTester.vue";
 
 interface ActiveInteraction {
   route: string;
@@ -66,6 +66,9 @@ const routeToSend = ref('/'); // Default route
 const payloadToSend = ref('{ "message": "hello" }');
 const connectionError = ref<string | null>(null);
 const startInteractionError = ref<string | null>(null);
+
+// Use the status ref directly from the client instance
+const wsStatus = wsAiClient.status;
 
 // Store active interactions: key is interactionId (string for reactivity keys), value is details
 const activeInteractions = reactive<Record<string, ActiveInteraction>>({});
@@ -96,19 +99,21 @@ const statusClass = computed(() => {
 
 const handleConnect = async () => {
   connectionError.value = null;
-  console.log('Attempting to connect...');
+  log(NS, 'Attempting to connect...');
   try {
-    await connectWebSocket(); // Default URL is used from WsClient
-    console.log('Connection promise resolved.');
+    // Use the client's connect method
+    await wsAiClient.connect();
+    log(NS, 'Connection promise resolved.');
   } catch (error: any) {
-    console.error('Connection failed:', error);
+    log(NS, `Connection failed: ${error}`, true);
     connectionError.value = error.message || 'Failed to connect';
   }
 };
 
 const handleDisconnect = () => {
-  console.log('Disconnecting...');
-  disconnectWebSocket();
+  log(NS, 'Disconnecting...');
+  // Use the client's disconnect method
+  wsAiClient.disconnect();
 };
 
 const handleStartInteraction = () => {
@@ -129,7 +134,7 @@ const handleStartInteraction = () => {
     const interactionIdStr = interactionId?.toString(); // Get ID from closure
     if (!interactionIdStr || !activeInteractions[interactionIdStr]) return; // Interaction might have been stopped
 
-    console.log(`Received message for interaction ${interactionIdStr}:`, message);
+    log(NS, `Received message for interaction ${interactionIdStr}: ${JSON.stringify(message)}`);
 
     if (message.data) {
       activeInteractions[interactionIdStr].messages.push(message.data);
@@ -142,11 +147,11 @@ const handleStartInteraction = () => {
     // Handle isComplete if added to InteractionMessage later
   };
 
-  // Start the interaction
-  const interactionId = startInteraction(route, payload, callback);
+  // Start the interaction using the client's method
+  const interactionId = wsAiClient.startInteraction(route, payload, callback);
 
   if (interactionId !== null) {
-    console.log(`Interaction ${interactionId} started.`);
+    log(NS, `Interaction ${interactionId} started.`);
     // Initialize entry in reactive state
     activeInteractions[interactionId.toString()] = {
       route: route,
@@ -161,12 +166,13 @@ const handleStartInteraction = () => {
 };
 
 const handleStopInteraction = (id: number) => {
-  if (stopInteraction(id)) {
+  // Use the client's stopInteraction method
+  if (wsAiClient.stopInteraction(id)) {
     // Remove from our local reactive state if successfully stopped in service
     delete activeInteractions[id.toString()];
-    console.log(`Interaction ${id} stopped and removed from UI.`);
+    log(NS, `Interaction ${id} stopped and removed from UI.`);
   } else {
-    console.warn(`Failed to stop interaction ${id} in service (maybe already stopped?).`);
+    log(NS, `Failed to stop interaction ${id} in service (maybe already stopped?).`, true);
      // Optionally remove from UI anyway if it exists?
      if (activeInteractions[id.toString()]) {
          delete activeInteractions[id.toString()];
