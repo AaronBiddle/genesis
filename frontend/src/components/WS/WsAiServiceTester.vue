@@ -51,10 +51,10 @@ import { ref, reactive, computed, watch } from 'vue';
 import { wsAiClient } from '@/services/WS/WsAiClient';
 import { WebSocketStatus } from '@/services/WS/types';
 import type { InteractionCallback, InteractionMessage } from '@/services/WS/types';
-import { log } from "@/components/Logger/loggerStore"; // Import the logger
+// import { log } from "@/components/Logger/loggerStore"; // Removed direct import
 
 // Define the namespace for this component
-const NS = "WsServiceTester.vue";
+const NS = "WsAiServiceTester.vue"; // Corrected namespace
 
 interface ActiveInteraction {
   route: string;
@@ -95,23 +95,28 @@ const statusClass = computed(() => {
   }
 });
 
+// Define props to accept the log function
+const props = defineProps<{
+  log: (namespace: string, message: string, isError?: boolean) => void;
+}>();
+
 // --- WebSocket Actions ---
 
 const handleConnect = async () => {
   connectionError.value = null;
-  log(NS, 'Attempting to connect...');
+  props.log(NS, 'Attempting to connect...'); // Use props.log
   try {
     // Use the client's connect method
     await wsAiClient.connect();
-    log(NS, 'Connection promise resolved.');
+    props.log(NS, 'Connection promise resolved.'); // Use props.log
   } catch (error: any) {
-    log(NS, `Connection failed: ${error}`, true);
+    props.log(NS, `Connection failed: ${error.message || error}`, true); // Use props.log, include error message
     connectionError.value = error.message || 'Failed to connect';
   }
 };
 
 const handleDisconnect = () => {
-  log(NS, 'Disconnecting...');
+  props.log(NS, 'Disconnecting...'); // Use props.log
   // Use the client's disconnect method
   wsAiClient.disconnect();
 };
@@ -123,7 +128,9 @@ const handleStartInteraction = () => {
   try {
     payload = JSON.parse(payloadToSend.value);
   } catch (e) {
+    const errorMsg = `Invalid JSON payload: ${e instanceof Error ? e.message : String(e)}`;
     startInteractionError.value = 'Invalid JSON payload.';
+    props.log(NS, errorMsg, true); // Log JSON parsing error
     return;
   }
 
@@ -131,29 +138,36 @@ const handleStartInteraction = () => {
 
   // Define the callback for this specific interaction
   const callback: InteractionCallback = (message: InteractionMessage) => {
-    const interactionIdStr = interactionId?.toString(); // Get ID from closure
-    if (!interactionIdStr || !activeInteractions[interactionIdStr]) return; // Interaction might have been stopped
+    // IMPORTANT: We need interactionId from the outer scope where it's defined
+    const interactionIdStr = currentInteractionId?.toString();
+    if (!interactionIdStr || !activeInteractions[interactionIdStr]) {
+      // Interaction might have been stopped between message arrival and callback execution.
+      // Cannot reliably log message.interactionId here if the type doesn't guarantee it.
+      return; // Silently return to avoid processing for a stopped interaction
+    }
 
-    log(NS, `Received message for interaction ${interactionIdStr}: ${JSON.stringify(message)}`);
+    props.log(NS, `Received message for interaction ${interactionIdStr}: ${JSON.stringify(message)}`); // Use props.log
 
     if (message.data) {
       activeInteractions[interactionIdStr].messages.push(message.data);
     }
     if (message.error) {
       activeInteractions[interactionIdStr].error = message.error;
+      // Log the error received within the interaction
+      props.log(NS, `Error received in interaction ${interactionIdStr}: ${JSON.stringify(message.error)}`, true);
       // Optionally stop interaction on error?
       // handleStopInteraction(Number(interactionIdStr));
     }
     // Handle isComplete if added to InteractionMessage later
   };
 
-  // Start the interaction using the client's method
-  const interactionId = wsAiClient.startInteraction(route, payload, callback);
+  // Start the interaction using the client's method and store the ID
+  const currentInteractionId = wsAiClient.startInteraction(route, payload, callback);
 
-  if (interactionId !== null) {
-    log(NS, `Interaction ${interactionId} started.`);
+  if (currentInteractionId !== null) {
+    props.log(NS, `Interaction ${currentInteractionId} started.`); // Use props.log
     // Initialize entry in reactive state
-    activeInteractions[interactionId.toString()] = {
+    activeInteractions[currentInteractionId.toString()] = {
       route: route,
       messages: [],
       error: null,
@@ -162,6 +176,7 @@ const handleStartInteraction = () => {
     // payloadToSend.value = ''; 
   } else {
     startInteractionError.value = 'Failed to start interaction. Is WebSocket connected?';
+    props.log(NS, `Failed to start interaction for route ${route}. Is WebSocket connected?`, true); // Log failure
   }
 };
 
@@ -170,9 +185,9 @@ const handleStopInteraction = (id: number) => {
   if (wsAiClient.stopInteraction(id)) {
     // Remove from our local reactive state if successfully stopped in service
     delete activeInteractions[id.toString()];
-    log(NS, `Interaction ${id} stopped and removed from UI.`);
+    props.log(NS, `Interaction ${id} stopped and removed from UI.`); // Use props.log
   } else {
-    log(NS, `Failed to stop interaction ${id} in service (maybe already stopped?).`, true);
+    props.log(NS, `Failed to stop interaction ${id} in service (maybe already stopped?).`, true); // Use props.log as warning
      // Optionally remove from UI anyway if it exists?
      if (activeInteractions[id.toString()]) {
          delete activeInteractions[id.toString()];
@@ -184,6 +199,8 @@ const handleStopInteraction = (id: number) => {
 // Clear interactions when WebSocket disconnects or errors
 watch(wsStatus, (newStatus) => {
   if (newStatus === WebSocketStatus.Disconnected || newStatus === WebSocketStatus.Error) {
+    // Log disconnect/error and clearing of interactions
+    props.log(NS, `WebSocket status changed to ${statusText.value}. Clearing active interactions.`);
     // Clear local state as the service map is also cleared
     Object.keys(activeInteractions).forEach(key => delete activeInteractions[key]);
   }

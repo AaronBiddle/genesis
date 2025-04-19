@@ -9,7 +9,7 @@ import Logger from '@/components/Logger/Logger.vue'; // Import Logger
 import WindowInspector from './WindowInspector.vue'; // Import the new Window Inspector
 import ChatApp from '@/components/ChatApp/ChatApp.vue'; // Import ChatApp
 import AIServiceTester from '@/components/AI/AIServiceTester.vue'; // Import AI Service Tester
-import WsServiceTester from '@/components/WS/WsServiceTester.vue'; // Import WS Service Tester
+import WsServiceTester from '@/components/WS/WsAiServiceTester.vue'; // Import WS Service Tester
 
 export interface App {
   id: string; // Unique identifier (e.g., 'text-editor', 'web-browser') - Essential
