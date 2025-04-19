@@ -45,16 +45,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue';
-// Remove the old import block entirely
 
-// Import the client instance and types separately with correct path casing
 import { wsAiClient } from '@/services/WS/WsAiClient';
 import { WebSocketStatus } from '@/services/WS/types';
 import type { InteractionCallback, InteractionMessage } from '@/services/WS/types';
-// import { log } from "@/components/Logger/loggerStore"; // Removed direct import
 
-// Define the namespace for this component
-const NS = "WsAiServiceTester.vue"; // Corrected namespace
+const NS = "WsAiServiceTester.vue";
 
 interface ActiveInteraction {
   route: string;

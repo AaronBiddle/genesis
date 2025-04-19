@@ -11,7 +11,7 @@ export interface WsClient {
     route: string,
     payload: any,
     cb: InteractionCallback
-  ) => number | null;
+  ) => Promise<number | null>;
   stopInteraction: (id: number) => boolean;
 }
 
@@ -76,15 +76,26 @@ export function createWebSocketClient(url: string): WsClient {
     if (ws) ws.close();
   }
 
-  function startInteraction(
+  async function startInteraction(
     route: string,
     payload: any,
     cb: InteractionCallback
-  ): number | null {
+  ): Promise<number | null> {
     if (!ws || ws.readyState !== WebSocket.OPEN) {
-      console.error('Not connected');
-      return null;
+      console.log('WebSocket not connected, attempting to connect...');
+      try {
+        await connect();
+      } catch (error) {
+        console.error('Connection failed:', error);
+        return null;
+      }
     }
+
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        console.error('Still not connected after attempt.');
+        return null;
+    }
+
     const id = nextId++;
     interactions.set(id, cb);
     ws.send(JSON.stringify({ requestId: id, route, payload }));
