@@ -119,8 +119,8 @@ import {
   type GenerateRequest,
   type GetModelsResponse,
   type ModelDetails
-} from '@/services/AIClient';
-import { readFile, writeFile } from '@/services/FileClient';
+} from '@/services/HTTP/HttpAIClient';
+import { readFile, writeFile } from '@/services/HTTP/HttpFileClient';
 
 const props = defineProps<{
   log: (namespace: string, message: string, isError?: boolean) => void;

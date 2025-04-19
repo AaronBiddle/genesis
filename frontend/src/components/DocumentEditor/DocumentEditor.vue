@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { readFile, writeFile } from '@/services/FileClient';
+import { readFile, writeFile } from '@/services/HTTP/HttpFileClient';
 import { svgIcons } from '@/components/Icons/SvgIcons'; // Import svgIcons
 import MarkdownRenderer from '@/components/Markdown/MarkdownRenderer.vue'; // Import MarkdownRenderer
 

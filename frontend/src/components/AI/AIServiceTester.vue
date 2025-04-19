@@ -63,13 +63,13 @@ import { ref, computed, onMounted, watch } from 'vue';
 import {
   getModels,
   generateResponse,
-} from '@/services/AIClient';
+} from '@/services/HTTP/HttpAIClient';
 import type {
   ModelDetails,
   GetModelsResponse,
   GenerateRequest,
   Message,
-} from '@/services/AIClient';
+} from '@/services/HTTP/HttpAIClient';
 
 // Define available tests
 const availableTests = [

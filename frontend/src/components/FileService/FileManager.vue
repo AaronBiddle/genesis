@@ -125,7 +125,7 @@ import {
   createDirectory,
   deleteDirectory,
   getMounts,
-} from '@/services/FileClient';
+} from '@/services/HTTP/HttpFileClient';
 
 const NS = 'FileManager.vue';
 

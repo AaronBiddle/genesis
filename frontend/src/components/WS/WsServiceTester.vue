@@ -54,7 +54,7 @@ import {
   WebSocketStatus,
   type InteractionCallback,
   type InteractionMessage
-} from '@/services/WsClient'; // Adjust path if needed
+} from '@/services/WS/WsClientFactory'; // Adjust path if needed
 
 interface ActiveInteraction {
   route: string;
