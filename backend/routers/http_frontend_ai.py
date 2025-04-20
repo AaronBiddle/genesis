@@ -32,7 +32,7 @@ async def generate_ai_response(request: Dict[str, Any] = Body(...)):
         if model is None or messages is None:
             raise HTTPException(status_code=400, detail="`model` and `messages` are required fields.")
 
-        response_data = ai_operations.generate_response(
+        response_data = await ai_operations.generate_response(
             model=model,
             messages=messages,
             system_prompt=request.get("system_prompt"),

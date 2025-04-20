@@ -1,5 +1,7 @@
 # backend/services/ai/gemini_adapter.py
 import google.generativeai as genai
+import asyncio # Import asyncio
+import datetime # Import datetime for logging timestamps
 from .clients import is_gemini_configured # Import the configuration check
 from .ai_extraction import extract_response_data # Assuming ai_extraction is in the same dir
 
@@ -36,6 +38,9 @@ def convert_to_gemini_format(messages, system_prompt=None):
     return converted_contents, system_instruction
 
 def sync_generate(model, messages, has_thinking, **kwargs):
+    start_time = datetime.datetime.now()
+    print(f"[{start_time.isoformat()}] Gemini sync_generate started for model {model}")
+
     if not is_gemini_configured():
         print("Error: Gemini API is not configured. Cannot generate response.")
         return None # Or raise
@@ -65,18 +70,39 @@ def sync_generate(model, messages, has_thinking, **kwargs):
         # Pass any other relevant kwargs directly if needed, filtering known ones
         # generation_config_args.update(kwargs) # Be cautious with unknown kwargs
 
+        api_call_start = datetime.datetime.now()
+        print(f"[{api_call_start.isoformat()}] Gemini calling API for model {model}...")
         gemini_response = model_instance.generate_content(
             contents=converted_contents,
             generation_config=genai.types.GenerationConfig(**generation_config_args) # Use GenerationConfig object
         )
+        api_call_end = datetime.datetime.now()
+        print(f"[{api_call_end.isoformat()}] Gemini API call finished for model {model}. Duration: {api_call_end - api_call_start}")
 
         response_data = extract_response_data(gemini_response, provider="gemini", has_thinking=has_thinking)
 
         if response_data is None:
              print(f"(Terminating call for Gemini model '{model}' after handling in extractor)")
              return None
+
+        end_time = datetime.datetime.now()
+        print(f"[{end_time.isoformat()}] Gemini sync_generate finished for model {model}. Total duration: {end_time - start_time}")
         return response_data
 
     except Exception as e:
-        print(f"Error during Gemini API call for model {model}: {e}")
+        error_time = datetime.datetime.now()
+        print(f"[{error_time.isoformat()}] Error during Gemini API call for model {model}: {e}")
+        print(f"[{error_time.isoformat()}] Gemini sync_generate finished with error for model {model}. Total duration: {error_time - start_time}")
+        return None
+
+async def async_generate(model, messages, has_thinking, **kwargs):
+    """Asynchronously generates response by running sync_generate in a separate thread."""
+    try:
+        # Use asyncio.to_thread to run the synchronous function
+        return await asyncio.to_thread(
+            sync_generate, model, messages, has_thinking, **kwargs
+        )
+    except Exception as e:
+        # Handle exceptions raised from the thread or during scheduling
+        print(f"Error in async_generate (Gemini) for model {model}: {e}")
         return None 

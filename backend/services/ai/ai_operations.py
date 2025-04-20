@@ -1,5 +1,6 @@
 from openai import OpenAI
 import google.generativeai as genai
+import asyncio # Import asyncio
 from google.generativeai import types # Add types import
 # Removed dotenv and os imports as they are handled in clients.py
 # Import clients check, not the clients themselves directly if adapters handle them
@@ -37,9 +38,9 @@ def get_models():
 
     return ai_models_dict
 
-def generate_response(model: str, messages: list, system_prompt: str = None, temperature: float = None, max_tokens: int = None):
+async def generate_response(model: str, messages: list, system_prompt: str = None, temperature: float = None, max_tokens: int = None):
     """
-    Generates a response from the specified AI model using provider-specific adapters.
+    Asynchronously generates a response from the specified AI model using provider-specific adapters.
 
     Args:
         model: The name of the model to use (e.g., "deepseek-reasoner", "gemini-2.5-pro-preview-03-25").
@@ -52,7 +53,7 @@ def generate_response(model: str, messages: list, system_prompt: str = None, tem
         A dictionary containing the extracted response details (content, tokens, etc.)
         or None if an error occurs.
     """
-    all_models = get_models()
+    all_models = get_models() # This is synchronous, potentially optimize if becomes bottleneck
     if not all_models:
         print("Error: No models available. Check AI_MODELS definition and loading.")
         return None
@@ -72,38 +73,36 @@ def generate_response(model: str, messages: list, system_prompt: str = None, tem
         print(f"Error: No adapter found for provider '{provider}'.")
         return None
 
-    # Prepare arguments for the adapter's sync_generate function
-    # Pass only the relevant arguments, let the adapter handle specifics
+    # Check if the adapter has an async_generate method
+    if not hasattr(adapter, 'async_generate'):
+        print(f"Error: Adapter for provider '{provider}' does not support async generation.")
+        return None
+
+    # Prepare arguments for the adapter's async_generate function
     adapter_args = {
         "model": model,
         "messages": messages,
-        "has_thinking": has_thinking # Pass has_thinking capability
+        "has_thinking": has_thinking
     }
     if system_prompt is not None:
         adapter_args["system_prompt"] = system_prompt
     if temperature is not None:
         adapter_args["temperature"] = temperature
     if max_tokens is not None:
-        # Adapters might use different names (e.g., max_tokens vs max_output_tokens)
-        # Pass it generically; the adapter should handle it.
         adapter_args["max_tokens"] = max_tokens 
 
     try:
-        # Call the adapter's generation function
-        response_data = adapter.sync_generate(**adapter_args)
+        # Call the adapter's ASYNC generation function
+        response_data = await adapter.async_generate(**adapter_args)
         
-        # The adapter's sync_generate should handle extraction and return data or None
         if response_data is None:
-            # Error details should be logged within the adapter
-            print(f"Adapter for provider '{provider}' failed to generate or extract response for model '{model}'.")
+            # Error details should be logged within the adapter/async_generate wrapper
+            print(f"Async adapter for provider '{provider}' failed for model '{model}'.")
             return None
             
         return response_data
 
     except Exception as e:
         # Catch potential errors during adapter dispatch or unexpected issues
-        print(f"Error calling adapter for provider '{provider}' with model '{model}': {e}")
+        print(f"Error calling async adapter for provider '{provider}' with model '{model}': {e}")
         return None
-
-# Example usage removed - moved to test.py
-
