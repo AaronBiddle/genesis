@@ -1,5 +1,5 @@
 import os
-from openai import OpenAI
+from openai import OpenAI, AsyncOpenAI
 import google.generativeai as genai
 from dotenv import load_dotenv
 
@@ -9,13 +9,18 @@ load_dotenv()
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 GEMINI_API_KEY   = os.getenv("GEMINI_API_KEY")
 
-# Initialize DeepSeek client
+# Initialize DeepSeek clients (Sync and Async)
+sync_deepseek_client = None
+async_deepseek_client = None
+
 if DEEPSEEK_API_KEY:
-    deepseek_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
-    print("DeepSeek client initialized.")
+    # Keep sync client for potential compatibility (or remove if unused)
+    sync_deepseek_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
+    # Initialize async client
+    async_deepseek_client = AsyncOpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
+    print("DeepSeek sync and async clients initialized.")
 else:
-    deepseek_client = None
-    print("Warning: DEEPSEEK_API_KEY not found. DeepSeek client not initialized.")
+    print("Warning: DEEPSEEK_API_KEY not found. DeepSeek clients not initialized.")
 
 
 # Configure Gemini API
