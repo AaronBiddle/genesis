@@ -47,7 +47,7 @@ app.include_router(
 )
 app.include_router(
     ws_frontend.router,
-    prefix="/frontend/ws",
+    prefix="/frontend/ws/ai",
     tags=["Frontend WebSocket"]
 )
 
