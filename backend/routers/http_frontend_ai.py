@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Body
 from typing import Any, Dict
 
-from backend.services import ai_operations
+from backend.services.ai import ai_operations
 
 router = APIRouter()
 

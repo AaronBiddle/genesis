@@ -2,11 +2,11 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 from typing import Any, Dict
 import asyncio
 
-from backend.services import ai_operations
+from backend.services.ai import ai_operations
 
-ws_router = APIRouter()
+router = APIRouter()
 
-@ws_router.websocket("/ws/generate")
+@router.websocket("/ws/generate")
 async def websocket_generate(websocket: WebSocket):
     # To support multiple simultaneous connections without blocking,
     # ensure that ai_operations.generate_streaming_response is an async generator
