@@ -3,6 +3,12 @@ import type { Ref } from 'vue';
 import { WebSocketStatus } from './types';
 import type { InteractionCallback, InteractionMessage } from './types';
 
+/**
+ * Generic WebSocket client that multiplexes interactions over one socket.
+ * Each outgoing frame includes a unique `request_id`; server echoes the id
+ * on every incremental packet so we can route it to the correct callback.
+ */
+
 export interface WsClient {
   status: Ref<WebSocketStatus>;
   connect: () => Promise<void>;
@@ -21,22 +27,30 @@ export function createWebSocketClient(url: string): WsClient {
   const interactions = new Map<number, InteractionCallback>();
   let nextId = 0;
 
+  // -------------------------------------------------------------------
+  // Connection helpers
+  // -------------------------------------------------------------------
+
   async function connect(): Promise<void> {
-    if (ws && ws.readyState <= WebSocket.OPEN) return;
+    if (ws && ws.readyState <= WebSocket.OPEN) return; // already connecting/connected
+
     interactions.clear();
     nextId = 0;
     status.value = WebSocketStatus.Connecting;
 
     return new Promise((resolve, reject) => {
       ws = new WebSocket(url);
+
       ws.onopen = () => {
         status.value = WebSocketStatus.Connected;
         resolve();
       };
+
       ws.onerror = e => {
         status.value = WebSocketStatus.Error;
         reject(e);
       };
+
       ws.onclose = ev => {
         status.value = ev.wasClean
           ? WebSocketStatus.Disconnected
@@ -45,6 +59,7 @@ export function createWebSocketClient(url: string): WsClient {
         interactions.clear();
         nextId = 0;
       };
+
       ws.onmessage = ev => {
         let msg: any;
         try {
@@ -53,19 +68,26 @@ export function createWebSocketClient(url: string): WsClient {
           console.error('Invalid JSON:', ev.data);
           return;
         }
-        // route by responseId
-        if (typeof msg.responseId === 'number') {
-          const cb = interactions.get(msg.responseId);
-          if (cb) {
-            const im: InteractionMessage = {
-              data: msg.data,
-              error: msg.error,
-            };
-            try { cb(im) } catch (err) {
-              console.error('Callback error', err);
-            }
+
+        // Route by request_id echoed from backend
+        if (typeof msg.request_id === 'number') {
+          const cb = interactions.get(msg.request_id);
+          if (!cb) return;
+
+          const im: InteractionMessage = {
+            text: msg.text,
+            thinking: msg.thinking,
+            meta: msg.meta,
+            error: msg.error,
+          } as InteractionMessage;
+
+          try {
+            cb(im);
+          } catch (err) {
+            console.error('Interaction callback threw', err);
           }
         } else {
+          // Unsolicited broadcast from server
           console.log('Broadcast:', msg);
         }
       };
@@ -76,29 +98,38 @@ export function createWebSocketClient(url: string): WsClient {
     if (ws) ws.close();
   }
 
+  // -------------------------------------------------------------------
+  // Interaction helpers
+  // -------------------------------------------------------------------
+
   async function startInteraction(
     route: string,
     payload: any,
     cb: InteractionCallback
   ): Promise<number | null> {
+    // Ensure connection
     if (!ws || ws.readyState !== WebSocket.OPEN) {
-      console.log('WebSocket not connected, attempting to connect...');
       try {
         await connect();
-      } catch (error) {
-        console.error('Connection failed:', error);
+      } catch (err) {
+        console.error('WebSocket connection failed', err);
         return null;
       }
     }
 
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-        console.error('Still not connected after attempt.');
-        return null;
-    }
+    if (!ws) return null;
 
     const id = nextId++;
     interactions.set(id, cb);
-    ws.send(JSON.stringify({ requestId: id, route, payload }));
+
+    ws.send(
+      JSON.stringify({
+        request_id: id,
+        route,
+        payload,
+      })
+    );
+
     return id;
   }
 

@@ -25,12 +25,18 @@
       <!-- Model Selection Dropdown (shown for generateResponse) -->
       <div v-if="selectedTestInfo.requiresModel" class="control-group">
         <label for="model-select">Select Model:</label>
-        <select id="model-select" v-model="modelNameInput" class="model-select" :disabled="modelOptions.length === 0">
-          <option disabled value="">{{ modelOptions.length > 0 ? 'Please select a model' : 'Fetching models...' }}</option>
-          <option v-for="model in modelOptions" :key="model.value" :value="model.value">
-            {{ model.name }} ({{ model.provider }})
-          </option>
-        </select>
+        <div class="model-row">
+          <select id="model-select" v-model="modelNameInput" class="model-select" :disabled="modelOptions.length === 0">
+            <option disabled value="">{{ modelOptions.length > 0 ? 'Please select a model' : 'Fetching models...' }}</option>
+            <option v-for="model in modelOptions" :key="model.value" :value="model.value">
+              {{ model.name }} ({{ model.provider }})
+            </option>
+          </select>
+          <label class="stream-checkbox">
+            <input type="checkbox" v-model="streamEnabled" />
+            Stream
+          </label>
+        </div>
       </div>
 
       <!-- System Prompt Input -->
@@ -84,6 +90,7 @@ const availableModels = ref<ModelDetails[]>([]);
 const modelNameInput = ref<string>('');
 const systemPromptInput = ref<string>('You are a helpful assistant called Genesis running inside a simulated desktop environment.');
 const userMessageInput = ref<string>('Write a short poem about a computer mouse.');
+const streamEnabled = ref<boolean>(false);
 // const conversationHistory = ref<Message[]>([]); // Future enhancement
 const executionResult = ref<string | null>(null);
 const isErrorResult = ref<boolean>(false);
@@ -343,5 +350,18 @@ textarea {
 .result-container pre.error-result {
     background-color: #ffebee;
     color: #c62828;
+}
+
+.model-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stream-checkbox {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 </style> 

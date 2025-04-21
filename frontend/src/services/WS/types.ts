@@ -1,7 +1,8 @@
 export interface InteractionMessage {
-  data?: any;
+  text?: string;
+  thinking?: boolean;
+  meta?: any;
   error?: any;
-  isComplete?: boolean;
 }
 
 export type InteractionCallback = (message: InteractionMessage) => void;
