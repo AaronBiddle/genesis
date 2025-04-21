@@ -1,29 +1,49 @@
-# backend/services/ai/base.py
-from typing import TypedDict, Literal, AsyncIterator, Protocol, Any, Union, runtime_checkable
+from __future__ import annotations
 
-class ChatResponse(TypedDict):
-    type: Literal["text"]           # fixed discriminator
-    data: str                       # token text or full answer chunk
+from typing import Protocol, Any, AsyncIterator, Tuple, Dict, Union, TypedDict, runtime_checkable
 
-class MetaResponse(TypedDict):
-    type: Literal["meta"]
-    data: dict[str, Any]            # usage, finish_reason, model, etc.
+# ---------------------------------------------------------------------
+# Core data shapes for AI providers
+# ---------------------------------------------------------------------
 
-StreamEvent = Union[ChatResponse, MetaResponse]
+# A single message in the chat history
+Message = Dict[str, str]  # keys: 'role', 'content'
+
+# Metadata returned at the end of a completion
+class MetaData(TypedDict, total=False):
+    usage: Dict[str, Any]
+    latency: float
+    ttfb: float
+    model: str
+
+# Events streamed by providers when stream=True
+class TextEvent(TypedDict):
+    text: str
+
+class ThinkingEvent(TypedDict):
+    thinking: str
+
+class MetaEvent(TypedDict):
+    meta: MetaData
+
+# One of the above per iteration
+StreamEvent = Union[TextEvent, ThinkingEvent, MetaEvent]
 
 @runtime_checkable
 class ChatProvider(Protocol):
+    """
+    Adapter protocol for chat-completion providers.
+
+    • stream=False → returns (full_text: str, meta: MetaData)
+    • stream=True  → returns an async iterator of StreamEvent dicts
+    """
     name: str
 
     async def chat(
         self,
-        messages: list[dict[str, str]],
+        messages: list[Message],
         *,
         stream: bool = False,
-        **opts: Any
-    ) -> AsyncIterator[StreamEvent] | tuple[str, dict[str, Any]]:
-        """
-        • stream=False → return (full_text, meta_dict)
-        • stream=True  → yield StreamEvent objects; exactly one
-                         MetaResponse appears at the end.
-        """
+        **opts: Any,
+    ) -> Union[Tuple[str, MetaData], AsyncIterator[StreamEvent]]:
+        ...
