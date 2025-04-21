@@ -1,5 +1,5 @@
 # backend/services/ai/base.py
-from typing import TypedDict, Literal, AsyncIterator, Protocol, Any, Union
+from typing import TypedDict, Literal, AsyncIterator, Protocol, Any, Union, runtime_checkable
 
 class ChatResponse(TypedDict):
     type: Literal["text"]           # fixed discriminator
@@ -11,6 +11,7 @@ class MetaResponse(TypedDict):
 
 StreamEvent = Union[ChatResponse, MetaResponse]
 
+@runtime_checkable
 class ChatProvider(Protocol):
     name: str
 

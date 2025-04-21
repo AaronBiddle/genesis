@@ -11,20 +11,19 @@ export interface Message {
   content: string;
 }
 
-// Request structure for generate_response
-export interface GenerateRequest {
+// Request structure for generate_response (now targeting /chat)
+// Renamed from GenerateRequest
+export interface ChatRequestData {
   model: string;
   messages: Message[];
-  system_prompt?: string | null; // Allow null or undefined
+  system_prompt?: string | null; // Kept here for function input, but not sent directly
 }
 
-// Expected structure of the response from /generate_response
-// Adjust based on backend/routers/http_frontend_ai.py > GenerateResponse
-export interface GenerateResponse {
-  content?: string | null;
-  // Include other potential fields if needed (e.g., tokens, finish_reason)
-  // thinking_content?: string | null; 
-  raw_response?: any; // Keep for debugging as per backend
+// Expected structure of the response from /chat
+// Renamed from GenerateResponse
+export interface ChatReply {
+  text: string;
+  meta: Record<string, any>; // Or just `any`
 }
 
 // Expected structure for a single model's details from /get_models
@@ -74,29 +73,45 @@ export async function getModels(): Promise<GetModelsResponse> {
 }
 
 /**
- * Sends a request to generate an AI response.
- * @param {GenerateRequest} requestData - The data for the generation request.
- * @returns {Promise<GenerateResponse>} A promise that resolves to the AI's response.
+ * Sends a request to generate an AI response via the /chat endpoint.
+ * @param {ChatRequestData} requestData - The data for the generation request.
+ * @returns {Promise<ChatReply>} A promise that resolves to the AI's response.
  */
-export async function generateResponse(requestData: GenerateRequest): Promise<GenerateResponse> {
+export async function generateResponse(requestData: ChatRequestData): Promise<ChatReply> {
   try {
-    const response = await post(`${AI_PATH}/generate_response`, requestData);
+    // Prepare messages, potentially adding system prompt
+    const messagesToSend: Message[] = [
+        ...(requestData.system_prompt ? [{ role: 'system', content: requestData.system_prompt }] : []),
+        ...requestData.messages
+    ];
+
+    // Prepare payload for the /chat endpoint
+    const payload = {
+        model: requestData.model,
+        messages: messagesToSend,
+        stream: false // Assuming non-streamed response for this HTTP client function
+        // Add temperature etc. here if needed in the future
+    };
+
+    // Use the /chat endpoint
+    const response = await post(`${AI_PATH}/chat`, payload);
 
     if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`HTTP error ${response.status} (${response.statusText}): ${errorText}`);
     }
 
-    const data: GenerateResponse = await response.json();
+    const data: ChatReply = await response.json();
 
-    // Add basic validation if necessary, e.g., check for response.data existence
-    if (!data) {
-        console.error('Received empty response from /generate_response');
-        throw new Error('Received no data from the AI generation endpoint.');
+    // Basic validation for the new structure
+    if (!data || typeof data.text !== 'string' || typeof data.meta !== 'object') {
+        console.error('Received invalid response structure from /chat:', data);
+        throw new Error('Received invalid data structure from the AI chat endpoint.');
     }
+
     return data;
   } catch (error: any) {
-    console.error('AIClient: Error generating AI response:', error);
+    console.error('AIClient: Error generating AI response via /chat:', error);
     // Re-throw a more specific error or handle it as needed
     throw new Error(error.message || 'Failed to generate AI response. Is the backend server running?');
   }

@@ -67,8 +67,8 @@ import {
 import type {
   ModelDetails,
   GetModelsResponse,
-  GenerateRequest,
-  Message,
+  ChatRequestData,
+  Message
 } from '@/services/HTTP/HttpAIClient';
 
 // Define available tests
@@ -189,7 +189,7 @@ const executeTest = async () => {
         // Add user message to history (simple version)
         messages.push({ role: 'user', content: userMessageInput.value });
 
-        const requestData: GenerateRequest = {
+        const requestData: ChatRequestData = {
           model: modelNameInput.value,
           messages: messages,
           system_prompt: systemPromptInput.value || null,
@@ -201,7 +201,7 @@ const executeTest = async () => {
       default:
         throw new Error('Invalid test selected');
     }
-    // Display success result (for generateResponse)
+    // Display success result (now a ChatReply object)
     executionResult.value = `Success:
 ${JSON.stringify(result, null, 2)}`;
 
