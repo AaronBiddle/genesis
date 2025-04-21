@@ -41,7 +41,7 @@ class DeepSeek(ChatProvider):
         self,
         messages: list[dict[str, str]],
         *,
-        stream: bool = False,
+        stream: bool = True,
         model: str = "deepseek-chat",
         temperature: float = 0.0,
         timeout: int = 60,
@@ -78,44 +78,47 @@ class DeepSeek(ChatProvider):
 
             # ---------- streaming branch ----------
             async def generator() -> AsyncIterator[StreamEvent]:
-                t0 = time.perf_counter()
-                usage: dict[str, Any] | None = None
-                first_token_t: float | None = None
+                async with self._sem:                       # gate depth
+                    async with httpx.AsyncClient(
+                        headers=self._HEADERS, http2=True, timeout=timeout
+                    ) as client:
+                        t0 = time.perf_counter()
+                        first_token_t = None
+                        usage = None
 
-                async with self._sem:  # queue‑depth guard
-                    async with client.stream(
-                        "POST", self._ENDPOINT, json=payload
-                    ) as resp:
-                        async for raw in resp.aiter_lines():
-                            if not raw.startswith("data: "):
-                                continue  # heartbeat
-                            data = raw[6:]
-                            if data == "[DONE]":
-                                break
-                            chunk = json.loads(data)
+                        async with client.stream(
+                            "POST", self._ENDPOINT, json=payload
+                        ) as resp:
+                            async for raw in resp.aiter_lines():
+                                if not raw.startswith("data: "):
+                                    continue  # heartbeat
+                                data = raw[6:]
+                                if data == "[DONE]":
+                                    break
+                                chunk = json.loads(data)
 
-                            # DeepSeek streams one choice; delta may be ''
-                            delta = chunk["choices"][0]["delta"].get("content", "")
-                            if delta:
-                                if first_token_t is None:
-                                    first_token_t = time.perf_counter()
-                                yield ChatResponse(type="text", data=delta)  # type: ignore
+                                # DeepSeek streams one choice; delta may be ''
+                                delta = chunk["choices"][0]["delta"].get("content", "")
+                                if delta:
+                                    if first_token_t is None:
+                                        first_token_t = time.perf_counter()
+                                    yield ChatResponse(type="text", data=delta)  # type: ignore
 
-                            # usage shows up in each SSE chunk; capture last one
-                            usage = chunk.get("usage", usage)
+                                # usage shows up in each SSE chunk; capture last one
+                                usage = chunk.get("usage", usage)
 
-                meta_resp: MetaResponse = {
-                    "type": "meta",
-                    "data": {
-                        "usage": usage or {},
-                        "latency": time.perf_counter() - t0,
-                        "ttfb": (
-                            first_token_t - t0 if first_token_t is not None else None
-                        ),
-                        "model": model,
-                    },
-                }
-                yield meta_resp
+                        meta_resp: MetaResponse = {
+                            "type": "meta",
+                            "data": {
+                                "usage": usage or {},
+                                "latency": time.perf_counter() - t0,
+                                "ttfb": (
+                                    first_token_t - t0 if first_token_t is not None else None
+                                ),
+                                "model": model,
+                            },
+                        }
+                        yield meta_resp
 
             # the outer coroutine returns the async generator
             return generator()

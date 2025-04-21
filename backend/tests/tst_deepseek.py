@@ -20,7 +20,7 @@ DS = DeepSeek()
 # Helpers
 # ----------------------------------------------------------------------
 
-TEST_MESSAGES = [{"role": "user", "content": "What is 1 + 1?"}]
+TEST_MESSAGES = [{"role": "user", "content": "What is 1 + 1? Answer with a single number."}]
 
 
 def has_api_key() -> bool:
