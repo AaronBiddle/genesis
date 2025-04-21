@@ -1,3 +1,4 @@
+# backend/services/ai/base.py
 from typing import TypedDict, Literal, AsyncIterator, Protocol, Any, Union
 
 class ChatResponse(TypedDict):
