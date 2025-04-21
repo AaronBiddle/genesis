@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.routers import http_frontend_echo
 from backend.routers import http_frontend_fs 
-from backend.routers import http_frontend_ai
+from backend.routers import ai_router
 
 origins = [
     "http://localhost:5173",
@@ -40,7 +40,7 @@ app.include_router(
     tags=["Frontend File System"]
 )
 app.include_router(
-    http_frontend_ai.router,
+    ai_router.router,
     prefix="/frontend/ai",
     tags=["Frontend AI"]
 )
