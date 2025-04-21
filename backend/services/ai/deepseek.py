@@ -16,8 +16,8 @@ __all__ = ["DeepSeek"]
 
 class DeepSeek(ChatProvider):
     """
-    Adapter for DeepSeek's chat‑completions endpoint.
-    Implements the two‑event streaming contract:
+    Adapter for DeepSeek's chat-completions endpoint.
+    Implements the two-event streaming contract:
 
         • yields {"type": "text", "data": <token str>}
           for every incremental delta
@@ -25,7 +25,7 @@ class DeepSeek(ChatProvider):
         • yields a single {"type": "meta", "data": {...}}
           when [DONE] is received
 
-    Non‑streaming calls return (full_text, meta_dict).
+    Non-streaming calls return (full_text, meta_dict).
     """
 
     name: str = "deepseek"
@@ -35,7 +35,7 @@ class DeepSeek(ChatProvider):
     _HEADERS  = {"Authorization": f"Bearer {_API_KEY}"} if _API_KEY else {}
 
     # allow two concurrent generations per connection
-    _sem: asyncio.Semaphore = asyncio.Semaphore(2)
+    _sem: asyncio.Semaphore = asyncio.Semaphore(10)
 
     async def chat(
         self,
@@ -50,7 +50,7 @@ class DeepSeek(ChatProvider):
         """
         See base.ChatProvider for semantics.
         Additional keyword args are ignored by DeepSeek
-        but accepted so the call‑site can stay uniform.
+        but accepted so the call-site can stay uniform.
         """
         payload = {
             "model": model,
