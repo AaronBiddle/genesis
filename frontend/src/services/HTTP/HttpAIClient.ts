@@ -30,15 +30,14 @@ export interface GenerateResponse {
 // Expected structure for a single model's details from /get_models
 export interface ModelDetails {
   provider: string;
+  name: string;
   display_name: string;
-  has_thinking: boolean;
+  supports_thinking: boolean; // Renamed from has_thinking
   // Add any other relevant fields returned by the backend
 }
 
 // Expected structure of the response from /get_models
-export interface GetModelsResponse {
-  models: Record<string, ModelDetails>; // Maps model name (string key) to its details
-}
+export type GetModelsResponse = ModelDetails[]; // Changed to an array of ModelDetails
 
 // --- Service Functions ---
 
@@ -48,20 +47,24 @@ export interface GetModelsResponse {
  */
 export async function getModels(): Promise<GetModelsResponse> {
   try {
-    const response = await get(`${AI_PATH}/get_models`);
+    const response = await get(`${AI_PATH}/models`);
 
     if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`HTTP error ${response.status} (${response.statusText}): ${errorText}`);
     }
 
+    // The backend returns an array directly
     const data: GetModelsResponse = await response.json();
 
-    // Basic validation: Check if 'models' property exists and is an object
-    if (!data || typeof data.models !== 'object' || data.models === null) {
-        console.error('Invalid response structure from /get_models:', data);
+    // Basic validation: Check if the response is an array
+    if (!Array.isArray(data)) {
+        console.error('Invalid response structure from /models: Expected an array, received:', data);
         throw new Error('Received invalid data structure for AI models.');
     }
+    // Optional: Add validation for array elements if needed
+    // data.forEach(item => { /* validate item properties */ });
+
     return data;
   } catch (error: any) {
     console.error('AIClient: Error fetching AI models:', error);

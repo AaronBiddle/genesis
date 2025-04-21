@@ -80,7 +80,7 @@ const availableTests = [
 // Reactive state
 const isLoading = ref<boolean>(false);
 const selectedTest = ref<string>('');
-const availableModels = ref<Record<string, ModelDetails>>({});
+const availableModels = ref<ModelDetails[]>([]);
 const modelNameInput = ref<string>('');
 const systemPromptInput = ref<string>('You are a helpful assistant called Genesis running inside a simulated desktop environment.');
 const userMessageInput = ref<string>('Write a short poem about a computer mouse.');
@@ -98,7 +98,7 @@ watch(selectedTest, (newTest) => {
       // modelNameInput.value = ''; // Keep model selected for convenience? Decide later.
   }
   // Fetch models if generateResponse is selected and models aren't loaded
-  if (newTest === 'generateResponse' && Object.keys(availableModels.value).length === 0) {
+  if (newTest === 'generateResponse' && availableModels.value.length === 0) {
       fetchModels();
   }
 });
@@ -110,8 +110,8 @@ const selectedTestInfo = computed(() => {
 
 // Computed property to format models for the dropdown
 const modelOptions = computed(() => {
-  return Object.entries(availableModels.value).map(([key, details]) => ({
-    value: key, // The actual model ID/key
+  return availableModels.value.map(details => ({
+    value: details.name, // Use the unique model name as the value
     name: details.display_name, // User-friendly name
     provider: details.provider,
   }));
@@ -136,22 +136,24 @@ const fetchModels = async () => {
   isErrorResult.value = false;
   executionResult.value = 'Fetching models...';
   try {
-    const result: GetModelsResponse = await getModels();
-    availableModels.value = result.models;
+    const result: GetModelsResponse = await getModels(); // result is now ModelDetails[]
+    // Assign the array directly
+    availableModels.value = result;
     // Set a default model if available and none is selected
     if (modelOptions.value.length > 0 && !modelNameInput.value) {
         modelNameInput.value = modelOptions.value[0].value;
     }
     // Clear the fetching message if successful and no other test is running
     if (selectedTest.value !== 'generateResponse') { // Only clear if just fetching models
-        executionResult.value = `Success: Found ${Object.keys(availableModels.value).length} models.`;
+        executionResult.value = `Success: Found ${availableModels.value.length} models.`;
     }
   } catch (error: any) {
     console.error('Failed to fetch AI models:', error);
     executionResult.value = `Error fetching models:
 ${error.message || 'Unknown error'}`;
     isErrorResult.value = true;
-    availableModels.value = {}; // Clear models on error
+    // Clear models on error - assign empty array
+    availableModels.value = [];
   } finally {
     isLoading.value = false;
   }
