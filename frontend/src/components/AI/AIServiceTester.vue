@@ -33,8 +33,8 @@
             </option>
           </select>
           <label class="stream-checkbox">
-            <input type="checkbox" v-model="streamEnabled" />
             Stream
+            <input type="checkbox" v-model="streamEnabled" />
           </label>
         </div>
       </div>
@@ -281,7 +281,6 @@ h4 {
 }
 
 .test-select,
-.model-select,
 textarea {
   width: 100%;
   padding: 8px;
@@ -352,16 +351,24 @@ textarea {
     color: #c62828;
 }
 
+.model-row .model-select {
+  /* let flexbox size it, not this width rule */
+  width: auto !important;
+  flex: 1;          /* take up all available space */
+  min-width: 0;     /* allow it to shrink if needed */
+  padding: 3px;
+}
+
 .model-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 8px;  
 }
 
 .stream-checkbox {
-  margin-left: auto;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
+  margin-left: auto;
 }
 </style> 
