@@ -76,6 +76,8 @@ import type {
   ChatRequestData,
   Message
 } from '@/services/HTTP/HttpAIClient';
+import { wsAiClient } from '@/services/WS/WsAiClient';
+import type { InteractionCallback, InteractionMessage } from '@/services/WS/types';
 
 // Define available tests
 const availableTests = [
@@ -94,6 +96,7 @@ const streamEnabled = ref<boolean>(false);
 // const conversationHistory = ref<Message[]>([]); // Future enhancement
 const executionResult = ref<string | null>(null);
 const isErrorResult = ref<boolean>(false);
+const streamInteractionId = ref<number | null>(null);
 
 // Watch for changes in selectedTest to clear previous results and model selection
 watch(selectedTest, (newTest) => {
@@ -192,6 +195,34 @@ const executeTest = async () => {
         return; // Exit early as fetchModels handles result display
 
       case 'generateResponse':
+        // Handle streaming when enabled
+        if (streamEnabled.value) {
+          executionResult.value = '';
+          isErrorResult.value = false;
+          const messages: Message[] = [{ role: 'user', content: userMessageInput.value }];
+          const callback: InteractionCallback = (msg: InteractionMessage) => {
+            if (msg.error) {
+              isErrorResult.value = true;
+              executionResult.value += `\n[Error]: ${msg.error}`;
+              if (streamInteractionId.value !== null) {
+                wsAiClient.stopInteraction(streamInteractionId.value);
+              }
+              return;
+            }
+            if (msg.text) {
+              executionResult.value += msg.text;
+            }
+          };
+          const payloadWS = {
+            model: modelNameInput.value,
+            messages,
+            system_prompt: systemPromptInput.value || null,
+            stream: true,
+          };
+          const id = await wsAiClient.startInteraction('/chat', payloadWS, callback);
+          streamInteractionId.value = id;
+          return;
+        }
         const messages: Message[] = [];
         // Add user message to history (simple version)
         messages.push({ role: 'user', content: userMessageInput.value });
