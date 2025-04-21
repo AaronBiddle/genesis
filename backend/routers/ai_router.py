@@ -22,17 +22,17 @@ class ModelCard(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    request_id: int
+    # For WebSocket, a request_id is required; for HTTP POST it's optional
+    request_id: int | None = None
     model: str
     system_prompt: str | None = None
     messages: list[dict[str, str]]
     stream: bool = False
     temperature: float | None = None
 
-
-# A single, uniform envelope that works for both REST and WS
+# A single, uniform envelope that works for both REST and WS that works for both REST and WS
 class ChatReply(BaseModel):
-    request_id: int
+    request_id: int | None = None
     text: str | None = None        # full answer or incremental token
     thinking: str | None = None    # incremental "thought" token
     meta: dict | None = None       # final metadata once per request
@@ -129,7 +129,7 @@ async def chat_socket(ws: WebSocket):
     try:
         while True:
             data = await ws.receive_json()
-            init = ChatRequest.parse_obj(data)
+            init = ChatRequest.model_validate(data)
             task = asyncio.create_task(handle_request(init))
             active_tasks.add(task)
             task.add_done_callback(active_tasks.discard)

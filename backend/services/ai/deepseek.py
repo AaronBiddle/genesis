@@ -82,17 +82,21 @@ class DeepSeek(ChatProvider):
                         if content == "[DONE]":
                             break
                         chunk = json.loads(content)
+                        delta = chunk.get("choices", [{}])[0].get("delta", {})
 
-                        delta = (
-                            chunk.get("choices", [{}])[0]
-                            .get("delta", {})
-                            .get("content", "")
-                        )
-                        if delta:
+                        # emit thinking tokens first if present
+                        thought = delta.get("thinking")
+                        if thought:
+                            yield {"thinking": thought}  # internal reasoning token
+
+                        # then emit user-visible content
+                        text = delta.get("content")
+                        if text:
                             if first_token_t is None:
                                 first_token_t = time.perf_counter()
-                            yield {"text": delta}  # user token
+                            yield {"text": text}  # user token
 
+                        # capture usage if present
                         if "usage" in chunk:
                             usage = chunk["usage"]
 
