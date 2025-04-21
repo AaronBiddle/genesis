@@ -7,6 +7,9 @@ from typing import AsyncIterator, Any, Tuple
 import httpx
 
 from .base import ChatResponse, MetaResponse, StreamEvent, ChatProvider
+from dotenv import load_dotenv
+
+load_dotenv()
 
 __all__ = ["DeepSeek"]
 
