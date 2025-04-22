@@ -133,7 +133,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { sendRequests as httpSendRequests, requestLog as httpRequestLog, post } from '@/services/HttpClient';
+import { sendRequests as httpSendRequests, requestLog as httpRequestLog, post } from '@/services/HTTP/HttpClient';
 
 // Preview mode is the opposite of sendRequests
 const previewMode = computed({

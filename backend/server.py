@@ -1,22 +1,17 @@
 '''Main FastAPI server application.'''
 import uvicorn
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware # Import CORS middleware
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.routers import http_frontend_echo
-# Import the new filesystem router
 from backend.routers import http_frontend_fs 
-# Import the new AI router
-from backend.routers import http_frontend_ai
+from backend.routers import ai_router
 
-# List of allowed origins (clients that can make requests)
-# Add your frontend development server URL here
 origins = [
-    "http://localhost:5173", # Vite default
-    "http://127.0.0.1:5173", # Vite default
-    "http://localhost:8000", # Allow requests from the backend itself if needed
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:8000",
     "http://127.0.0.1:8000",
-    # Add other origins if needed (e.g., production frontend URL)
 ]
 
 app = FastAPI(
@@ -25,39 +20,38 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# Add CORS middleware to the application
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # Allows specified origins
-    allow_credentials=True, # Allows cookies to be included in requests
-    allow_methods=["*"],    # Allows all methods (GET, POST, PUT, DELETE, etc.)
-    allow_headers=["*"],    # Allows all headers
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include routers
 app.include_router(
     http_frontend_echo.router, 
-    prefix="/frontend/echo",  # Define full prefix here
-    tags=["Frontend Echo"]     # Update tag
+    prefix="/frontend/echo",
+    tags=["Frontend Echo"]
 )
 app.include_router(
     http_frontend_fs.router, 
-    prefix="/frontend/fs",    # Define full prefix here
-    tags=["Frontend File System"] # Ensure tag is set
+    prefix="/frontend/fs",
+    tags=["Frontend File System"]
 )
 app.include_router(
-    http_frontend_ai.router,
-    prefix="/frontend/ai",    # Define full prefix here
-    tags=["Frontend AI"]      # Add a tag for the AI endpoints
+    ai_router.router,
+    prefix="/frontend/ai",
+    tags=["Frontend AI"]
+)
+app.include_router(
+    ai_router.router,
+    prefix="/frontend/ws",
+    tags=["Frontend WS (Forwarded to AI)"]
 )
 
-@app.get("/", tags=["Root"])
-def read_root():
-    return {"message": "Welcome to the Genesis Backend!"}
 
 if __name__ == "__main__":
-    # Configuration for Uvicorn server
-    # You can adjust host, port, log_level, etc. as needed
     uvicorn.run(
         "backend.server:app",  # Points to the 'app' instance in this 'server.py' file
         host="127.0.0.1",

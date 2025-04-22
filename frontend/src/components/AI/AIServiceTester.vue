@@ -25,12 +25,18 @@
       <!-- Model Selection Dropdown (shown for generateResponse) -->
       <div v-if="selectedTestInfo.requiresModel" class="control-group">
         <label for="model-select">Select Model:</label>
-        <select id="model-select" v-model="modelNameInput" class="model-select" :disabled="modelOptions.length === 0">
-          <option disabled value="">{{ modelOptions.length > 0 ? 'Please select a model' : 'Fetching models...' }}</option>
-          <option v-for="model in modelOptions" :key="model.value" :value="model.value">
-            {{ model.name }} ({{ model.provider }})
-          </option>
-        </select>
+        <div class="model-row">
+          <select id="model-select" v-model="modelNameInput" class="model-select" :disabled="modelOptions.length === 0">
+            <option disabled value="">{{ modelOptions.length > 0 ? 'Please select a model' : 'Fetching models...' }}</option>
+            <option v-for="model in modelOptions" :key="model.value" :value="model.value">
+              {{ model.name }} ({{ model.provider }})
+            </option>
+          </select>
+          <label class="stream-checkbox">
+            Stream
+            <input type="checkbox" v-model="streamEnabled" />
+          </label>
+        </div>
       </div>
 
       <!-- System Prompt Input -->
@@ -63,13 +69,15 @@ import { ref, computed, onMounted, watch } from 'vue';
 import {
   getModels,
   generateResponse,
-} from '@/services/AIClient';
+} from '@/services/HTTP/HttpAIClient';
 import type {
   ModelDetails,
   GetModelsResponse,
-  GenerateRequest,
-  Message,
-} from '@/services/AIClient';
+  ChatRequestData,
+  Message
+} from '@/services/HTTP/HttpAIClient';
+import { WsAiClient } from '@/services/WS/WsAiClient';
+import type { InteractionCallback, InteractionMessage } from '@/services/WS/types';
 
 // Define available tests
 const availableTests = [
@@ -80,13 +88,15 @@ const availableTests = [
 // Reactive state
 const isLoading = ref<boolean>(false);
 const selectedTest = ref<string>('');
-const availableModels = ref<Record<string, ModelDetails>>({});
+const availableModels = ref<ModelDetails[]>([]);
 const modelNameInput = ref<string>('');
 const systemPromptInput = ref<string>('You are a helpful assistant called Genesis running inside a simulated desktop environment.');
 const userMessageInput = ref<string>('Write a short poem about a computer mouse.');
+const streamEnabled = ref<boolean>(false);
 // const conversationHistory = ref<Message[]>([]); // Future enhancement
 const executionResult = ref<string | null>(null);
 const isErrorResult = ref<boolean>(false);
+const streamInteractionId = ref<number | null>(null);
 
 // Watch for changes in selectedTest to clear previous results and model selection
 watch(selectedTest, (newTest) => {
@@ -98,7 +108,7 @@ watch(selectedTest, (newTest) => {
       // modelNameInput.value = ''; // Keep model selected for convenience? Decide later.
   }
   // Fetch models if generateResponse is selected and models aren't loaded
-  if (newTest === 'generateResponse' && Object.keys(availableModels.value).length === 0) {
+  if (newTest === 'generateResponse' && availableModels.value.length === 0) {
       fetchModels();
   }
 });
@@ -110,8 +120,8 @@ const selectedTestInfo = computed(() => {
 
 // Computed property to format models for the dropdown
 const modelOptions = computed(() => {
-  return Object.entries(availableModels.value).map(([key, details]) => ({
-    value: key, // The actual model ID/key
+  return availableModels.value.map(details => ({
+    value: details.name, // Use the unique model name as the value
     name: details.display_name, // User-friendly name
     provider: details.provider,
   }));
@@ -136,22 +146,24 @@ const fetchModels = async () => {
   isErrorResult.value = false;
   executionResult.value = 'Fetching models...';
   try {
-    const result: GetModelsResponse = await getModels();
-    availableModels.value = result.models;
+    const result: GetModelsResponse = await getModels(); // result is now ModelDetails[]
+    // Assign the array directly
+    availableModels.value = result;
     // Set a default model if available and none is selected
     if (modelOptions.value.length > 0 && !modelNameInput.value) {
         modelNameInput.value = modelOptions.value[0].value;
     }
     // Clear the fetching message if successful and no other test is running
     if (selectedTest.value !== 'generateResponse') { // Only clear if just fetching models
-        executionResult.value = `Success: Found ${Object.keys(availableModels.value).length} models.`;
+        executionResult.value = `Success: Found ${availableModels.value.length} models.`;
     }
   } catch (error: any) {
     console.error('Failed to fetch AI models:', error);
     executionResult.value = `Error fetching models:
 ${error.message || 'Unknown error'}`;
     isErrorResult.value = true;
-    availableModels.value = {}; // Clear models on error
+    // Clear models on error - assign empty array
+    availableModels.value = [];
   } finally {
     isLoading.value = false;
   }
@@ -183,11 +195,39 @@ const executeTest = async () => {
         return; // Exit early as fetchModels handles result display
 
       case 'generateResponse':
+        // Handle streaming when enabled
+        if (streamEnabled.value) {
+          executionResult.value = '';
+          isErrorResult.value = false;
+          const messages: Message[] = [{ role: 'user', content: userMessageInput.value }];
+          const callback: InteractionCallback = (msg: InteractionMessage) => {
+            if (msg.error) {
+              isErrorResult.value = true;
+              executionResult.value += `\n[Error]: ${msg.error}`;
+              if (streamInteractionId.value !== null) {
+                WsAiClient.cancelChat(streamInteractionId.value);
+              }
+              return;
+            }
+            if (msg.text) {
+              executionResult.value += msg.text;
+            }
+          };
+          const payloadWS = {
+            model: modelNameInput.value,
+            messages,
+            system_prompt: systemPromptInput.value || null,
+            stream: true,
+          };
+          const id = await WsAiClient.sendChatMessage(payloadWS, callback);
+          streamInteractionId.value = id;
+          return;
+        }
         const messages: Message[] = [];
         // Add user message to history (simple version)
         messages.push({ role: 'user', content: userMessageInput.value });
 
-        const requestData: GenerateRequest = {
+        const requestData: ChatRequestData = {
           model: modelNameInput.value,
           messages: messages,
           system_prompt: systemPromptInput.value || null,
@@ -199,7 +239,7 @@ const executeTest = async () => {
       default:
         throw new Error('Invalid test selected');
     }
-    // Display success result (for generateResponse)
+    // Display success result (now a ChatReply object)
     executionResult.value = `Success:
 ${JSON.stringify(result, null, 2)}`;
 
@@ -272,7 +312,6 @@ h4 {
 }
 
 .test-select,
-.model-select,
 textarea {
   width: 100%;
   padding: 8px;
@@ -341,5 +380,26 @@ textarea {
 .result-container pre.error-result {
     background-color: #ffebee;
     color: #c62828;
+}
+
+.model-row .model-select {
+  /* let flexbox size it, not this width rule */
+  width: auto !important;
+  flex: 1;          /* take up all available space */
+  min-width: 0;     /* allow it to shrink if needed */
+  padding: 3px;
+}
+
+.model-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;  
+}
+
+.stream-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
 }
 </style> 

@@ -6,9 +6,10 @@ import FileServiceTester from '@/components/FileService/FileServiceTester.vue'; 
 import FileManager from '@/components/FileService/FileManager.vue'; // Import FileManager
 import EventBusInspector from './EventBusInspector.vue'; // Import EventBusInspector
 import Logger from '@/components/Logger/Logger.vue'; // Import Logger
-import WindowInspector from './WindowInspector.vue'; // Import the new Window Inspector
+import WindowInspecter from './WindowInspecter.vue'; // Import the new Window Inspector
 import ChatApp from '@/components/ChatApp/ChatApp.vue'; // Import ChatApp
 import AIServiceTester from '@/components/AI/AIServiceTester.vue'; // Import AI Service Tester
+import WsInspecter from '@/components/WS/WsInspecter.vue'; // Import WS Service Tester
 
 export interface App {
   id: string; // Unique identifier (e.g., 'text-editor', 'web-browser') - Essential
@@ -127,10 +128,10 @@ export const apps: App[] = [
     category: 'Utilities',
   },
   {
-    id: "window-inspector",
-    title: "Window Inspector",
+    id: "window-inspecter",
+    title: "Window Inspecter",
     iconId: "windows", // Use the 'windows' icon
-    appComponent: WindowInspector,
+    appComponent: WindowInspecter,
     iconColor: 'text-purple-600', // Use the purple color from the original request
     titleBarColor: 'bg-purple-200',
     titleColor: 'text-purple-900',
@@ -149,6 +150,18 @@ export const apps: App[] = [
     titleColor: 'text-indigo-900',
     initialWidth: 550,
     initialHeight: 750,
+    category: 'Utilities',
+  },
+  {
+    id: "ws-inspecter",
+    title: "WS Inspecter",
+    iconId: "ws", // Use the 'ws' icon
+    appComponent: WsInspecter,
+    iconColor: 'text-sky-600', // Sky blue theme
+    titleBarColor: 'bg-sky-200',
+    titleColor: 'text-sky-900',
+    initialWidth: 650,
+    initialHeight: 600,
     category: 'Utilities',
   }
 ];

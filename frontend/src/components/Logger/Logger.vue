@@ -14,19 +14,20 @@
           <label :for="`ns-${ns}`" class="text-sm text-gray-700">{{ ns }}</label>
         </div>
       </div>
-      <div class="mt-2 space-x-2"> <button
-          @click="clearLogs"
-          class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
-        >
+      <div class="mt-2 space-x-2">
+        <button @click="clearLogs" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs">
           Clear Logs
         </button>
-        <button
-          @click="handleClearSettings"
-          class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-xs"
-        >
+        <button @click="handleClearSettings" class="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-xs">
           Reset Namespaces
         </button>
-       </div>
+        <button @click="enableAll" class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-xs">
+          Enable All
+        </button>
+        <button @click="disableAll" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs">
+          Disable All
+        </button>
+      </div>
     </div>
 
     <div class="flex-grow overflow-y-auto bg-white p-2 border border-gray-200 rounded shadow-inner" ref="logContainer">
@@ -61,6 +62,22 @@ const handleClearSettings = () => {
     // if (confirm("Are you sure you want to reset all namespace settings?")) {
         clearNamespaceSettings();
     // }
+};
+
+// Add functions to enable or disable all namespaces
+const enableAll = () => {
+    availableNamespaces.value.forEach(ns => {
+        if (!isNamespaceEnabled(ns)) {
+            toggleNamespace(ns);
+        }
+    });
+};
+const disableAll = () => {
+    availableNamespaces.value.forEach(ns => {
+        if (isNamespaceEnabled(ns)) {
+            toggleNamespace(ns);
+        }
+    });
 };
 
 // Scroll to bottom when new logs are added

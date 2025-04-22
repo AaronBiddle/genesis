@@ -66,8 +66,8 @@ import {
   createDirectory,
   deleteDirectory,
   getMounts,
-} from '@/services/FileClient';
-import type { MountInfo } from '@/services/FileClient';
+} from '@/services/HTTP/HttpFileClient';
+import type { MountInfo } from '@/services/HTTP/HttpFileClient';
 
 // Define available tests with mount requirement
 const availableTests = [
