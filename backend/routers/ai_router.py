@@ -114,15 +114,26 @@ async def chat_socket(ws: WebSocket):
                 return
 
             # stream: incremental replies; adapters now emit flat dicts with 'text', 'thinking', or 'meta'
-            async for ev in prov.chat(
+            # Get the stream iterable from the provider
+            stream_iter = prov.chat(
                 msgs,
                 stream=True,
                 temperature=init.temperature or 0.8,
                 model=init.model,
-            ):
-                # ev is a dict: {'text': ..., 'thinking': ..., or 'meta': ...}
-                payload = {"request_id": init.request_id, **ev}
-                await ws.send_json(payload)
+            )
+            # Iterate over the stream, catching TypeError if not async iterable
+            try:
+                async for ev in stream_iter:
+                    # ev is a dict: {'text': ..., 'thinking': ..., or 'meta': ...}
+                    payload = {"request_id": init.request_id, **ev}
+                    await ws.send_json(payload)
+            except TypeError as exc:
+                # Provide descriptive error indicating wrong return type
+                provider_name = prov.__class__.__name__
+                module_name = prov.__class__.__module__
+                raise Exception(
+                    f"Streaming provider '{module_name}.{provider_name}'.chat expected async iterable but got {type(stream_iter)}: {exc}"
+                ) from exc
         except Exception as exc:
             # send error envelope with file and line details
             tb_list = traceback.extract_tb(exc.__traceback__)
