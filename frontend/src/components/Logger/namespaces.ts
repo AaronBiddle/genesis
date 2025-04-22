@@ -5,4 +5,5 @@ export const initialNamespaces: string[] = [
   'eventBus.ts',
   'FileManager.vue',
   'Window.vue',
+  'WsClientFactory.ts',
 ]; 
