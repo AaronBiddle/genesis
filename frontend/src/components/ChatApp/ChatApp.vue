@@ -116,7 +116,8 @@ import {
   generateResponse,
   getModels,
   type Message as AIMessage,
-  type GenerateRequest,
+  type ChatRequestData,
+  type ChatReply,
   type GetModelsResponse,
   type ModelDetails
 } from '@/services/HTTP/HttpAIClient';
@@ -170,18 +171,18 @@ const sendMessage = async () => {
   isLoading.value = true;
 
   try {
-    const requestData: GenerateRequest = {
+    const requestData: ChatRequestData = {
       model: selectedModel.value,
       messages: messages.value.map(m => ({ role: m.role, content: m.content })),
     };
 
-    const response = await generateResponse(requestData);
+    const response: ChatReply = await generateResponse(requestData);
 
-    if (response.content) {
-      addMessage(response.content, 'assistant');
+    if (response.text) {
+      addMessage(response.text, 'assistant');
     } else {
       addMessage("Sorry, I couldn't generate a response.", 'assistant');
-      console.error('AI response missing content:', response);
+      console.error('AI response missing text:', response);
     }
   } catch (error: any) {
     console.error('Error calling AI service:', error);
@@ -342,9 +343,12 @@ onMounted(async () => {
   modelsLoading.value = true;
   modelsError.value = null;
   try {
-    const response: GetModelsResponse = await getModels();
-    availableModels.value = response.models;
-    const modelKeys = Object.keys(response.models);
+    const modelsArray: GetModelsResponse = await getModels();
+    // Convert array to map keyed by model.name
+    const modelsMap: Record<string, ModelDetails> = {};
+    modelsArray.forEach(model => { modelsMap[model.name] = model; });
+    availableModels.value = modelsMap;
+    const modelKeys = Object.keys(modelsMap);
     if (modelKeys.length > 0) {
       selectedModel.value = modelKeys[0];
     }
