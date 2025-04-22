@@ -44,6 +44,11 @@ app.include_router(
     prefix="/frontend/ai",
     tags=["Frontend AI"]
 )
+app.include_router(
+    ai_router.router,
+    prefix="/frontend/ws",
+    tags=["Frontend WS (Forwarded to AI)"]
+)
 
 
 if __name__ == "__main__":

@@ -22,7 +22,10 @@ export interface WsClient {
   stopInteraction: (id: number) => boolean;
 }
 
-export function createWebSocketClient(url: string): WsClient {
+// Define the base URL for the WebSocket server
+const WS_BASE_URL = 'ws://localhost:8000';
+
+export function createWebSocketClient(relativePath: string): WsClient {
   let ws: WebSocket | null = null;
   const status = ref<WebSocketStatus>(WebSocketStatus.Disconnected);
   const interactions = new Map<number, InteractionCallback>();
@@ -40,8 +43,13 @@ export function createWebSocketClient(url: string): WsClient {
     status.value = WebSocketStatus.Connecting;
 
     return new Promise((resolve, reject) => {
-      ws = new WebSocket(url);
-      log('WsClientFactory.ts', `WebSocket connecting... URL: ${ws.url}`);
+      // Ensure relativePath starts with / and ends with /
+      let formattedPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+      formattedPath = formattedPath.endsWith('/') ? formattedPath : `${formattedPath}/`;
+
+      const fullUrl = `${WS_BASE_URL}${formattedPath}`;
+      ws = new WebSocket(fullUrl);
+      log('WsClientFactory.ts', `WebSocket connecting... Base: ${WS_BASE_URL}, Path: ${formattedPath}, Full URL: ${ws.url}`);
 
       ws.onopen = () => {
         status.value = WebSocketStatus.Connected;
@@ -55,17 +63,19 @@ export function createWebSocketClient(url: string): WsClient {
         status.value = WebSocketStatus.Error;
         if (ws) {
             log('WsClientFactory.ts', `WebSocket error. URL: ${ws.url}, Error: ${e}`, true);
+        } else {
+             log('WsClientFactory.ts', `WebSocket error before connection established. Intended URL: ${fullUrl}, Error: ${e}`, true);
         }
         reject(e);
       };
 
       ws.onclose = ev => {
         const clean = ev.wasClean;
-        const currentWsUrl = ws?.url;
+        const currentWsUrl = ws?.url; // Capture URL before setting ws to null
         status.value = clean
           ? WebSocketStatus.Disconnected
           : WebSocketStatus.Error;
-        log('WsClientFactory.ts', `WebSocket closed. URL: ${currentWsUrl || url}, Code: ${ev.code}, Reason: ${ev.reason}, Clean: ${clean}`, !clean);
+        log('WsClientFactory.ts', `WebSocket closed. URL: ${currentWsUrl || fullUrl}, Code: ${ev.code}, Reason: ${ev.reason}, Clean: ${clean}`, !clean);
         ws = null;
         interactions.clear();
         nextId = 0;
@@ -118,7 +128,10 @@ export function createWebSocketClient(url: string): WsClient {
         log('WsClientFactory.ts', `Disconnecting WebSocket... URL: ${currentWsUrl}`);
         ws.close();
     } else {
-        log('WsClientFactory.ts', `Disconnect called but WebSocket already null. Initial URL was: ${url}`);
+        // Ensure relativePath starts with / and ends with / for logging consistency
+        let formattedPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+        formattedPath = formattedPath.endsWith('/') ? formattedPath : `${formattedPath}/`;
+        log('WsClientFactory.ts', `Disconnect called but WebSocket already null. Intended Path: ${formattedPath}`);
     }
   }
 
