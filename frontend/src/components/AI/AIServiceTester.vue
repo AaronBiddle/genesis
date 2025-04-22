@@ -76,7 +76,7 @@ import type {
   ChatRequestData,
   Message
 } from '@/services/HTTP/HttpAIClient';
-import { wsAiClient } from '@/services/WS/WsAiClient';
+import { WsAiClient } from '@/services/WS/WsAiClient';
 import type { InteractionCallback, InteractionMessage } from '@/services/WS/types';
 
 // Define available tests
@@ -205,7 +205,7 @@ const executeTest = async () => {
               isErrorResult.value = true;
               executionResult.value += `\n[Error]: ${msg.error}`;
               if (streamInteractionId.value !== null) {
-                wsAiClient.stopInteraction(streamInteractionId.value);
+                WsAiClient.cancelChat(streamInteractionId.value);
               }
               return;
             }
@@ -219,7 +219,7 @@ const executeTest = async () => {
             system_prompt: systemPromptInput.value || null,
             stream: true,
           };
-          const id = await wsAiClient.startInteraction('/chat', payloadWS, callback);
+          const id = await WsAiClient.sendChatMessage(payloadWS, callback);
           streamInteractionId.value = id;
           return;
         }
