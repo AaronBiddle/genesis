@@ -43,9 +43,8 @@ export function createWebSocketClient(relativePath: string): WsClient {
     status.value = WebSocketStatus.Connecting;
 
     return new Promise((resolve, reject) => {
-      // Ensure relativePath starts with / and ends with /
+      // Ensure relativePath starts with /
       let formattedPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
-      formattedPath = formattedPath.endsWith('/') ? formattedPath : `${formattedPath}/`;
 
       const fullUrl = `${WS_BASE_URL}${formattedPath}`;
       ws = new WebSocket(fullUrl);
@@ -130,7 +129,6 @@ export function createWebSocketClient(relativePath: string): WsClient {
     } else {
         // Ensure relativePath starts with / and ends with / for logging consistency
         let formattedPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
-        formattedPath = formattedPath.endsWith('/') ? formattedPath : `${formattedPath}/`;
         log('WsClientFactory.ts', `Disconnect called but WebSocket already null. Intended Path: ${formattedPath}`);
     }
   }
@@ -161,17 +159,25 @@ export function createWebSocketClient(relativePath: string): WsClient {
         return null;
     }
 
+    // Check if the payload contains the forbidden 'request_id' key
+    if (typeof payload === 'object' && payload !== null && 'request_id' in payload) {
+      const errorMsg = `Payload cannot contain reserved key 'request_id'. Interaction aborted.`;
+      console.error(errorMsg, payload);
+      log('WsClientFactory.ts', `${errorMsg} Route: ${route}`, true);
+      return null; // Abort the interaction
+    }
+
     const id = nextId++;
     interactions.set(id, cb);
-    log('WsClientFactory.ts', `Starting interaction. ID: ${id}, Route: ${route}, Payload: ${JSON.stringify(payload)}`);
+    log('WsClientFactory.ts', `Starting interaction. ID: ${id}, Payload: ${JSON.stringify(payload)}`); // Route removed from log
 
-    ws.send(
-      JSON.stringify({
+    // Construct the flat message by merging the id and payload
+    const messageToSend = {
         request_id: id,
-        route,
-        payload,
-      })
-    );
+        ...payload
+    };
+
+    ws.send(JSON.stringify(messageToSend));
 
     return id;
   }
