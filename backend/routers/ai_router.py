@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, Query
 from pydantic import BaseModel
+import traceback
 
 from backend.services.ai.models import AI_MODELS, list_by_vendor
 from backend.services.ai.registry import get_provider
@@ -123,8 +124,15 @@ async def chat_socket(ws: WebSocket):
                 payload = {"request_id": init.request_id, **ev}
                 await ws.send_json(payload)
         except Exception as exc:
-            # send error envelope
-            await send(ChatReply(request_id=init.request_id, error=str(exc)))
+            # send error envelope with file and line details
+            tb_list = traceback.extract_tb(exc.__traceback__)
+            last_frame = tb_list[-1] if tb_list else None
+            if last_frame:
+                location = f"{last_frame.filename}:{last_frame.lineno}"
+            else:
+                location = "unknown location"
+            error_msg = f"{str(exc)} (at {location})"
+            await send(ChatReply(request_id=init.request_id, error=error_msg))
 
     try:
         while True:
@@ -138,6 +146,13 @@ async def chat_socket(ws: WebSocket):
         for t in active_tasks:
             t.cancel()
     except Exception as exc:
-        # on fatal errors, send and close
-        await ws.send_json({"error": str(exc)})
+        # on fatal errors, send and close with file and line details
+        tb_list = traceback.extract_tb(exc.__traceback__)
+        last_frame = tb_list[-1] if tb_list else None
+        if last_frame:
+            location = f"{last_frame.filename}:{last_frame.lineno}"
+        else:
+            location = "unknown location"
+        error_msg = f"{str(exc)} (at {location})"
+        await ws.send_json({"error": error_msg})
         await ws.close(code=1011)
