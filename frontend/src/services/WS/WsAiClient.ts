@@ -30,9 +30,9 @@ async function sendChatMessage(
   payload: AiChatPayload,
   callback: InteractionCallback
 ): Promise<number | null> {
-  log("WsAiClient", `sendChatMessage called with payload: ${JSON.stringify(payload)}`);
+  log("WsAiClient.ts", `sendChatMessage called with payload: ${JSON.stringify(payload)}`);
   const id = await internalClient.startInteraction('', payload, callback);
-  log("WsAiClient", `sendChatMessage received interaction ID: ${id}`);
+  log("WsAiClient.ts", `sendChatMessage received interaction ID: ${id}`);
   return id;
 }
 
@@ -42,9 +42,9 @@ async function sendChatMessage(
  * @returns True if the listener was successfully removed, false otherwise.
  */
 function cancelChat(id: number): boolean {
-  log("WsAiClient", `cancelChat called for ID: ${id}`);
+  log("WsAiClient.ts", `cancelChat called for ID: ${id}`);
   const result = internalClient.stopInteraction(id);
-  log("WsAiClient", `cancelChat ${result ? 'succeeded' : 'failed'} for ID: ${id}`);
+  log("WsAiClient.ts", `cancelChat ${result ? 'succeeded' : 'failed'} for ID: ${id}`);
   return result;
 }
 

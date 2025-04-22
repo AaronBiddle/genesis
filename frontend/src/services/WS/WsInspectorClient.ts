@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import type { InteractionMessage } from './types';
-import { wsAiClient } from './WsAiClient';
+import { WsAiClient } from './WsAiClient';
 
 export interface WSOutgoingEntry {
   timestamp: Date;
@@ -16,20 +16,26 @@ export interface WSIncomingEntry {
 export const wsSendLog = ref<WSOutgoingEntry[]>([]);
 export const wsReceiveLog = ref<WSIncomingEntry[]>([]);
 
-// Wrap the existing startInteraction to capture logs
-const originalStartInteraction = wsAiClient.startInteraction.bind(wsAiClient);
-wsAiClient.startInteraction = async (
-  route: string,
+// Wrap sendChatMessage to capture logs
+const originalSendChatMessage = WsAiClient.sendChatMessage.bind(WsAiClient);
+WsAiClient.sendChatMessage = async (
   payload: any,
   cb: (message: InteractionMessage) => void
 ): Promise<number | null> => {
   // Log outgoing message
-  wsSendLog.value.push({ timestamp: new Date(), route, payload });
+  wsSendLog.value.push({ timestamp: new Date(), route: 'sendChatMessage', payload });
   // Wrap the callback to log incoming messages
   const wrappedCb = (message: InteractionMessage) => {
     wsReceiveLog.value.push({ timestamp: new Date(), message });
     cb(message);
   };
-  // Invoke the original startInteraction with wrapped callback
-  return originalStartInteraction(route, payload, wrappedCb);
+  // Invoke the original sendChatMessage with wrapped callback
+  return originalSendChatMessage(payload, wrappedCb);
+};
+
+// Wrap cancelChat to capture logs
+const originalCancelChat = WsAiClient.cancelChat.bind(WsAiClient);
+WsAiClient.cancelChat = (id: number): boolean => {
+  wsSendLog.value.push({ timestamp: new Date(), route: 'cancelChat', payload: id });
+  return originalCancelChat(id);
 }; 
