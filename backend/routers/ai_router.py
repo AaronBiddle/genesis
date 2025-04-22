@@ -115,7 +115,7 @@ async def chat_socket(ws: WebSocket):
 
             # stream: incremental replies; adapters now emit flat dicts with 'text', 'thinking', or 'meta'
             # Get the stream iterable from the provider
-            stream_iter = prov.chat(
+            stream_iter = await prov.chat(
                 msgs,
                 stream=True,
                 temperature=init.temperature or 0.8,
