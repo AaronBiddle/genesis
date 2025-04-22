@@ -112,6 +112,18 @@ export function createWebSocketClient(relativePath: string): WsClient {
             console.error('Interaction callback threw', err);
             log('WsClientFactory.ts', `Interaction callback failed. Request ID: ${msg.request_id}, Error: ${err}`, true);
           }
+
+          // --- Automatic Cleanup ---
+          // If the message signals completion (contains meta or error), remove the interaction.
+          if (msg.meta || msg.error) {
+            const deleted = interactions.delete(msg.request_id);
+            if (deleted) {
+              log('WsClientFactory.ts', `Interaction automatically cleaned up due to completion/error signal. ID: ${msg.request_id}`);
+            } else {
+              // This case might happen if stopInteraction was called manually just before completion signal arrived
+              log('WsClientFactory.ts', `Attempted auto-cleanup for already removed interaction. ID: ${msg.request_id}`);
+            }
+          }
         } else {
           // Unsolicited broadcast from server
           console.log('Broadcast:', msg);
