@@ -54,6 +54,23 @@
             ]"
           >
             <template v-if="message.role === 'assistant'">
+              <!-- Thinking Section (Collapsible) -->
+              <div v-if="currentThinkingText.length > 0 && index === messages.length - 1" class="mb-2 border-b border-gray-300 pb-1">
+                <button 
+                  @click="isThinkingExpanded = !isThinkingExpanded"
+                  class="text-xs text-gray-500 hover:text-gray-700 flex items-center w-full text-left"
+                >
+                  <span class="font-medium">Thinking...</span>
+                  <!-- Chevron Icon -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-1 transition-transform duration-200" :class="{ 'rotate-90': isThinkingExpanded }" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+                <div v-show="isThinkingExpanded" class="mt-1">
+                  <pre class="text-xs text-gray-500 font-mono whitespace-pre-wrap bg-gray-100 p-1 rounded">{{ currentThinkingText }}</pre>
+                </div>
+              </div>
+              <!-- Main Assistant Content -->
               <MarkdownRenderer :source="message.content" />
             </template>
             <template v-else>
@@ -146,6 +163,10 @@ const textareaRef = ref<HTMLTextAreaElement | null>(null); // Ref for textarea
 const sendButtonRef = ref<HTMLButtonElement | null>(null); // Ref for button
 const currentInteractionId = ref<number | null>(null); // State for active stream ID
 
+// State for thinking process visualization
+const currentThinkingText = ref<string>('');
+const isThinkingExpanded = ref<boolean>(false); // Start collapsed
+
 // State for current file context
 const currentFileName = ref<string | null>(null);
 const currentDirectoryPath = ref<string | null>(null);
@@ -229,15 +250,20 @@ const sendMessage = async () => {
           updateAssistantMessage(`\n\n--- Error: ${message.error} ---`);
           isLoading.value = false;
           currentInteractionId.value = null;
+          currentThinkingText.value = ''; // Reset thinking text
+          isThinkingExpanded.value = false;
         } else if (message.thinking) {
           // Optional: display thinking status
           // props.log(NS, `WS Thinking: ${message.thinking}`);
+          currentThinkingText.value += message.thinking; // Append thinking tokens
         } else if (message.text) {
           updateAssistantMessage(message.text);
         } else if (message.meta) {
           props.log(NS, `WS Stream finished. Meta: ${JSON.stringify(message.meta)}`);
           isLoading.value = false;
           currentInteractionId.value = null;
+          currentThinkingText.value = ''; // Reset thinking text
+          isThinkingExpanded.value = false;
           // Optional: Display metadata if needed
           // updateAssistantMessage(`\n\n--- Meta: ${JSON.stringify(message.meta)} ---`);
         }
