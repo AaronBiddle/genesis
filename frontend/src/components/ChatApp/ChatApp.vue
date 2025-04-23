@@ -177,11 +177,20 @@ const updateAssistantMessage = (chunk: string) => {
   scrollToBottom();
 };
 
-// Helper to scroll message container
+// Helper to scroll message container only if user is near the bottom
 const scrollToBottom = () => {
   nextTick(() => {
     if (messageContainer.value) {
-      messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
+      const el = messageContainer.value;
+      // Check if scrolled near the bottom before the DOM update
+      // Threshold allows for slight variations
+      const scrollThreshold = 10; 
+      const isScrolledToBottom = el.scrollHeight - el.clientHeight <= el.scrollTop + scrollThreshold;
+
+      // If the user was scrolled to the bottom, keep them scrolled to the bottom
+      if (isScrolledToBottom) {
+         el.scrollTop = el.scrollHeight;
+      }
     }
   });
 };
