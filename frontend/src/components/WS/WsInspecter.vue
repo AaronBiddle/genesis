@@ -1,30 +1,30 @@
 <template>
-  <div class="ws-inspector">
-    <div class="header">
-      <h2>WebSocket Inspector</h2>
-      <div class="actions">
-        <button @click="clearOutgoing" class="btn-clear">Clear Outgoing</button>
-        <button @click="clearIncoming" class="btn-clear">Clear Incoming</button>
+  <div class="p-4 h-full flex flex-col bg-gray-50 text-gray-800 antialiased">
+    <div class="flex justify-between items-center pb-3 mb-3 border-b border-gray-200 flex-shrink-0">
+      <h2 class="text-lg font-semibold">WebSocket Inspector</h2>
+      <div class="actions space-x-2">
+        <button @click="clearOutgoing" class="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300">Clear Outgoing</button>
+        <button @click="clearIncoming" class="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300">Clear Incoming</button>
       </div>
     </div>
-    <div class="logs">
-      <section class="log-section">
-        <h3>Outgoing Messages ({{ outgoingLog.length }})</h3>
-        <div v-if="!outgoingLog.length" class="no-messages">No outgoing messages.</div>
-        <div v-else class="log-entries">
+    <div class="flex flex-col lg:flex-row gap-4 flex-grow overflow-hidden">
+      <section class="log-section flex flex-col h-full lg:w-1/2">
+        <h3 class="text-md font-medium mb-2 flex-shrink-0">Outgoing Messages ({{ outgoingLog.length }})</h3>
+        <div v-if="!outgoingLog.length" class="no-messages flex-grow flex items-center justify-center text-center text-gray-500 italic p-4 border border-gray-200 rounded bg-white">No outgoing messages.</div>
+        <div v-else class="log-entries flex-grow overflow-y-auto border border-gray-200 rounded p-2 bg-white space-y-3">
           <div v-for="(entry, idx) in limitedOutgoing" :key="idx" class="log-entry">
-            <div class="timestamp">{{ formatTime(entry.timestamp) }}</div>
-            <pre class="message">{{ formatJson({ route: entry.route, payload: entry.payload }) }}</pre>
+            <div class="timestamp text-xs text-gray-500 mb-1">{{ formatTime(entry.timestamp) }}</div>
+            <pre class="message font-mono text-sm bg-gray-100 p-2 rounded-sm whitespace-pre-wrap overflow-x-auto">{{ formatJson({ route: entry.route, payload: entry.payload }) }}</pre>
           </div>
         </div>
       </section>
-      <section class="log-section">
-        <h3>Incoming Messages ({{ incomingLog.length }})</h3>
-        <div v-if="!incomingLog.length" class="no-messages">No incoming messages.</div>
-        <div v-else class="log-entries">
+      <section class="log-section flex flex-col h-full lg:w-1/2">
+        <h3 class="text-md font-medium mb-2 flex-shrink-0">Incoming Messages ({{ incomingLog.length }})</h3>
+        <div v-if="!incomingLog.length" class="no-messages flex-grow flex items-center justify-center text-center text-gray-500 italic p-4 border border-gray-200 rounded bg-white">No incoming messages.</div>
+        <div v-else class="log-entries flex-grow overflow-y-auto border border-gray-200 rounded p-2 bg-white space-y-3">
           <div v-for="(entry, idx) in limitedIncoming" :key="idx" class="log-entry">
-            <div class="timestamp">{{ formatTime(entry.timestamp) }}</div>
-            <pre class="message">{{ formatJson(entry.message) }}</pre>
+            <div class="timestamp text-xs text-gray-500 mb-1">{{ formatTime(entry.timestamp) }}</div>
+            <pre class="message font-mono text-sm bg-gray-100 p-2 rounded-sm whitespace-pre-wrap overflow-x-auto">{{ formatJson(entry.message) }}</pre>
           </div>
         </div>
       </section>
@@ -62,61 +62,4 @@ const formatJson = (obj: any) => {
   }
 };
 </script>
-
-<style scoped>
-.ws-inspector {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  color: #333;
-  max-width: 100%;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.actions button {
-  margin-left: 8px;
-}
-
-.log-section {
-  margin-bottom: 24px;
-}
-
-.log-entries {
-  max-height: 300px;
-  overflow-y: auto;
-  border: 1px solid #e1e4e8;
-  border-radius: 4px;
-  padding: 8px;
-  background-color: #fafbfc;
-}
-
-.log-entry {
-  margin-bottom: 12px;
-}
-
-.timestamp {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 4px;
-}
-
-.message {
-  margin: 0;
-  background-color: #f6f8fa;
-  padding: 8px;
-  border-radius: 3px;
-  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-  font-size: 13px;
-}
-
-.no-messages {
-  text-align: center;
-  color: #666;
-  padding: 16px;
-}
-</style>
 

@@ -9,6 +9,7 @@ const AI_PATH = '/frontend/ai';
 export interface Message {
   role: string; // 'user' or 'assistant'
   content: string;
+  thinkingLog?: string; // Optional field for saved thinking process
 }
 
 // Request structure for generate_response (now targeting /chat)

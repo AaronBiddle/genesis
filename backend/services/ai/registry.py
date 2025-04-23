@@ -24,7 +24,6 @@ _PROVIDERS: Dict[str, ChatProvider] = {}
 
 
 def _load_providers() -> None:
-    print("--- Loading AI providers ---")
     here = Path(__file__).parent
     for py in here.glob("*.py"):
         if py.stem in {"__init__", "base", "registry"}:
@@ -48,7 +47,6 @@ def _load_providers() -> None:
 
             if found_provider_class:
                 ProviderClass: Type[ChatProvider] = found_provider_class # Type hint
-                print(f"  Found provider class {ProviderClass.__name__} in {py.name}")
                 inst = ProviderClass()
                 if hasattr(inst, 'name') and inst.name: # Double check instance has name
                     _PROVIDERS[inst.name] = inst
@@ -62,7 +60,7 @@ def _load_providers() -> None:
         except Exception as e:
             print(f"  ERROR loading provider from {py.name}: {e}") # Keep error reporting
 
-    print("--- Finished loading AI providers ---")
+
     print(f"Registry contains: {list(_PROVIDERS.keys())}")
 
 

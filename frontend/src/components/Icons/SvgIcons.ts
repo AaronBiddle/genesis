@@ -117,5 +117,13 @@ export const svgIcons: Map<string, string> = new Map([
           <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M7 17 L 10.5 8 M 10.5 8 L 14 17 M 8 14 H 13"/>
           <path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M16 8 V 17"/>
         </svg>`
+  ],
+  [
+    "tag",
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+          <path d="M8 7L4 12L8 17"/>
+          <path d="M16 7L20 12L16 17"/>
+          <path d="M10 17L14 7"/>
+        </svg>`
   ]
 ]); 

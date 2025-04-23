@@ -30,8 +30,8 @@
       <select
         id="model-select"
         v-model="selectedModel"
-        :disabled="modelsLoading || !!modelsError || Object.keys(availableModels).length === 0"
-        class="pl-3 pr-3 py-1.5 text-base border border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md"
+        :disabled="modelsLoading || !!modelsError || Object.keys(availableModels).length === 0 || isLoading"
+        class="pl-3 pr-3 py-1.5 text-base border border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md disabled:opacity-70 disabled:bg-gray-100"
       >
         <option v-if="modelsLoading" value="">Loading models...</option>
         <option v-else-if="modelsError" value="">Error loading models</option>
@@ -44,22 +44,55 @@
     </div>
     <div class="flex flex-col flex-grow h-full bg-gray-50 p-2 overflow-hidden">
       <div ref="messageContainer" class="flex-grow overflow-y-auto mb-2 space-y-2 pr-2">
-        <div v-for="(message, index) in messages" :key="index" :class="getMessageClass(message)">
+        <div v-for="(message, index) in messages" :key="index" :class="getMessageClass(message)" class="flex items-start">
           <div 
-            class="px-3 py-2 rounded-lg" 
+            class="px-3 py-2 rounded-lg relative max-w-full"
             :class="[
               message.role === 'user' 
                 ? 'bg-cyan-500 text-white ml-12' 
-                : 'bg-gray-200 text-gray-800 mr-12'
+                : 'bg-gray-200 text-gray-800'
             ]"
           >
             <template v-if="message.role === 'assistant'">
-              <MarkdownRenderer :source="message.content" />
+              <!-- Thinking Section (Collapsible) -->
+              <div v-if="currentThinkingText.length > 0 && index === messages.length - 1" class="mb-2 border-b border-gray-300 pb-1">
+                <button 
+                  @click="isThinkingExpanded = !isThinkingExpanded"
+                  class="text-xs text-gray-500 hover:text-gray-700 flex items-center w-full text-left"
+                >
+                  <span class="font-medium">Thinking...</span>
+                  <!-- Chevron Icon -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-1 transition-transform duration-200" :class="{ 'rotate-90': isThinkingExpanded }" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+                <div v-show="isThinkingExpanded" class="mt-1">
+                  <pre class="text-xs text-gray-500 font-mono whitespace-pre-wrap bg-gray-100 p-1 rounded">{{ currentThinkingText }}</pre>
+                </div>
+              </div>
+              <!-- Main Assistant Content -->
+              <template v-if="!message.isRawText">
+                 <MarkdownRenderer :source="message.content" />
+              </template>
+              <template v-else>
+                <pre class="text-xs font-mono whitespace-pre-wrap bg-gray-100 p-1 rounded mt-1">{{ message.content }}</pre>
+              </template>
             </template>
             <template v-else>
               <div class="whitespace-pre-wrap">{{ message.content }}</div>
             </template>
           </div>
+          <!-- Conditionally render the button ONLY for assistant messages, outside the bubble -->
+          <button
+            v-if="message.role === 'assistant'"
+            @click="message.isRawText = !message.isRawText"
+            class="p-0.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-600 hover:text-gray-800 z-10 sticky flex-shrink-0 ml-1 mr-12"
+            :title="message.isRawText ? 'Show Rendered Markdown' : 'Show Raw Text'"
+            style="top: 4px;"
+          >
+            <span v-if="message.isRawText" v-html="svgIcons.get('eye')"></span>
+            <span v-else v-html="svgIcons.get('tag')"></span>
+          </button>
         </div>
       </div>
       <div class="pt-2"> 
@@ -77,27 +110,32 @@
               'border border-black rounded-l-md': !isInputAreaFocused, 
               'border-2 border-cyan-500 rounded-l-md': isInputAreaFocused 
             }"
-            @keydown.enter.exact.prevent="sendMessage"
+            @keydown.enter.exact.prevent="isLoading ? cancelStream() : sendMessage()"
             :disabled="isLoading"
             rows="4"
           ></textarea>
           <button
             ref="sendButtonRef"
-            @click="sendMessage"
-            :disabled="!newMessage.trim() || isLoading"
-            class="bg-cyan-500 text-white px-3 py-2 hover:bg-cyan-600 hover:border-cyan-600 disabled:bg-gray-300 flex items-center justify-center self-stretch outline-none"
-            :class="{ 
-              'border border-l-0 border-black rounded-r-md': !isInputAreaFocused, 
-              'border-2 border-l-0 border-cyan-500 rounded-r-md': isInputAreaFocused 
-            }"
+            @click="isLoading ? cancelStream() : sendMessage()"
+            :disabled="!newMessage.trim() && !isLoading"
+            class="text-white px-3 py-2 flex items-center justify-center self-stretch outline-none bg-cyan-500 hover:bg-cyan-600 disabled:bg-gray-300 disabled:hover:bg-gray-300"
+            :class="[
+              {
+                'border border-l-0 border-black rounded-r-md': !isInputAreaFocused, 
+                'border-2 border-l-0 border-cyan-500 rounded-r-md': isInputAreaFocused
+              }
+            ]"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6">
+            <svg v-if="isLoading" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6 text-red-400">
+              <path fill-rule="evenodd" d="M4.5 7.5a3 3 0 013-3h9a3 3 0 013 3v9a3 3 0 01-3 3h-9a3 3 0 01-3-3v-9z" clip-rule="evenodd" />
+            </svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6">
               <path
                 fill-rule="evenodd"
                 d="M3 16.5 L12 16.5 L12 22.5 L21 12 L12 1.5 L12 7.5 L3 7.5 Z"
                 clip-rule="evenodd"
                 stroke="currentColor"
-                stroke-width="1.5" 
+                stroke-width="1.5"
                 stroke-linecap="round"
                 stroke-linejoin="round"
               />
@@ -113,15 +151,26 @@
 import { ref, nextTick, onMounted, computed } from 'vue';
 import MarkdownRenderer from '@/components/Markdown/MarkdownRenderer.vue';
 import {
-  generateResponse,
   getModels,
-  type Message as AIMessage,
-  type ChatRequestData,
-  type ChatReply,
+  type Message as AIMessageBase,
   type GetModelsResponse,
   type ModelDetails
 } from '@/services/HTTP/HttpAIClient';
 import { readFile, writeFile } from '@/services/HTTP/HttpFileClient';
+
+// Import WebSocket client and types
+import { WsAiClient } from '@/services/WS/WsAiClient';
+import type { AiChatPayload } from '@/services/WS/WsAiClient';
+import type { InteractionMessage } from '@/services/WS/types';
+
+// Import SVG Icons
+import { svgIcons } from '@/components/Icons/SvgIcons';
+
+// Define extended message type locally
+interface AIMessage extends AIMessageBase {
+  isRawText?: boolean;
+  thinkingLog?: string;
+}
 
 const props = defineProps<{
   log: (namespace: string, message: string, isError?: boolean) => void;
@@ -134,9 +183,14 @@ const messages = ref<AIMessage[]>([]);
 const newMessage = ref('');
 const messageContainer = ref<HTMLElement | null>(null);
 const isLoading = ref(false);
-const isInputAreaFocused = ref(false); // State for combined focus
-const textareaRef = ref<HTMLTextAreaElement | null>(null); // Ref for textarea
-const sendButtonRef = ref<HTMLButtonElement | null>(null); // Ref for button
+const isInputAreaFocused = ref(false);
+const textareaRef = ref<HTMLTextAreaElement | null>(null);
+const sendButtonRef = ref<HTMLButtonElement | null>(null);
+const currentInteractionId = ref<number | null>(null);
+
+// State for thinking process visualization
+const currentThinkingText = ref<string>('');
+const isThinkingExpanded = ref<boolean>(false);
 
 // State for current file context
 const currentFileName = ref<string | null>(null);
@@ -154,51 +208,120 @@ const modelsLoading = ref(true);
 const modelsError = ref<string | null>(null);
 
 const addMessage = (content: string, role: 'user' | 'assistant') => {
-  messages.value.push({ content, role });
+  messages.value.push({ content, role, isRawText: false });
+  scrollToBottom();
+};
+
+// Helper to update the last assistant message or add a new one
+const updateAssistantMessage = (chunk: string) => {
+  if (messages.value.length > 0 && messages.value[messages.value.length - 1].role === 'assistant') {
+    const lastMessage = messages.value[messages.value.length - 1];
+    lastMessage.content += chunk;
+    if (lastMessage.isRawText === undefined) {
+      lastMessage.isRawText = false;
+    }
+  } else {
+    addMessage(chunk, 'assistant');
+  }
+  scrollToBottom();
+};
+
+// Helper to scroll message container only if user is near the bottom
+const scrollToBottom = () => {
   nextTick(() => {
     if (messageContainer.value) {
-      messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
+      const el = messageContainer.value;
+      const scrollThreshold = 10; 
+      const isScrolledToBottom = el.scrollHeight - el.clientHeight <= el.scrollTop + scrollThreshold;
+
+      if (isScrolledToBottom) {
+         el.scrollTop = el.scrollHeight;
+      }
     }
   });
 };
 
 const sendMessage = async () => {
   const text = newMessage.value.trim();
-  if (!text || isLoading.value) return;
+  if (!text || currentInteractionId.value !== null) return;
 
   addMessage(text, 'user');
   newMessage.value = '';
   isLoading.value = true;
+  addMessage('', 'assistant'); 
 
   try {
-    const requestData: ChatRequestData = {
+    const payload: AiChatPayload = {
       model: selectedModel.value,
-      messages: messages.value.map(m => ({ role: m.role, content: m.content })),
+      messages: messages.value
+        .slice(0, -1)
+        .map(m => ({ role: m.role, content: m.content })),
+      stream: true,
     };
 
-    const response: ChatReply = await generateResponse(requestData);
+    props.log(NS, `Sending WS request: ${JSON.stringify(payload.model)}`);
 
-    if (response.text) {
-      addMessage(response.text, 'assistant');
+    const interactionId = await WsAiClient.sendChatMessage(
+      payload,
+      (message: InteractionMessage) => {
+        if (message.error) {
+          props.log(NS, `WS Error: ${message.error}`, true);
+          updateAssistantMessage(`\n\n--- Error: ${message.error} ---`);
+          isLoading.value = false;
+          currentInteractionId.value = null;
+          currentThinkingText.value = '';
+          isThinkingExpanded.value = false;
+        } else if (message.thinking) {
+          currentThinkingText.value += message.thinking;
+        } else if (message.text) {
+          updateAssistantMessage(message.text);
+        } else if (message.meta) {
+          props.log(NS, `WS Stream finished. Meta: ${JSON.stringify(message.meta)}`);
+          isLoading.value = false;
+          currentInteractionId.value = null;
+        }
+      }
+    );
+
+    if (interactionId !== null) {
+      props.log(NS, `WS Interaction started with ID: ${interactionId}`);
+      currentInteractionId.value = interactionId;
     } else {
-      addMessage("Sorry, I couldn't generate a response.", 'assistant');
-      console.error('AI response missing text:', response);
+      props.log(NS, "Failed to start WS interaction - connection issue?", true);
+      messages.value.pop();
+      addMessage("Error: Could not connect to the AI service.", 'assistant');
+      isLoading.value = false;
     }
+
   } catch (error: any) {
-    console.error('Error calling AI service:', error);
-    addMessage(`Error: ${error.message || 'Failed to get response from AI.'}`, 'assistant');
-  } finally {
+    console.error('Error calling WsAiClient.sendChatMessage:', error);
+    props.log(NS, `Error sending message: ${error.message}`, true);
+    messages.value.pop();
+    addMessage(`Error: ${error.message || 'Failed to send message.'}`, 'assistant');
     isLoading.value = false;
+    currentInteractionId.value = null;
   }
 };
 
-// --- Focus Handling for Input Area ---
+const cancelStream = () => {
+  if (currentInteractionId.value !== null) {
+    props.log(NS, `Cancelling WS Interaction ID: ${currentInteractionId.value}`);
+    const cancelled = WsAiClient.cancelChat(currentInteractionId.value);
+    if (cancelled) {
+        props.log(NS, `Cancellation request sent for ID: ${currentInteractionId.value}`);
+    } else {
+        props.log(NS, `Failed to find interaction ID ${currentInteractionId.value} to cancel.`, true);
+    }
+    isLoading.value = false;
+    currentInteractionId.value = null;
+  }
+};
+
 const handleFocusIn = () => {
   isInputAreaFocused.value = true;
 };
 
 const handleFocusOut = () => {
-  // Use setTimeout to allow focus to shift within the group before checking
   setTimeout(() => {
     if (document.activeElement !== textareaRef.value && 
         document.activeElement !== sendButtonRef.value) {
@@ -206,17 +329,15 @@ const handleFocusOut = () => {
     }
   }, 0);
 };
-// --- End Focus Handling ---
 
 const getMessageClass = (message: AIMessage) => {
   return message.role === 'user' ? 'flex justify-end' : 'flex justify-start';
 };
 
-// --- Toolbar Button Stubs ---
 function handleNewClick() {
   props.log(NS, '"New Chat" button clicked');
-  messages.value = []; // Clear message history
-  newMessage.value = ''; // Optional: clear the input field as well
+  messages.value = [];
+  newMessage.value = '';
   currentFileName.value = null;
   currentDirectoryPath.value = null;
   currentFileMount.value = null;
@@ -226,7 +347,6 @@ function handleNewClick() {
 function handleOpenClick() {
   props.log(NS, '"Open Chat" button clicked');
   const launchOptions: any = { mode: 'open' };
-  // Pass the current path if available
   if (currentFileMount.value && currentDirectoryPath.value) {
     launchOptions.initialMount = currentFileMount.value;
     launchOptions.initialPath = currentDirectoryPath.value;
@@ -241,7 +361,7 @@ function handleSaveClick() {
   props.log(NS, '"Save Chat" button clicked');
   if (!canSaveDirectly.value) {
     props.log(NS, 'Save button clicked, but no valid file context exists.', true);
-    return; // Should not happen if button is disabled correctly, but good practice
+    return;
   }
 
   const mount = currentFileMount.value!;
@@ -251,20 +371,26 @@ function handleSaveClick() {
 
   props.log(NS, `Attempting to save directly to: Mount=${mount}, Path=${fullPath}`);
   try {
-    const contentToSave = JSON.stringify(messages.value, null, 2);
-    writeFile(mount, fullPath, contentToSave); // Note: await is removed as it's not strictly needed here if we don't block UI
+    const messagesToSave = JSON.parse(JSON.stringify(messages.value));
+    if (messagesToSave.length > 0) {
+      const lastMessage = messagesToSave[messagesToSave.length - 1];
+      if (lastMessage.role === 'assistant' && currentThinkingText.value) {
+        lastMessage.thinkingLog = currentThinkingText.value;
+        props.log(NS, `Adding thinkingLog to the last message for saving.`);
+      }
+    }
+
+    const contentToSave = JSON.stringify(messagesToSave, null, 2);
+    writeFile(mount, fullPath, contentToSave);
     props.log(NS, `Successfully initiated save to ${fullPath}`);
-    // Optionally, you could add tracking for unsaved changes and reset it here
   } catch (error: any) {
     props.log(NS, `Error saving chat file directly to ${fullPath}: ${error.message}`, true);
-    // Optionally show user error
   }
 }
 
 function handleSaveAsClick() {
   props.log(NS, '"Save Chat As" button clicked');
   const launchOptions: any = { mode: 'save' };
-  // Pass the current path if available
   if (currentFileMount.value && currentDirectoryPath.value) {
     launchOptions.initialMount = currentFileMount.value;
     launchOptions.initialPath = currentDirectoryPath.value;
@@ -274,14 +400,12 @@ function handleSaveAsClick() {
   }
   props.newWindow('file-manager', launchOptions);
 }
-// --- End Toolbar Button Stubs ---
 
-// --- File Handling --- 
 interface FileMessagePayload {
   mode: 'open' | 'save';
   mount: string;
-  path: string; // Directory path
-  name?: string; // Filename (present in 'open' and 'save' confirmations)
+  path: string;
+  name?: string;
 }
 
 interface FileMessage {
@@ -297,29 +421,56 @@ async function handleMessage(senderId: number, message: FileMessage | any) {
 
     if (payload.mode === 'open' && payload.name) {
       props.log(NS, `File Manager response (Open): Mount=${payload.mount}, Path=${payload.path}, Name=${payload.name}`);
-      const fullPath = `${payload.path}/${payload.name}`.replace('//', '/'); // Basic handling for root
+      const fullPath = `${payload.path}/${payload.name}`.replace('//', '/');
       try {
         const fileContent = await readFile(payload.mount, fullPath);
-        const loadedMessages = JSON.parse(fileContent);
-        // Basic validation: Check if it's an array
-        if (Array.isArray(loadedMessages)) {
+        const loadedMessagesRaw = JSON.parse(fileContent);
+        if (Array.isArray(loadedMessagesRaw)) {
+          const loadedMessages: AIMessage[] = loadedMessagesRaw.map((msg: any) => ({
+              ...msg,
+              isRawText: false
+          }));
+
           messages.value = loadedMessages;
           currentFileMount.value = payload.mount;
           currentDirectoryPath.value = payload.path;
           currentFileName.value = payload.name;
+
+          currentThinkingText.value = '';
+          isThinkingExpanded.value = false;
+          const lastLoadedMessage = messages.value[messages.value.length - 1];
+          if (lastLoadedMessage && lastLoadedMessage.role === 'assistant' && lastLoadedMessage.thinkingLog) {
+            currentThinkingText.value = lastLoadedMessage.thinkingLog;
+            props.log(NS, `Loaded thinkingLog from last message.`);
+          } else {
+            props.log(NS, `No thinkingLog found in the last message or it was empty.`);
+            if (lastLoadedMessage && lastLoadedMessage.role === 'assistant') {
+               delete lastLoadedMessage.thinkingLog;
+             }
+          }
+
           props.log(NS, `Successfully loaded chat history from ${fullPath}`);
+          scrollToBottom();
         } else {
           throw new Error('Invalid chat history format in file.');
         }
       } catch (error: any) {
         props.log(NS, `Error opening/reading chat file ${fullPath}: ${error.message}`, true);
-        // Optionally clear state or show user error
       }
     } else if (payload.mode === 'save' && payload.name) {
       props.log(NS, `File Manager response (Save): Mount=${payload.mount}, Path=${payload.path}, Name=${payload.name}`);
       const fullPath = `${payload.path}/${payload.name}`.replace('//', '/');
       try {
-        const contentToSave = JSON.stringify(messages.value, null, 2); // Pretty print JSON
+        const messagesToSave = JSON.parse(JSON.stringify(messages.value));
+        if (messagesToSave.length > 0) {
+          const lastMessage = messagesToSave[messagesToSave.length - 1];
+          if (lastMessage.role === 'assistant' && currentThinkingText.value) {
+            lastMessage.thinkingLog = currentThinkingText.value;
+            props.log(NS, `Adding thinkingLog to the last message for saving (Save As).`);
+          }
+        }
+
+        const contentToSave = JSON.stringify(messagesToSave, null, 2);
         await writeFile(payload.mount, fullPath, contentToSave);
         currentFileMount.value = payload.mount;
         currentDirectoryPath.value = payload.path;
@@ -327,7 +478,6 @@ async function handleMessage(senderId: number, message: FileMessage | any) {
         props.log(NS, `Successfully saved chat history to ${fullPath}`);
       } catch (error: any) {
         props.log(NS, `Error saving chat file to ${fullPath}: ${error.message}`, true);
-        // Optionally show user error
       }
     }
   } else {
@@ -335,16 +485,13 @@ async function handleMessage(senderId: number, message: FileMessage | any) {
   }
 }
 
-// Expose handleMessage for Window.vue
 defineExpose({ handleMessage });
-// --- End File Handling ---
 
 onMounted(async () => {
   modelsLoading.value = true;
   modelsError.value = null;
   try {
     const modelsArray: GetModelsResponse = await getModels();
-    // Convert array to map keyed by model.name
     const modelsMap: Record<string, ModelDetails> = {};
     modelsArray.forEach(model => { modelsMap[model.name] = model; });
     availableModels.value = modelsMap;
@@ -363,7 +510,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Optional: Add custom scrollbar styling if desired */
 .overflow-y-auto::-webkit-scrollbar {
   width: 6px;
 }
@@ -379,5 +525,15 @@ onMounted(async () => {
 
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
   background: #aaaaaa;
+}
+
+.icon-disabled {
+  filter: grayscale(100%);
+  opacity: 0.5;
+}
+
+button > span > svg {
+  width: 1rem;
+  height: 1rem;
 }
 </style> 
