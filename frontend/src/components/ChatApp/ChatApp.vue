@@ -44,9 +44,9 @@
     </div>
     <div class="flex flex-col flex-grow h-full bg-gray-50 p-2 overflow-hidden">
       <div ref="messageContainer" class="flex-grow overflow-y-auto mb-2 space-y-2 pr-2">
-        <div v-for="(message, index) in messages" :key="index" :class="getMessageClass(message)">
+        <div v-for="(message, index) in messages" :key="index" :class="getMessageClass(message)" class="flex items-start">
           <div 
-            class="px-3 py-2 rounded-lg relative"
+            class="px-3 py-2 rounded-lg relative max-w-full"
             :class="[
               message.role === 'user' 
                 ? 'bg-cyan-500 text-white ml-12' 
@@ -54,17 +54,6 @@
             ]"
           >
             <template v-if="message.role === 'assistant'">
-              <!-- Raw Text Toggle Button -->
-              <button
-                @click="message.isRawText = !message.isRawText"
-                class="absolute top-1 right-1 p-0.5 bg-gray-300 hover:bg-gray-400 rounded text-gray-600 hover:text-gray-800 z-10 sticky"
-                :title="message.isRawText ? 'Show Rendered Markdown' : 'Show Raw Text'"
-                style="top: 4px; right: 4px;"
-              >
-                <span v-if="message.isRawText" v-html="svgIcons.get('eye')"></span>
-                <span v-else v-html="svgIcons.get('tag')"></span>
-              </button>
-
               <!-- Thinking Section (Collapsible) -->
               <div v-if="currentThinkingText.length > 0 && index === messages.length - 1" class="mb-2 border-b border-gray-300 pb-1">
                 <button 
@@ -93,6 +82,17 @@
               <div class="whitespace-pre-wrap">{{ message.content }}</div>
             </template>
           </div>
+          <!-- Conditionally render the button ONLY for assistant messages, outside the bubble -->
+          <button
+            v-if="message.role === 'assistant'"
+            @click="message.isRawText = !message.isRawText"
+            class="p-0.5 bg-gray-300 hover:bg-gray-400 rounded text-gray-600 hover:text-gray-800 z-10 sticky ml-1 flex-shrink-0"
+            :title="message.isRawText ? 'Show Rendered Markdown' : 'Show Raw Text'"
+            style="top: 4px;"
+          >
+            <span v-if="message.isRawText" v-html="svgIcons.get('eye')"></span>
+            <span v-else v-html="svgIcons.get('tag')"></span>
+          </button>
         </div>
       </div>
       <div class="pt-2"> 
