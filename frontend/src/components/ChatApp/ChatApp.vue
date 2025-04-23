@@ -50,7 +50,7 @@
             :class="[
               message.role === 'user' 
                 ? 'bg-cyan-500 text-white ml-12' 
-                : 'bg-gray-200 text-gray-800 mr-12'
+                : 'bg-gray-200 text-gray-800'
             ]"
           >
             <template v-if="message.role === 'assistant'">
@@ -86,7 +86,7 @@
           <button
             v-if="message.role === 'assistant'"
             @click="message.isRawText = !message.isRawText"
-            class="p-0.5 bg-gray-300 hover:bg-gray-400 rounded text-gray-600 hover:text-gray-800 z-10 sticky ml-1 flex-shrink-0"
+            class="p-0.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-600 hover:text-gray-800 z-10 sticky flex-shrink-0 ml-1 mr-12"
             :title="message.isRawText ? 'Show Rendered Markdown' : 'Show Raw Text'"
             style="top: 4px;"
           >
