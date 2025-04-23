@@ -369,7 +369,18 @@ function handleSaveClick() {
 
   props.log(NS, `Attempting to save directly to: Mount=${mount}, Path=${fullPath}`);
   try {
-    const contentToSave = JSON.stringify(messages.value, null, 2);
+    // Create a deep copy to avoid mutating the original state
+    const messagesToSave = JSON.parse(JSON.stringify(messages.value));
+    // Add thinking log to the last message if it's an assistant message and thinking text exists
+    if (messagesToSave.length > 0) {
+      const lastMessage = messagesToSave[messagesToSave.length - 1];
+      if (lastMessage.role === 'assistant' && currentThinkingText.value) {
+        lastMessage.thinkingLog = currentThinkingText.value;
+        props.log(NS, `Adding thinkingLog to the last message for saving.`);
+      }
+    }
+
+    const contentToSave = JSON.stringify(messagesToSave, null, 2);
     writeFile(mount, fullPath, contentToSave); // Note: await is removed as it's not strictly needed here if we don't block UI
     props.log(NS, `Successfully initiated save to ${fullPath}`);
     // Optionally, you could add tracking for unsaved changes and reset it here
@@ -425,6 +436,20 @@ async function handleMessage(senderId: number, message: FileMessage | any) {
           currentFileMount.value = payload.mount;
           currentDirectoryPath.value = payload.path;
           currentFileName.value = payload.name;
+
+          // Check for and load thinkingLog from the last message
+          currentThinkingText.value = ''; // Clear previous thinking text
+          isThinkingExpanded.value = false; // Collapse by default
+          const lastLoadedMessage = messages.value[messages.value.length - 1];
+          if (lastLoadedMessage && lastLoadedMessage.role === 'assistant' && lastLoadedMessage.thinkingLog) {
+            currentThinkingText.value = lastLoadedMessage.thinkingLog;
+            // Optionally expand the thinking section automatically when loading
+            // isThinkingExpanded.value = true; 
+            props.log(NS, `Loaded thinkingLog from last message.`);
+          } else {
+            props.log(NS, `No thinkingLog found in the last message.`);
+          }
+
           props.log(NS, `Successfully loaded chat history from ${fullPath}`);
         } else {
           throw new Error('Invalid chat history format in file.');
@@ -437,7 +462,18 @@ async function handleMessage(senderId: number, message: FileMessage | any) {
       props.log(NS, `File Manager response (Save): Mount=${payload.mount}, Path=${payload.path}, Name=${payload.name}`);
       const fullPath = `${payload.path}/${payload.name}`.replace('//', '/');
       try {
-        const contentToSave = JSON.stringify(messages.value, null, 2); // Pretty print JSON
+        // Create a deep copy to avoid mutating the original state
+        const messagesToSave = JSON.parse(JSON.stringify(messages.value));
+        // Add thinking log to the last message if it's an assistant message and thinking text exists
+        if (messagesToSave.length > 0) {
+          const lastMessage = messagesToSave[messagesToSave.length - 1];
+          if (lastMessage.role === 'assistant' && currentThinkingText.value) {
+            lastMessage.thinkingLog = currentThinkingText.value;
+            props.log(NS, `Adding thinkingLog to the last message for saving (Save As).`);
+          }
+        }
+
+        const contentToSave = JSON.stringify(messagesToSave, null, 2); // Pretty print JSON
         await writeFile(payload.mount, fullPath, contentToSave);
         currentFileMount.value = payload.mount;
         currentDirectoryPath.value = payload.path;
