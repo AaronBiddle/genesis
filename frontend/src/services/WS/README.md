@@ -43,23 +43,38 @@ The `WsAiClient` object provides the following properties and methods:
   - `callback`: An `InteractionCallback` function (imported from `./types`) that will be called with incremental responses or the final result related to this interaction.
   - Returns a `Promise` that resolves to a unique `number` ID for the interaction if the message was sent successfully (i.e., connected), otherwise resolves to `null`.
   - Example:
+
     ```typescript
     const interactionId = await WsAiClient.sendChatMessage(
       {
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: "Hello, AI!" }],
+        model: "gpt-4-turbo",
+        messages: [
+          {
+            role: "user",
+            content:
+              "Explain the difference between WebSockets and HTTP long-polling.",
+          },
+        ],
+        system_prompt:
+          "You are a helpful assistant explaining technical concepts clearly.",
         stream: true,
+        temperature: 0.7,
       },
       (message) => {
         if (message.error) {
-          console.error("Chat failed:", message.error);
-        } else {
-          console.log("Received text:", message.text);
+          console.error("Chat error:", message.error);
+        } else if (message.thinking) {
+          console.log("AI is thinking:", message.thinking);
+        } else if (message.text) {
+          console.log("Received text chunk:", message.text);
+        } else if (message.meta) {
+          console.log("Chat finished. Metadata:", message.meta);
         }
       }
     );
+
     if (interactionId === null) {
-      console.error("Failed to start chat - not connected?");
+      console.error("Failed to start chat - WebSocket not connected?");
     }
     ```
 
