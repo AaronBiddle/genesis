@@ -30,8 +30,8 @@
       <select
         id="model-select"
         v-model="selectedModel"
-        :disabled="modelsLoading || !!modelsError || Object.keys(availableModels).length === 0"
-        class="pl-3 pr-3 py-1.5 text-base border border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md"
+        :disabled="modelsLoading || !!modelsError || Object.keys(availableModels).length === 0 || isLoading"
+        class="pl-3 pr-3 py-1.5 text-base border border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md disabled:opacity-70 disabled:bg-gray-100"
       >
         <option v-if="modelsLoading" value="">Loading models...</option>
         <option v-else-if="modelsError" value="">Error loading models</option>
@@ -77,27 +77,32 @@
               'border border-black rounded-l-md': !isInputAreaFocused, 
               'border-2 border-cyan-500 rounded-l-md': isInputAreaFocused 
             }"
-            @keydown.enter.exact.prevent="sendMessage"
+            @keydown.enter.exact.prevent="isLoading ? cancelStream() : sendMessage()"
             :disabled="isLoading"
             rows="4"
           ></textarea>
           <button
             ref="sendButtonRef"
-            @click="sendMessage"
-            :disabled="!newMessage.trim() || isLoading"
-            class="bg-cyan-500 text-white px-3 py-2 hover:bg-cyan-600 hover:border-cyan-600 disabled:bg-gray-300 flex items-center justify-center self-stretch outline-none"
-            :class="{ 
-              'border border-l-0 border-black rounded-r-md': !isInputAreaFocused, 
-              'border-2 border-l-0 border-cyan-500 rounded-r-md': isInputAreaFocused 
-            }"
+            @click="isLoading ? cancelStream() : sendMessage()"
+            :disabled="!newMessage.trim() && !isLoading"
+            class="text-white px-3 py-2 flex items-center justify-center self-stretch outline-none bg-cyan-500 hover:bg-cyan-600 disabled:bg-gray-300 disabled:hover:bg-gray-300"
+            :class="[
+              {
+                'border border-l-0 border-black rounded-r-md': !isInputAreaFocused, 
+                'border-2 border-l-0 border-cyan-500 rounded-r-md': isInputAreaFocused
+              }
+            ]"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6">
+            <svg v-if="isLoading" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6 text-red-400">
+              <path fill-rule="evenodd" d="M4.5 7.5a3 3 0 013-3h9a3 3 0 013 3v9a3 3 0 01-3 3h-9a3 3 0 01-3-3v-9z" clip-rule="evenodd" />
+            </svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-6 w-6">
               <path
                 fill-rule="evenodd"
                 d="M3 16.5 L12 16.5 L12 22.5 L21 12 L12 1.5 L12 7.5 L3 7.5 Z"
                 clip-rule="evenodd"
                 stroke="currentColor"
-                stroke-width="1.5" 
+                stroke-width="1.5"
                 stroke-linecap="round"
                 stroke-linejoin="round"
               />
@@ -113,15 +118,17 @@
 import { ref, nextTick, onMounted, computed } from 'vue';
 import MarkdownRenderer from '@/components/Markdown/MarkdownRenderer.vue';
 import {
-  generateResponse,
   getModels,
   type Message as AIMessage,
-  type ChatRequestData,
-  type ChatReply,
   type GetModelsResponse,
   type ModelDetails
 } from '@/services/HTTP/HttpAIClient';
 import { readFile, writeFile } from '@/services/HTTP/HttpFileClient';
+
+// Import WebSocket client and types
+import { WsAiClient } from '@/services/WS/WsAiClient';
+import type { AiChatPayload } from '@/services/WS/WsAiClient';
+import type { InteractionMessage } from '@/services/WS/types';
 
 const props = defineProps<{
   log: (namespace: string, message: string, isError?: boolean) => void;
@@ -137,6 +144,7 @@ const isLoading = ref(false);
 const isInputAreaFocused = ref(false); // State for combined focus
 const textareaRef = ref<HTMLTextAreaElement | null>(null); // Ref for textarea
 const sendButtonRef = ref<HTMLButtonElement | null>(null); // Ref for button
+const currentInteractionId = ref<number | null>(null); // State for active stream ID
 
 // State for current file context
 const currentFileName = ref<string | null>(null);
@@ -155,6 +163,22 @@ const modelsError = ref<string | null>(null);
 
 const addMessage = (content: string, role: 'user' | 'assistant') => {
   messages.value.push({ content, role });
+  scrollToBottom();
+};
+
+// Helper to update the last assistant message or add a new one
+const updateAssistantMessage = (chunk: string) => {
+  if (messages.value.length > 0 && messages.value[messages.value.length - 1].role === 'assistant') {
+    messages.value[messages.value.length - 1].content += chunk;
+  } else {
+    // Should ideally not happen if we add an empty assistant message first
+    addMessage(chunk, 'assistant');
+  }
+  scrollToBottom();
+};
+
+// Helper to scroll message container
+const scrollToBottom = () => {
   nextTick(() => {
     if (messageContainer.value) {
       messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
@@ -164,31 +188,90 @@ const addMessage = (content: string, role: 'user' | 'assistant') => {
 
 const sendMessage = async () => {
   const text = newMessage.value.trim();
-  if (!text || isLoading.value) return;
+  // Prevent sending if already loading or no text
+  if (!text || currentInteractionId.value !== null) return;
 
   addMessage(text, 'user');
   newMessage.value = '';
   isLoading.value = true;
+  // Add an empty placeholder for the assistant's response
+  addMessage('', 'assistant'); 
 
   try {
-    const requestData: ChatRequestData = {
+    const payload: AiChatPayload = {
       model: selectedModel.value,
-      messages: messages.value.map(m => ({ role: m.role, content: m.content })),
+      messages: messages.value
+        .slice(0, -1) // Exclude the empty assistant message placeholder
+        .map(m => ({ role: m.role, content: m.content })),
+      stream: true, // Explicitly request streaming
+      // Add temperature or system prompt if needed, e.g.:
+      // temperature: 0.7,
+      // system_prompt: "You are helpful"
     };
 
-    const response: ChatReply = await generateResponse(requestData);
+    props.log(NS, `Sending WS request: ${JSON.stringify(payload.model)}`);
 
-    if (response.text) {
-      addMessage(response.text, 'assistant');
+    const interactionId = await WsAiClient.sendChatMessage(
+      payload,
+      (message: InteractionMessage) => {
+        // props.log(NS, `WS Message received: ${JSON.stringify(message)}`);
+        if (message.error) {
+          props.log(NS, `WS Error: ${message.error}`, true);
+          updateAssistantMessage(`\n\n--- Error: ${message.error} ---`);
+          isLoading.value = false;
+          currentInteractionId.value = null;
+        } else if (message.thinking) {
+          // Optional: display thinking status
+          // props.log(NS, `WS Thinking: ${message.thinking}`);
+        } else if (message.text) {
+          updateAssistantMessage(message.text);
+        } else if (message.meta) {
+          props.log(NS, `WS Stream finished. Meta: ${JSON.stringify(message.meta)}`);
+          isLoading.value = false;
+          currentInteractionId.value = null;
+          // Optional: Display metadata if needed
+          // updateAssistantMessage(`\n\n--- Meta: ${JSON.stringify(message.meta)} ---`);
+        }
+      }
+    );
+
+    if (interactionId !== null) {
+      props.log(NS, `WS Interaction started with ID: ${interactionId}`);
+      currentInteractionId.value = interactionId;
     } else {
-      addMessage("Sorry, I couldn't generate a response.", 'assistant');
-      console.error('AI response missing text:', response);
+      // Handle connection failure before starting
+      props.log(NS, "Failed to start WS interaction - connection issue?", true);
+      messages.value.pop(); // Remove the empty assistant placeholder
+      addMessage("Error: Could not connect to the AI service.", 'assistant');
+      isLoading.value = false;
     }
+
   } catch (error: any) {
-    console.error('Error calling AI service:', error);
-    addMessage(`Error: ${error.message || 'Failed to get response from AI.'}`, 'assistant');
-  } finally {
+    // Catch errors during the initial sendChatMessage call (e.g., setup issues)
+    console.error('Error calling WsAiClient.sendChatMessage:', error);
+    props.log(NS, `Error sending message: ${error.message}`, true);
+    messages.value.pop(); // Remove the empty assistant placeholder
+    addMessage(`Error: ${error.message || 'Failed to send message.'}`, 'assistant');
     isLoading.value = false;
+    currentInteractionId.value = null; // Ensure state is reset
+  }
+};
+
+const cancelStream = () => {
+  if (currentInteractionId.value !== null) {
+    props.log(NS, `Cancelling WS Interaction ID: ${currentInteractionId.value}`);
+    const cancelled = WsAiClient.cancelChat(currentInteractionId.value);
+    if (cancelled) {
+        props.log(NS, `Cancellation request sent for ID: ${currentInteractionId.value}`);
+        // Note: isLoading and currentInteractionId are reset in the callback when meta/error arrives
+        // Or potentially add a timeout to reset state if meta/error doesn't arrive after cancel
+    } else {
+        props.log(NS, `Failed to find interaction ID ${currentInteractionId.value} to cancel.`, true);
+    }
+    // We optimistically assume cancellation will eventually stop the stream and the callback will handle state.
+    // If the backend doesn't send meta/error on cancel, we might need explicit state reset here.
+    isLoading.value = false; // Reset loading state immediately on cancel attempt
+    currentInteractionId.value = null;
   }
 };
 
