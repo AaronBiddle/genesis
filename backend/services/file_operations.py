@@ -21,6 +21,11 @@ MOUNT_POINTS: List[Dict[str, str]] = [
         "access": "readwrite"
     },
     {
+        "name": "src/",
+        "path": "D:/projects/genesis/frontend/src", # Use forward slashes for consistency
+        "access": "readonly"
+    },
+    {
         "name": "D:/",
         "path": "D:/",
         "access": "readonly"
