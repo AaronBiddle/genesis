@@ -262,8 +262,8 @@ const sendMessage = async () => {
           props.log(NS, `WS Stream finished. Meta: ${JSON.stringify(message.meta)}`);
           isLoading.value = false;
           currentInteractionId.value = null;
-          currentThinkingText.value = ''; // Reset thinking text
-          isThinkingExpanded.value = false;
+          // currentThinkingText.value = ''; // Keep thinking text
+          // isThinkingExpanded.value = false; // Keep expansion state
           // Optional: Display metadata if needed
           // updateAssistantMessage(`\n\n--- Meta: ${JSON.stringify(message.meta)} ---`);
         }

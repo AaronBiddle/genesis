@@ -85,9 +85,9 @@ class DeepSeek(ChatProvider):
                         delta = chunk.get("choices", [{}])[0].get("delta", {})
 
                         # emit thinking tokens first if present
-                        thought = delta.get("thinking")
-                        if thought:
-                            yield {"thinking": thought}  # internal reasoning token
+                        reasoning_content = delta.get("reasoning_content")
+                        if reasoning_content:
+                            yield {"thinking": reasoning_content}  # internal reasoning token
 
                         # then emit user-visible content
                         text = delta.get("content")
