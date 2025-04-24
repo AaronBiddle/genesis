@@ -28,6 +28,17 @@
           Disable All
         </button>
       </div>
+
+      <div class="mt-2 flex items-center">
+        <input
+          type="checkbox"
+          id="store-disabled-toggle"
+          :checked="storeDisabledLogs"
+          @change="toggleStoreDisabledLogs"
+          class="mr-2 h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+        />
+        <label for="store-disabled-toggle" class="text-sm text-gray-700">Store logs from disabled namespaces</label>
+      </div>
     </div>
 
     <div class="flex-grow overflow-y-auto bg-white p-2 border border-gray-200 rounded shadow-inner" ref="logContainer">
@@ -52,7 +63,16 @@
 import { ref, watch, nextTick } from 'vue';
 import { useLogger } from './loggerStore';
 
-const { availableNamespaces, filteredLogs, isNamespaceEnabled, toggleNamespace, clearLogs, clearNamespaceSettings } = useLogger();
+const { 
+    availableNamespaces, 
+    filteredLogs, 
+    isNamespaceEnabled, 
+    toggleNamespace, 
+    clearLogs, 
+    clearNamespaceSettings,
+    storeDisabledLogs,
+    toggleStoreDisabledLogs
+} = useLogger();
 
 const logContainer = ref<HTMLElement | null>(null);
 
