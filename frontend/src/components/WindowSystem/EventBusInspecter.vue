@@ -78,7 +78,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import eventBus from './eventBus';
-import type { ListenerMap } from './eventBus'; // Import the type
 
 // Message tester state
 const fromWindowId = ref<number>(1);
