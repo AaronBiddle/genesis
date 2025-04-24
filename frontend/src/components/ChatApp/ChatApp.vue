@@ -518,7 +518,7 @@ async function handleMessage(senderId: number, message: FileMessage | SettingsMe
     }
   } else if (message.type === 'settings' && message.payload) {
     const payload = message.payload as SettingsMessagePayload;
-    props.log(NS, `Settings received: Temp=${payload.temperature}, SystemPrompt=${payload.systemPrompt ? '...' : '<empty>'}`);
+    props.log(NS, `Settings received: Temp=${payload.temperature}, SystemPrompt=${payload.systemPrompt ? payload.systemPrompt : '<empty>'}`);
     temperature.value = payload.temperature;
     systemPrompt.value = payload.systemPrompt;
     props.log(NS, 'Chat settings updated.');
