@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, shallowRef, watch } from 'vue';
+import { computed, ref, onMounted, shallowRef, watch, onUnmounted } from 'vue';
 import type { ManagedWindow } from '@/components/WindowSystem/WindowManager';
 import type { ComponentPublicInstance } from 'vue';
 import {
@@ -242,6 +242,8 @@ function logFromChild(namespace: string, message: string, isError: boolean = fal
   log(namespace, message, isError, props.windowData.id); // Add windowId automatically
 }
 
+const wasSubscribed = ref(false); // Track if a subscription was made
+
 // Lifecycle hook: Subscribe to eventBus if the component has handleMessage
 onMounted(() => {
   // We need to wait for the component instance to be available.
@@ -249,12 +251,21 @@ onMounted(() => {
   watch(appComponentRef, (newInstance) => {
     if (newInstance && typeof (newInstance as any).handleMessage === 'function') {
       const callback = (newInstance as any).handleMessage as (senderId: number, message: any) => void;
-      // Subscribe with keepAlive: false by default. 
+      // Subscribe with keepAlive: false by default.
       // If an app NEEDS persistent listening, it would need a different mechanism.
       eventBus.subscribe(props.windowData.id, callback, false);
+      wasSubscribed.value = true; // Mark that subscription occurred
       log(NS, `Window ${props.windowData.id}: Subscribed eventBus for component with handleMessage.`);
     }
   }, { immediate: true }); // immediate: true checks right away if ref is already set
+});
+
+// Lifecycle hook: Unsubscribe from eventBus if needed
+onUnmounted(() => {
+  if (wasSubscribed.value) {
+    eventBus.unsubscribe(props.windowData.id);
+    log(NS, `Window ${props.windowData.id}: Unsubscribed from eventBus.`);
+  }
 });
 
 </script>

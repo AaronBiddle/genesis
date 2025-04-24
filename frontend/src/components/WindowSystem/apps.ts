@@ -4,7 +4,7 @@ import DocumentEditor from '@/components/DocumentEditor/DocumentEditor.vue'; // 
 import HttpInspector from '@/components/HTTP/HttpInspector.vue'; // Import HttpInspector
 import FileServiceTester from '@/components/FileService/FileServiceTester.vue'; // Import FileServiceTester
 import FileManager from '@/components/FileService/FileManager.vue'; // Import FileManager
-import EventBusInspecter from './EventBusInspecter.vue'; // Import EventBusInspector
+import EventBusInspector from './EventBusInspector.vue'; // Import EventBusInspector
 import Logger from '@/components/Logger/Logger.vue'; // Import Logger
 import WindowInspecter from './WindowInspecter.vue'; // Import the new Window Inspector
 import ChatApp from '@/components/ChatApp/ChatApp.vue'; // Import ChatApp
@@ -104,10 +104,10 @@ export const apps: App[] = [
     category: 'Utilities',
   },
   {
-    id: "event-bus-inspecter",
-    title: "Event Bus Inspecter",
+    id: "event-bus-inspector",
+    title: "Event Bus Inspector",
     iconId: "bus", // Using the new bus icon
-    appComponent: EventBusInspecter,
+    appComponent: EventBusInspector,
     iconColor: 'text-orange-600', // Orange theme
     titleBarColor: 'bg-orange-200',
     titleColor: 'text-orange-900',
