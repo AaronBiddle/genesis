@@ -52,9 +52,9 @@ export const apps: App[] = [
     iconColor: 'text-cyan-600', // Cyan theme
     titleBarColor: 'bg-cyan-100',
     titleColor: 'text-cyan-900',
-    initialWidth: 450,
+    initialWidth: 480,
     initialHeight: 500,
-    minimumWidth: 450,
+    minimumWidth: 480,
   },
   {
     id: "icons",

@@ -41,6 +41,15 @@
         </option>
       </select>
       <span v-if="modelsError" class="text-red-600 text-sm">!</span>
+
+      <!-- Settings Button -->
+      <button
+        class="p-1 hover:bg-gray-200 rounded ml-auto"
+        @click="handleSettingsClick"
+        title="Settings"
+      >
+        <span v-html="svgIcons.get('settings')"></span>
+      </button>
     </div>
     <div class="flex flex-col flex-grow h-full bg-gray-50 p-2 overflow-hidden">
       <div ref="messageContainer" class="flex-grow overflow-y-auto mb-2 space-y-2 pr-2">
@@ -399,6 +408,11 @@ function handleSaveAsClick() {
      props.log(NS, `Opening file manager for Save As at default location.`);
   }
   props.newWindow('file-manager', launchOptions);
+}
+
+function handleSettingsClick() {
+  props.log(NS, '"Settings" button clicked');
+  // TODO: Implement settings functionality, maybe open a new window/modal
 }
 
 interface FileMessagePayload {
