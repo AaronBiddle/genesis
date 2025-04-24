@@ -253,9 +253,9 @@ onMounted(() => {
       const callback = (newInstance as any).handleMessage as (senderId: number, message: any) => void;
       // Subscribe with keepAlive: false by default.
       // If an app NEEDS persistent listening, it would need a different mechanism.
-      eventBus.subscribe(props.windowData.id, callback, false);
+      eventBus.subscribe(props.windowData.id, callback, props.windowData.appId, false);
       wasSubscribed.value = true; // Mark that subscription occurred
-      log(NS, `Window ${props.windowData.id}: Subscribed eventBus for component with handleMessage.`);
+      log(NS, `Window ${props.windowData.id}: Subscribed eventBus for component ${props.windowData.appId} with handleMessage.`);
     }
   }, { immediate: true }); // immediate: true checks right away if ref is already set
 });
