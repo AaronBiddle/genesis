@@ -14,7 +14,7 @@
           <label :for="`ns-${ns}`" class="text-sm text-gray-700">{{ ns }}</label>
         </div>
       </div>
-      <div class="mt-2 space-x-2">
+      <div class="mt-2 space-x-2 flex flex-wrap items-center gap-y-2">
         <button @click="clearLogs" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs">
           Clear Logs
         </button>
@@ -27,17 +27,18 @@
         <button @click="disableAll" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs">
           Disable All
         </button>
-      </div>
 
-      <div class="mt-2 flex items-center">
-        <input
-          type="checkbox"
-          id="store-disabled-toggle"
-          :checked="storeDisabledLogs"
-          @change="toggleStoreDisabledLogs"
-          class="mr-2 h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-        />
-        <label for="store-disabled-toggle" class="text-sm text-gray-700">Store logs from disabled namespaces</label>
+        <span class="inline-flex items-center ml-2">
+          <span class="text-sm text-gray-700 mr-1">Retro:</span>
+          <input
+            type="checkbox"
+            id="store-disabled-toggle"
+            :checked="storeDisabledLogs"
+            @change="toggleStoreDisabledLogs"
+            class="h-4 w-4 accent-black border-gray-300 rounded focus:ring-black focus:ring-offset-0"
+            title="Store all logs from disabled namespaces."
+          />
+        </span>
       </div>
     </div>
 
