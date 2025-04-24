@@ -12,7 +12,7 @@
         <div v-for="(entries, windowId) in eventBus.listeners" :key="windowId" class="border border-gray-200 rounded p-3 bg-white">
           <!-- Since subscribe overwrites, there's only one entry per windowId -->
           <div v-if="entries.length > 0" class="flex justify-between items-center">
-            <div class="font-medium">Window ID: {{ windowId }}</div>
+            <div class="font-medium">Window ID: {{ windowId }} ({{ entries[0].appName }})</div>
             <div class="text-sm flex items-center space-x-4">
                <span :class="entries[0].keepAlive ? 'text-green-600 font-semibold' : 'text-red-600'">
                  KeepAlive: {{ entries[0].keepAlive ? 'Yes' : 'No' }}
