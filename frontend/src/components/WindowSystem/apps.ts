@@ -29,6 +29,7 @@ export interface App {
   allowMultipleInstances?: boolean; // Can multiple windows of this app be open? (Default: true)
   category?: string; // For grouping (e.g., 'Utilities', 'Games', 'Development')
   initialPosition?: { x: number; y: number }; // Specific starting position? (For relative window positions like file dialogues)
+  showInLauncher?: boolean; // Whether the app should appear in the launcher menu (defaults to true)
 }
 
 export const apps: App[] = [  
@@ -65,7 +66,7 @@ export const apps: App[] = [
     titleColor: 'text-gray-800', // Tailwind class
     category: 'Utilities',
     initialWidth: 300,
-    initialHeight: 400
+    initialHeight: 400,
   },
   {
     id: "http-inspector",
