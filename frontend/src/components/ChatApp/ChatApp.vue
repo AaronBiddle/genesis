@@ -197,6 +197,11 @@ const textareaRef = ref<HTMLTextAreaElement | null>(null);
 const sendButtonRef = ref<HTMLButtonElement | null>(null);
 const currentInteractionId = ref<number | null>(null);
 
+// --- AI Settings ---
+const temperature = ref<number>(0.7);
+const systemPrompt = ref<string>('You are a helpful assistant.');
+// -------------------
+
 // State for thinking process visualization
 const currentThinkingText = ref<string>('');
 const isThinkingExpanded = ref<boolean>(false);
@@ -266,9 +271,11 @@ const sendMessage = async () => {
         .slice(0, -1)
         .map(m => ({ role: m.role, content: m.content })),
       stream: true,
+      temperature: temperature.value,
+      system_prompt: systemPrompt.value || undefined,
     };
 
-    props.log(NS, `Sending WS request: ${JSON.stringify(payload.model)}`);
+    props.log(NS, `Sending WS request: model=${payload.model}, temp=${payload.temperature}, sys_prompt=${payload.system_prompt ? 'Yes' : 'No'}`);
 
     const interactionId = await WsAiClient.sendChatMessage(
       payload,
@@ -412,7 +419,12 @@ function handleSaveAsClick() {
 
 function handleSettingsClick() {
   props.log(NS, '"Settings" button clicked');
-  // TODO: Implement settings functionality, maybe open a new window/modal
+  const launchOptions = {
+    initialTemperature: temperature.value,
+    initialSystemPrompt: systemPrompt.value,
+  };
+  props.log(NS, `Opening settings window with options: ${JSON.stringify(launchOptions)}`);
+  props.newWindow('chat-settings', launchOptions);
 }
 
 interface FileMessagePayload {
@@ -422,12 +434,22 @@ interface FileMessagePayload {
   name?: string;
 }
 
+interface SettingsMessagePayload {
+  temperature: number;
+  systemPrompt: string;
+}
+
 interface FileMessage {
   type: 'file';
   payload: FileMessagePayload;
 }
 
-async function handleMessage(senderId: number, message: FileMessage | any) {
+interface SettingsMessage {
+  type: 'settings';
+  payload: SettingsMessagePayload;
+}
+
+async function handleMessage(senderId: number, message: FileMessage | SettingsMessage | any) {
   props.log(NS, `Received message from window ${senderId}: type=${message?.type}`);
 
   if (message.type === 'file' && message.payload) {
@@ -494,6 +516,12 @@ async function handleMessage(senderId: number, message: FileMessage | any) {
         props.log(NS, `Error saving chat file to ${fullPath}: ${error.message}`, true);
       }
     }
+  } else if (message.type === 'settings' && message.payload) {
+    const payload = message.payload as SettingsMessagePayload;
+    props.log(NS, `Settings received: Temp=${payload.temperature}, SystemPrompt=${payload.systemPrompt ? '...' : '<empty>'}`);
+    temperature.value = payload.temperature;
+    systemPrompt.value = payload.systemPrompt;
+    props.log(NS, 'Chat settings updated.');
   } else {
     props.log(NS, `Received unhandled message type: ${message?.type ?? 'unknown'}`);
   }

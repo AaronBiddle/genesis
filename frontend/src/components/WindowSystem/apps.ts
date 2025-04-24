@@ -8,6 +8,7 @@ import EventBusInspector from './EventBusInspector.vue'; // Import EventBusInspe
 import Logger from '@/components/Logger/Logger.vue'; // Import Logger
 import WindowInspecter from './WindowInspecter.vue'; // Import the new Window Inspector
 import ChatApp from '@/components/ChatApp/ChatApp.vue'; // Import ChatApp
+import ChatSettings from '@/components/ChatApp/ChatSettings.vue'; // Import ChatSettings
 import AIServiceTester from '@/components/AI/AIServiceTester.vue'; // Import AI Service Tester
 import WsInspecter from '@/components/WS/WsInspecter.vue'; // Import WS Service Tester
 
@@ -55,6 +56,22 @@ export const apps: App[] = [
     initialWidth: 480,
     initialHeight: 500,
     minimumWidth: 480,
+  },
+  {
+    id: "chat-settings",
+    title: "Chat Settings",
+    iconId: "settings", // Use 'settings' icon
+    appComponent: ChatSettings,
+    iconColor: 'text-gray-600', // Neutral theme for settings
+    titleBarColor: 'bg-gray-100',
+    titleColor: 'text-gray-800',
+    initialWidth: 350,
+    initialHeight: 400,
+    minimumWidth: 300,
+    minimumHeight: 250,
+    showInLauncher: false, // Do not show in launcher
+    category: 'Utilities', // Keep as utility
+    allowMultipleInstances: false, // Probably only need one settings window per chat
   },
   {
     id: "icons",
