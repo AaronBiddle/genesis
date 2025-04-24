@@ -4,12 +4,12 @@
     
     <div class="mb-6 bg-gray-100 p-4 rounded-lg">
       <h3 class="text-md font-medium mb-2">Registered Listeners</h3>
-      <div v-if="Object.keys(listeners).length === 0" class="text-gray-500 italic">
+      <div v-if="Object.keys(eventBus.listeners).length === 0" class="text-gray-500 italic">
         No active listeners registered
       </div>
       <div v-else class="space-y-2">
-        <!-- Iterate through window IDs and their listener entries -->
-        <div v-for="(entries, windowId) in listeners" :key="windowId" class="border border-gray-200 rounded p-3 bg-white">
+        <!-- Iterate through window IDs and their listener entries from eventBus -->
+        <div v-for="(entries, windowId) in eventBus.listeners" :key="windowId" class="border border-gray-200 rounded p-3 bg-white">
           <!-- Since subscribe overwrites, there's only one entry per windowId -->
           <div v-if="entries.length > 0" class="flex justify-between items-center">
             <div class="font-medium">Window ID: {{ windowId }}</div>
@@ -76,18 +76,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed } from 'vue';
 import eventBus from './eventBus';
 import type { ListenerMap } from './eventBus'; // Import the type
-
-// Reactively track listeners from the event bus
-const listeners = ref<ListenerMap>({});
-
-// Update listeners when they change
-const updateListeners = () => {
-  // Use JSON parse/stringify for a deep copy to ensure reactivity
-  listeners.value = JSON.parse(JSON.stringify(eventBus.listeners)); 
-};
 
 // Message tester state
 const fromWindowId = ref<number>(1);
@@ -124,7 +115,7 @@ const sendMessage = () => {
       return;
     }
     
-    eventBus.publish(fromWindowId.value, toWindowId.value, messageObject);
+    eventBus.post(fromWindowId.value, toWindowId.value, messageObject);
     messageSent.value = true;
     
     // Reset after 2 seconds
@@ -135,28 +126,6 @@ const sendMessage = () => {
     messageError.value = `Error sending message: ${error instanceof Error ? error.message : 'Invalid JSON'}`;
   }
 };
-
-// Set up polling to update the listeners display
-let intervalId: number | null = null;
-
-onMounted(() => {
-  // Initial update
-  updateListeners();
-  
-  // Poll for changes every second
-  intervalId = window.setInterval(() => {
-    updateListeners();
-  }, 1000);
-  
-  // Note: watchEffect removed as polling is used for simplicity
-});
-
-onUnmounted(() => {
-  // Clean up interval on component unmount
-  if (intervalId !== null) {
-    clearInterval(intervalId);
-  }
-});
 </script>
 
 <style scoped>
