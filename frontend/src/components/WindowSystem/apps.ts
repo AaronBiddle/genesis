@@ -66,9 +66,9 @@ export const apps: App[] = [
     titleBarColor: 'bg-gray-100',
     titleColor: 'text-gray-800',
     initialWidth: 350,
-    initialHeight: 400,
-    minimumWidth: 300,
-    minimumHeight: 250,
+    initialHeight: 450,
+    minimumWidth: 350,
+    minimumHeight: 450,
     showInLauncher: false, // Do not show in launcher
     category: 'Utilities', // Keep as utility
     allowMultipleInstances: false, // Probably only need one settings window per chat

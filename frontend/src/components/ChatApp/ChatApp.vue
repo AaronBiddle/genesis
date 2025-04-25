@@ -275,7 +275,7 @@ const sendMessage = async () => {
       system_prompt: systemPrompt.value || undefined,
     };
 
-    props.log(NS, `Sending WS request: model=${payload.model}, temp=${payload.temperature}, sys_prompt=${payload.system_prompt ? 'Yes' : 'No'}`);
+    props.log(NS, `Sending WS request: model=${payload.model}, temp=${payload.temperature}, sys_prompt=${payload.system_prompt}`);
 
     const interactionId = await WsAiClient.sendChatMessage(
       payload,
