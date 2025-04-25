@@ -186,7 +186,8 @@ const props = defineProps<{
   newWindow: (appId: string, launchOptions?: any) => void;
 }>();
 
-const NS = 'ChatApp.vue'; // Namespace for logging
+import { getCurrentInstance } from 'vue';
+const NS = `ChatApp.vue:${getCurrentInstance()?.uid}`;
 
 const messages = ref<AIMessage[]>([]);
 const newMessage = ref('');
