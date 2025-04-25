@@ -37,9 +37,11 @@
 
     <!-- Content Area -->
     <div class="content-area flex-grow bg-white">
+      <!-- :key ensures Vue creates a distinct component instance for each window, preventing state reuse and ensuring proper lifecycle hooks -->
       <component 
         ref="appComponentRef"
         :is="windowData.appComponent" 
+        :key="windowData.id"
         :sendParent="sendParent"
         :getLaunchOptions="getLaunchOptions" 
         :newWindow="newWindow"
