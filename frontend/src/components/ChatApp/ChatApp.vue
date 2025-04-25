@@ -41,6 +41,15 @@
         </option>
       </select>
       <span v-if="modelsError" class="text-red-600 text-sm">!</span>
+
+      <!-- Settings Button -->
+      <button
+        class="p-1 hover:bg-gray-200 rounded ml-auto"
+        @click="handleSettingsClick"
+        title="Settings"
+      >
+        <span v-html="svgIcons.get('settings')"></span>
+      </button>
     </div>
     <div class="flex flex-col flex-grow h-full bg-gray-50 p-2 overflow-hidden">
       <div ref="messageContainer" class="flex-grow overflow-y-auto mb-2 space-y-2 pr-2">
@@ -177,7 +186,9 @@ const props = defineProps<{
   newWindow: (appId: string, launchOptions?: any) => void;
 }>();
 
-const NS = 'ChatApp.vue'; // Namespace for logging
+// import { getCurrentInstance } from 'vue';
+// const NS = `ChatApp.vue:${getCurrentInstance()?.uid}`;
+const NS = `ChatApp.vue`;
 
 const messages = ref<AIMessage[]>([]);
 const newMessage = ref('');
@@ -187,6 +198,11 @@ const isInputAreaFocused = ref(false);
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
 const sendButtonRef = ref<HTMLButtonElement | null>(null);
 const currentInteractionId = ref<number | null>(null);
+
+// --- AI Settings ---
+const temperature = ref<number>(0.7);
+const systemPrompt = ref<string>('You are a helpful assistant.');
+// -------------------
 
 // State for thinking process visualization
 const currentThinkingText = ref<string>('');
@@ -257,9 +273,11 @@ const sendMessage = async () => {
         .slice(0, -1)
         .map(m => ({ role: m.role, content: m.content })),
       stream: true,
+      temperature: temperature.value,
+      system_prompt: systemPrompt.value || undefined,
     };
 
-    props.log(NS, `Sending WS request: ${JSON.stringify(payload.model)}`);
+    props.log(NS, `Sending WS request: model=${payload.model}, temp=${payload.temperature}, sys_prompt=${payload.system_prompt}`);
 
     const interactionId = await WsAiClient.sendChatMessage(
       payload,
@@ -401,6 +419,16 @@ function handleSaveAsClick() {
   props.newWindow('file-manager', launchOptions);
 }
 
+function handleSettingsClick() {
+  props.log(NS, '"Settings" button clicked');
+  const launchOptions = {
+    initialTemperature: temperature.value,
+    initialSystemPrompt: systemPrompt.value,
+  };
+  props.log(NS, `Opening settings window with options: ${JSON.stringify(launchOptions)}`);
+  props.newWindow('chat-settings', launchOptions);
+}
+
 interface FileMessagePayload {
   mode: 'open' | 'save';
   mount: string;
@@ -408,12 +436,22 @@ interface FileMessagePayload {
   name?: string;
 }
 
+interface SettingsMessagePayload {
+  temperature: number;
+  systemPrompt: string;
+}
+
 interface FileMessage {
   type: 'file';
   payload: FileMessagePayload;
 }
 
-async function handleMessage(senderId: number, message: FileMessage | any) {
+interface SettingsMessage {
+  type: 'settings';
+  payload: SettingsMessagePayload;
+}
+
+async function handleMessage(senderId: number, message: FileMessage | SettingsMessage | any) {
   props.log(NS, `Received message from window ${senderId}: type=${message?.type}`);
 
   if (message.type === 'file' && message.payload) {
@@ -480,6 +518,12 @@ async function handleMessage(senderId: number, message: FileMessage | any) {
         props.log(NS, `Error saving chat file to ${fullPath}: ${error.message}`, true);
       }
     }
+  } else if (message.type === 'settings' && message.payload) {
+    const payload = message.payload as SettingsMessagePayload;
+    props.log(NS, `Settings received: Temp=${payload.temperature}, SystemPrompt=${payload.systemPrompt ? payload.systemPrompt : '<empty>'}`);
+    temperature.value = payload.temperature;
+    systemPrompt.value = payload.systemPrompt;
+    props.log(NS, 'Chat settings updated.');
   } else {
     props.log(NS, `Received unhandled message type: ${message?.type ?? 'unknown'}`);
   }

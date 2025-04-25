@@ -56,7 +56,10 @@ const groupedItems = computed<DropdownItem[]>(() => {
   const items: DropdownItem[] = [];
   const processedCategories = new Set<string>();
 
-  apps.forEach(app => {
+  // Filter apps first based on showInLauncher (defaulting to true if undefined)
+  const appsToShow = apps.filter(app => app.showInLauncher !== false);
+
+  appsToShow.forEach(app => { // Iterate over the filtered list
     const categoryName = app.category;
 
     if (categoryName) {

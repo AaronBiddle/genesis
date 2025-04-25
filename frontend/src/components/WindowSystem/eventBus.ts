@@ -5,6 +5,7 @@ import { log } from "@/components/Logger/loggerStore";
 export interface ListenerEntry {
   callback: Function;
   keepAlive: boolean;
+  appName: string;
 }
 
 export interface ListenerMap {
@@ -14,8 +15,8 @@ export interface ListenerMap {
 const eventBus = reactive({
   listeners: {} as ListenerMap, // Store listeners for each window ID
 
-  // Updated subscribe method to prioritize keepAlive
-  subscribe(windowId: number, callback: Function, keepAlive: boolean = false) {
+  // Updated subscribe method to prioritize keepAlive and include appName
+  subscribe(windowId: number, callback: Function, appName: string, keepAlive: boolean = false) {
     let finalKeepAlive = keepAlive;
 
     // Check if there's an existing listener entry for this window ID
@@ -26,12 +27,12 @@ const eventBus = reactive({
       finalKeepAlive = existingEntry.keepAlive || keepAlive;
     }
 
-    const newListenerEntry: ListenerEntry = { callback, keepAlive: finalKeepAlive };
+    const newListenerEntry: ListenerEntry = { callback, keepAlive: finalKeepAlive, appName };
     
     // Replace the existing listeners array with a new array containing only the new entry
     this.listeners[windowId] = [newListenerEntry];
     
-    log("eventBus.ts", `Window ${windowId} registered listener. Final keepAlive: ${finalKeepAlive}`);
+    log("eventBus.ts", `Window ${windowId} (${appName}) registered listener. Final keepAlive: ${finalKeepAlive}`);
   },
 
   // Updated unsubscribe method: removes based on windowId, respects keepAlive unless forced
@@ -40,11 +41,12 @@ const eventBus = reactive({
 
     if (entry) {
       if (force || !entry.keepAlive) {
+        const appName = entry.appName; // Get appName for logging
         delete this.listeners[windowId]; // Remove the entry for this window ID
-        log("eventBus.ts", `Removed listener for window ${windowId}. KeepAlive: ${entry.keepAlive}, Forced: ${force}`);
+        log("eventBus.ts", `Removed listener for window ${windowId} (${appName}). KeepAlive: ${entry.keepAlive}, Forced: ${force}`);
       } else {
         // KeepAlive is true and force is false
-        log("eventBus.ts", `Did not remove listener for window ${windowId} because keepAlive is true and force is false.`);
+        log("eventBus.ts", `Did not remove listener for window ${windowId} (${entry.appName}) because keepAlive is true and force is false.`);
       }
     } else {
       // No listener found for this ID

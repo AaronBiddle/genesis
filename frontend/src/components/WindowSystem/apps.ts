@@ -8,6 +8,7 @@ import EventBusInspector from './EventBusInspector.vue'; // Import EventBusInspe
 import Logger from '@/components/Logger/Logger.vue'; // Import Logger
 import WindowInspecter from './WindowInspecter.vue'; // Import the new Window Inspector
 import ChatApp from '@/components/ChatApp/ChatApp.vue'; // Import ChatApp
+import ChatSettings from '@/components/ChatApp/ChatSettings.vue'; // Import ChatSettings
 import AIServiceTester from '@/components/AI/AIServiceTester.vue'; // Import AI Service Tester
 import WsInspecter from '@/components/WS/WsInspecter.vue'; // Import WS Service Tester
 
@@ -29,6 +30,7 @@ export interface App {
   allowMultipleInstances?: boolean; // Can multiple windows of this app be open? (Default: true)
   category?: string; // For grouping (e.g., 'Utilities', 'Games', 'Development')
   initialPosition?: { x: number; y: number }; // Specific starting position? (For relative window positions like file dialogues)
+  showInLauncher?: boolean; // Whether the app should appear in the launcher menu (defaults to true)
 }
 
 export const apps: App[] = [  
@@ -51,9 +53,25 @@ export const apps: App[] = [
     iconColor: 'text-cyan-600', // Cyan theme
     titleBarColor: 'bg-cyan-100',
     titleColor: 'text-cyan-900',
-    initialWidth: 450,
+    initialWidth: 480,
     initialHeight: 500,
-    minimumWidth: 450,
+    minimumWidth: 480,
+  },
+  {
+    id: "chat-settings",
+    title: "Chat Settings",
+    iconId: "settings", // Use 'settings' icon
+    appComponent: ChatSettings,
+    iconColor: 'text-gray-600', // Neutral theme for settings
+    titleBarColor: 'bg-gray-100',
+    titleColor: 'text-gray-800',
+    initialWidth: 350,
+    initialHeight: 450,
+    minimumWidth: 350,
+    minimumHeight: 450,
+    showInLauncher: false, // Do not show in launcher
+    category: 'Utilities', // Keep as utility
+    allowMultipleInstances: false, // Probably only need one settings window per chat
   },
   {
     id: "icons",
@@ -65,7 +83,7 @@ export const apps: App[] = [
     titleColor: 'text-gray-800', // Tailwind class
     category: 'Utilities',
     initialWidth: 300,
-    initialHeight: 400
+    initialHeight: 400,
   },
   {
     id: "http-inspector",
