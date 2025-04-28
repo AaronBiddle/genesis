@@ -111,7 +111,7 @@ const groupedItems = computed<DropdownItem[]>(() => {
     </div>
 
     <!-- App Dropdown -->
-    <div v-if="showAppDropdown" class="absolute top-8 left-0 w-56 bg-gray-200 z-10 shadow-lg rounded-b max-h-96 overflow-y-auto"> <!-- Increased width, added shadow/rounding, max-height -->
+    <div v-if="showAppDropdown" class="absolute top-8 left-0 w-56 bg-gray-200 z-10 shadow-lg rounded-b max-h-[75vh] overflow-y-auto"> <!-- Increased max-height -->
        <ul class="py-1">
          <template v-for="(item, index) in groupedItems" :key="item.type === 'category' ? item.name : item.appData.id + '-' + index">
            <!-- Category Header -->
