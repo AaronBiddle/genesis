@@ -2,7 +2,7 @@
 import { ref, computed, provide } from 'vue';
 import { apps, type App } from './apps';
 import Window from './Window.vue';
-import { createWindowStore } from './WindowStoreFactory';
+import { createWindowStore } from './windowStoreFactory';
 import { svgIcons } from '@/components/Icons/SvgIcons';
 import { categoryConfigs, defaultCategoryIcon } from './categories';
 import { log } from '@/components/Logger/loggerStore';
@@ -20,11 +20,12 @@ const {
 } = createWindowStore('desktop');
 
 // Expose store API to descendant components (e.g. Window.vue)
-provide('desktopWindowStore', {
+provide('windowStore', {
   bringToFront,
   moveWindow,
   updateWindowBounds,
   closeWindow,
+  addWindow,
 });
 
 /* ------------------------------------------------------------------
