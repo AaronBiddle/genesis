@@ -19,7 +19,7 @@
           v-html="iconSvg"
         ></span>
         <span class="window-title pl-2 py-1" :class="windowData.titleColor || ''">
-          {{ windowData.title }}
+          {{ dynamicTitle }}
         </span>
       </div>
       <div class="window-controls self-stretch flex-shrink-0">
@@ -45,6 +45,7 @@
         :newWindow="newWindow"
         :log="logFromChild"
         @close="handleClose"
+        @update-title="handleUpdateTitle"
       />
     </div>
 
@@ -127,6 +128,9 @@ const initialHeight = ref(0);
 
 const appComponentRef = shallowRef<ComponentPublicInstance | null>(null);
 
+// Add a ref for the dynamic title
+const dynamicTitle = ref(props.windowData.title);
+
 const windowStyle = computed(() => ({
   left: `${props.windowData.x}px`,
   top: `${props.windowData.y}px`,
@@ -150,6 +154,7 @@ function startDrag(e: MouseEvent) {
   isDragging.value = true;
   dragOffsetX.value = e.clientX - props.windowData.x;
   dragOffsetY.value = e.clientY - props.windowData.y;
+  bringToFrontLocal();
   window.addEventListener('mousemove', doDrag);
   window.addEventListener('mouseup', stopDrag);
 }
@@ -221,6 +226,12 @@ function handleClose() {
   store.closeWindow(props.windowData.id);
 }
 
+// Handler for the updateTitle event
+function handleUpdateTitle(newTitle: string) {
+  dynamicTitle.value = newTitle;
+  log(NS, `Updated title for window ${props.windowData.id} to: ${newTitle}`);
+}
+
 function sendParent(message: any) {
   if (props.windowData.parentId !== undefined) {
     eventBus.post(props.windowData.id, props.windowData.parentId, message);
@@ -254,6 +265,11 @@ onMounted(() => {
       subscribed.value = true;
     }
   }, { immediate: true });
+
+  // Watch for changes in the initial title prop, in case it changes externally
+  watch(() => props.windowData.title, (newVal) => {
+      dynamicTitle.value = newVal;
+  });
 });
 
 onUnmounted(() => {

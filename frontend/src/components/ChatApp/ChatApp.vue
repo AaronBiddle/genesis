@@ -186,6 +186,9 @@ const props = defineProps<{
   newWindow: (appId: string, launchOptions?: any) => void;
 }>();
 
+// Define emits for title update
+const emit = defineEmits(['updateTitle']);
+
 // import { getCurrentInstance } from 'vue';
 // const NS = `ChatApp.vue:${getCurrentInstance()?.uid}`;
 const NS = `ChatApp.vue`;
@@ -363,6 +366,7 @@ function handleNewClick() {
   temperature.value = 0.7;
   systemPrompt.value = 'You are a helpful assistant.';
   props.log(NS, 'Chat history, file context, and settings reset to defaults.');
+  emit('updateTitle', 'New Chat'); // Update title for new chat
 }
 
 function handleOpenClick() {
@@ -509,6 +513,7 @@ async function handleMessage(senderId: number, message: FileMessage | SettingsMe
 
         props.log(NS, `Successfully loaded chat history from ${fullPath}`);
         scrollToBottom();
+        emit('updateTitle', `${payload.name} - Chat`); // Update title on open
       } catch (error: any) {
         props.log(NS, `Error opening/reading chat file ${fullPath}: ${error.message}`, true);
       }
@@ -533,6 +538,7 @@ async function handleMessage(senderId: number, message: FileMessage | SettingsMe
         currentDirectoryPath.value = payload.path;
         currentFileName.value = payload.name;
         props.log(NS, `Successfully saved chat history to ${fullPath}`);
+        emit('updateTitle', `${payload.name} - Chat`); // Update title on save as
       } catch (error: any) {
         props.log(NS, `Error saving chat file to ${fullPath}: ${error.message}`, true);
       }
@@ -567,6 +573,13 @@ onMounted(async () => {
     modelsError.value = error.message || 'Unknown error fetching models';
   } finally {
     modelsLoading.value = false;
+  }
+
+  // Set initial title
+  if (currentFileName.value) {
+    emit('updateTitle', `${currentFileName.value} - Chat`);
+  } else {
+    emit('updateTitle', 'Chat');
   }
 });
 

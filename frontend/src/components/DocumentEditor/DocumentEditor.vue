@@ -51,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { readFile, writeFile } from '@/services/HTTP/HttpFileClient';
 import { svgIcons } from '@/components/Icons/SvgIcons'; // Import svgIcons
 import MarkdownRenderer from '@/components/Markdown/MarkdownRenderer.vue'; // Import MarkdownRenderer
@@ -60,6 +60,8 @@ const props = defineProps<{
   newWindow: (appId: string, launchOptions?: any) => void;
   log: (namespace: string, message: string, isError?: boolean) => void;
 }>();
+
+const emit = defineEmits(['updateTitle']); // Define emits
 
 const NS = 'DocumentEditor.vue';
 
@@ -125,6 +127,7 @@ const handleMessage = async (senderId: number, message: FileMessage | any) => {
         hasUnsavedChanges.value = false;
         isLoadingFile = false;
         props.log(NS, `Successfully opened file: ${fullPath}`);
+        emit('updateTitle', `${fileName} - Document Editor`); // Emit title update
       } catch (error: any) {
         props.log(NS, `Error opening file ${fullPath}: ${error.message}`, true);
         isLoadingFile = false; // Ensure flag is reset on error too
@@ -146,6 +149,7 @@ const handleMessage = async (senderId: number, message: FileMessage | any) => {
         currentFileMount.value = payload.mount; // Update mount
         hasUnsavedChanges.value = false;
         props.log(NS, `Successfully saved file to: ${saveFullPath}`);
+        emit('updateTitle', `${fileName} - Document Editor`); // Emit title update
       } catch (error: any) {
         props.log(NS, `Error saving file to ${saveFullPath}: ${error.message}`, true);
       }
@@ -171,6 +175,7 @@ async function handleSaveClick() {
       await writeFile(mount, fullPath, content.value);
       hasUnsavedChanges.value = false; // Reset unsaved changes after saving
       props.log(NS, `Successfully saved file directly to: ${fullPath}`);
+      emit('updateTitle', `${name} - Document Editor`); // Emit title update
     } catch (error: any) {
       props.log(NS, `Error saving file directly to ${fullPath}: ${error.message}`, true);
     }
@@ -202,6 +207,7 @@ function createNewFile() {
   hasUnsavedChanges.value = false; // Reset unsaved changes when creating a new file
   // Keep currentDirectoryPath and currentFileMount to retain context
   props.log(NS, `Created new file, cleared editor content. Kept directory context: ${currentDirectoryPath.value} on mount ${currentFileMount.value}`);
+  emit('updateTitle', 'New File - Document Editor'); // Emit title update for new file
 }
 
 // Watch for content changes
@@ -216,6 +222,15 @@ watch(content, () => {
 
 // Expose the handleMessage function so Window.vue can access it
 defineExpose({ handleMessage });
+
+// Emit initial title on mount
+onMounted(() => {
+  if (currentFileName.value) {
+    emit('updateTitle', `${currentFileName.value} - Document Editor`);
+  } else {
+    emit('updateTitle', 'Document Editor'); // Default title if no file loaded initially
+  }
+});
 
 </script>
 
