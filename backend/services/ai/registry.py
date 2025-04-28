@@ -50,12 +50,6 @@ def _load_providers() -> None:
                 inst = ProviderClass()
                 if hasattr(inst, 'name') and inst.name: # Double check instance has name
                     _PROVIDERS[inst.name] = inst
-                    print(f"    Added provider {inst.name!r} to registry.")
-                else:
-                     print(f"    Provider class {ProviderClass.__name__} instance missing 'name' attribute or it is empty.")
-
-            else:
-                print(f"  No suitable provider class found in {py.name}.")
 
         except Exception as e:
             print(f"  ERROR loading provider from {py.name}: {e}") # Keep error reporting

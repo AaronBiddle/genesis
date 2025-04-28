@@ -359,7 +359,10 @@ function handleNewClick() {
   currentFileName.value = null;
   currentDirectoryPath.value = null;
   currentFileMount.value = null;
-  props.log(NS, 'Chat history and file context cleared.');
+  // Reset settings to defaults
+  temperature.value = 0.7;
+  systemPrompt.value = 'You are a helpful assistant.';
+  props.log(NS, 'Chat history, file context, and settings reset to defaults.');
 }
 
 function handleOpenClick() {
@@ -398,7 +401,9 @@ function handleSaveClick() {
       }
     }
 
-    const contentToSave = JSON.stringify(messagesToSave, null, 2);
+    // Include system prompt and temperature in saved data
+    const dataToSave = { systemPrompt: systemPrompt.value, temperature: temperature.value, messages: messagesToSave };
+    const contentToSave = JSON.stringify(dataToSave, null, 2);
     writeFile(mount, fullPath, contentToSave);
     props.log(NS, `Successfully initiated save to ${fullPath}`);
   } catch (error: any) {
@@ -462,36 +467,48 @@ async function handleMessage(senderId: number, message: FileMessage | SettingsMe
       const fullPath = `${payload.path}/${payload.name}`.replace('//', '/');
       try {
         const fileContent = await readFile(payload.mount, fullPath);
-        const loadedMessagesRaw = JSON.parse(fileContent);
-        if (Array.isArray(loadedMessagesRaw)) {
-          const loadedMessages: AIMessage[] = loadedMessagesRaw.map((msg: any) => ({
-              ...msg,
-              isRawText: false
-          }));
-
-          messages.value = loadedMessages;
-          currentFileMount.value = payload.mount;
-          currentDirectoryPath.value = payload.path;
-          currentFileName.value = payload.name;
-
-          currentThinkingText.value = '';
-          isThinkingExpanded.value = false;
-          const lastLoadedMessage = messages.value[messages.value.length - 1];
-          if (lastLoadedMessage && lastLoadedMessage.role === 'assistant' && lastLoadedMessage.thinkingLog) {
-            currentThinkingText.value = lastLoadedMessage.thinkingLog;
-            props.log(NS, `Loaded thinkingLog from last message.`);
-          } else {
-            props.log(NS, `No thinkingLog found in the last message or it was empty.`);
-            if (lastLoadedMessage && lastLoadedMessage.role === 'assistant') {
-               delete lastLoadedMessage.thinkingLog;
-             }
+        const parsed = JSON.parse(fileContent);
+        let loadedMessagesRaw: any[];
+        if (Array.isArray(parsed)) {
+          loadedMessagesRaw = parsed;
+        } else if (parsed && Array.isArray(parsed.messages)) {
+          loadedMessagesRaw = parsed.messages;
+          if (typeof parsed.systemPrompt === 'string') {
+            systemPrompt.value = parsed.systemPrompt;
+            props.log(NS, `Loaded system prompt from file.`);
           }
-
-          props.log(NS, `Successfully loaded chat history from ${fullPath}`);
-          scrollToBottom();
+          if (typeof parsed.temperature === 'number') {
+            temperature.value = parsed.temperature;
+            props.log(NS, `Loaded temperature from file.`);
+          }
         } else {
           throw new Error('Invalid chat history format in file.');
         }
+        const loadedMessages: AIMessage[] = loadedMessagesRaw.map((msg: any) => ({
+            ...msg,
+            isRawText: false
+        }));
+
+        messages.value = loadedMessages;
+        currentFileMount.value = payload.mount;
+        currentDirectoryPath.value = payload.path;
+        currentFileName.value = payload.name;
+
+        currentThinkingText.value = '';
+        isThinkingExpanded.value = false;
+        const lastLoadedMessage = messages.value[messages.value.length - 1];
+        if (lastLoadedMessage && lastLoadedMessage.role === 'assistant' && lastLoadedMessage.thinkingLog) {
+          currentThinkingText.value = lastLoadedMessage.thinkingLog;
+          props.log(NS, `Loaded thinkingLog from last message.`);
+        } else {
+          props.log(NS, `No thinkingLog found in the last message or it was empty.`);
+          if (lastLoadedMessage && lastLoadedMessage.role === 'assistant') {
+             delete lastLoadedMessage.thinkingLog;
+           }
+        }
+
+        props.log(NS, `Successfully loaded chat history from ${fullPath}`);
+        scrollToBottom();
       } catch (error: any) {
         props.log(NS, `Error opening/reading chat file ${fullPath}: ${error.message}`, true);
       }
@@ -508,7 +525,9 @@ async function handleMessage(senderId: number, message: FileMessage | SettingsMe
           }
         }
 
-        const contentToSave = JSON.stringify(messagesToSave, null, 2);
+        // Include system prompt and temperature in saved data for Save As
+        const dataToSave = { systemPrompt: systemPrompt.value, temperature: temperature.value, messages: messagesToSave };
+        const contentToSave = JSON.stringify(dataToSave, null, 2);
         await writeFile(payload.mount, fullPath, contentToSave);
         currentFileMount.value = payload.mount;
         currentDirectoryPath.value = payload.path;
