@@ -74,13 +74,8 @@ const hasUnsavedChanges = ref(false); // Track if content has been modified sinc
 
 // Computed property to determine if the save button should be disabled
 const isSaveDisabled = computed(() => {
-  const dir = currentDirectoryPath.value;
-  const name = currentFileName.value;
-  const mount = currentFileMount.value;
-  const changes = hasUnsavedChanges.value;
-  // Check specifically for null/undefined for directory path
-  const isDisabled = dir === null || !name || !mount || !changes;
-  return isDisabled;
+  // Only disable if there are no unsaved changes
+  return !hasUnsavedChanges.value;
 });
 
 // Get the eye icon SVG, remove fixed size/color classes for dynamic control
@@ -162,12 +157,12 @@ const handleMessage = async (senderId: number, message: FileMessage | any) => {
 
 // Function to handle the Save button click
 async function handleSaveClick() {
-  // Check if all necessary parts are available, consistent with isSaveDisabled
+  // Check if all necessary parts are available for a direct save
   const dir = currentDirectoryPath.value;
   const name = currentFileName.value;
   const mount = currentFileMount.value;
 
-  if (dir !== null && name && mount) { // Check dir !== null specifically
+  if (dir !== null && name && mount) { // Check if we have a path and name to save to
     // Reconstruct the full path for saving
     const fullPath = `${dir}/${name}`.replace('//', '/'); // Basic handling for potential double slash at root
 
@@ -179,11 +174,14 @@ async function handleSaveClick() {
     } catch (error: any) {
       props.log(NS, `Error saving file directly to ${fullPath}: ${error.message}`, true);
     }
-  } else {
-    // This block should ideally not be reachable if the button is enabled,
-    // but keep the log/fallback just in case.
-    props.log(NS, `Save clicked but state is invalid? Dir=${dir}, Name=${name}, Mount=${mount}. Opening save dialog.`, true);
+  } else if (hasUnsavedChanges.value) {
+    // If we have unsaved changes but no valid path/filename, trigger "Save As"
+    props.log(NS, `No filename set or invalid path. Triggering Save As. Dir=${dir}, Name=${name}, Mount=${mount}`);
     openFileManager('save');
+  } else {
+    // This case should theoretically not be reachable if the button follows isSaveDisabled,
+    // but log it just in case.
+    props.log(NS, `Save clicked but no unsaved changes? Dir=${dir}, Name=${name}, Mount=${mount}`);
   }
 }
 
