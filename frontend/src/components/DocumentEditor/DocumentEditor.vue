@@ -198,7 +198,7 @@ async function handleSaveClick() {
 }
 
 /* ------------------------------------------------------------------ */
-onMounted(() => emit('updateTitle', 'Document Editor'));
+onMounted(() => emit('updateTitle', 'Untitled - Document Editor'));
 </script>
 
 <style scoped>
