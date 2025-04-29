@@ -460,7 +460,7 @@ async function handleSaveClick() {
 /* ───────────────────── Toolbar miscellany ───────────────────── */
 function handleNewClick() {
   messages.value = [];
-  Object.assign(current, { mount: 'userdata/', dir: 'chats', name: null }); // Set default mount/dir
+  Object.assign(current, { name: null });
   temperature.value = 0.7;
   systemPrompt.value = 'You are a helpful assistant.';
   newMessage.value = ''; // Clear text area
@@ -488,6 +488,9 @@ defineExpose({ handleMessage });
 
 /* ───────────────────── onMounted ───────────────────── */
 onMounted(async () => {
+  // Set default mount/path when the component is first created
+  Object.assign(current, { mount: 'userdata/', dir: 'chats', name: null });
+
   try {
     const arr: GetModelsResponse = await getModels();
     arr.forEach(m => (availableModels.value[m.name] = m));
