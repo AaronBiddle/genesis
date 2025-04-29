@@ -72,6 +72,7 @@ import {
   onMounted,
   onUnmounted,
   inject,
+  provide,
 } from 'vue';
 import type { ComponentPublicInstance } from 'vue';
 import type { ManagedWindow } from './windowStoreFactory';
@@ -258,18 +259,88 @@ function logFromChild(ns: string, message: string, isError = false) {
    ------------------------------------------------------------------ */
 const subscribed = ref(false);
 
-onMounted(() => {
-  watch(appComponentRef, (inst) => {
-    if (inst && typeof (inst as any).handleMessage === 'function') {
-      eventBus.subscribe(props.windowData.id, (inst as any).handleMessage, props.windowData.appId, false);
-      subscribed.value = true;
-    }
-  }, { immediate: true });
+/* ------------------------------------------------------------ *
+ *  A.  Promise-based File-Dialog service                        *
+ * ------------------------------------------------------------ */
+interface FileDialogOptions {
+  mode: 'open' | 'save';
+  /** optional filters or hints */
+  mimeFilter?: string[];
+  suggestedName?: string;
+}
 
-  // Watch for changes in the initial title prop, in case it changes externally
-  watch(() => props.windowData.title, (newVal) => {
-      dynamicTitle.value = newVal;
+interface WindowBus {
+  requestFile: (
+    opts: FileDialogOptions,
+  ) => Promise<
+    | { cancelled: true }
+    | {
+        cancelled: false;
+        token: number;
+        mount: string;
+        path: string;
+        name: string;
+      }
+  >;
+}
+
+const pendingFilePromises = new Map<number, (r: any) => void>();
+let nextFileToken = 0;
+
+function requestFile(opts: FileDialogOptions) {
+  return new Promise<any>((resolve) => {
+    const token = nextFileToken++;
+    pendingFilePromises.set(token, resolve);
+    // Re-use the existing window-spawner
+    newWindow('file-manager', { token, ...opts });
   });
+}
+
+provide<WindowBus>('windowBus', { requestFile });
+
+function dispatchMessage(senderId: number, message: any) {
+  /* 1 ▸ Resolve File-Manager replies */
+  if (message?.type === 'file' && message?.payload?.token !== undefined) {
+    const { token } = message.payload;
+    const resolver = pendingFilePromises.get(token);
+    if (resolver) {
+      resolver({ cancelled: false, ...message.payload });
+      pendingFilePromises.delete(token);
+    }
+    return; // intercept handled
+  }
+
+  /* 2 ▸ Forward everything else to the child app (if present) */
+  const child = appComponentRef.value as any;
+  if (child && typeof child.handleMessage === 'function') {
+    child.handleMessage(senderId, message);
+  }
+}
+
+onMounted(() => {
+  watch(
+    appComponentRef,
+    (inst) => {
+      if (inst) {
+        eventBus.subscribe(
+          props.windowData.id,
+          dispatchMessage, // <-- use wrapper
+          props.windowData.appId,
+          false,
+        );
+        subscribed.value = true;
+      }
+    },
+    { immediate: true },
+  );
+
+  /* keep dynamicTitle in sync with external prop updates */
+  watch(
+    () => props.windowData.title,
+    (newVal) => {
+      dynamicTitle.value = newVal;
+    },
+  );
 });
 
 onUnmounted(() => {
