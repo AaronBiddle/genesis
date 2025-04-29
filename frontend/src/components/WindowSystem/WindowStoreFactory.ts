@@ -34,7 +34,7 @@ export function createWindowStore(scope = 'global') {
 
   /* ---------- stacking order management -------------------------- */
   const BASE_Z = 1                      // starting z‑index
-  const MAX_Z_LIMIT = 10_000            // compact once we cross this
+  const MAX_Z_LIMIT = 9999            // compact once we cross this
   let currentMaxZ = BASE_Z              // highest z currently in use
 
   /* ---------- layout constants ----------------------------------- */

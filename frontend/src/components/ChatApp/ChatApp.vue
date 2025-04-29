@@ -10,7 +10,7 @@
         <img src="@/components/Icons/icons8/icons8-open-file-80.png" alt="Open Chat" class="h-6 w-6" />
       </button>
       <button
-        class="p-1 hover:bg-gray-200 rounded ml-1 disabled:hover:bg-transparent"
+        class="p-1 hover:bg-gray-200 rounded ml-1"
         @click="handleSaveClick"
         :disabled="!isChatModified"
         title="Save Chat"
@@ -19,7 +19,7 @@
           src="@/components/Icons/icons8/icons8-save-80.png"
           alt="Save Chat"
           class="h-6 w-6"
-          :class="{ 'icon-disabled': !canSaveDirectly }"
+          :class="{ 'icon-disabled': !isChatModified }"
         />
       </button>
       <button class="p-1 hover:bg-gray-200 rounded ml-1" @click="saveAsDialog">
@@ -414,10 +414,6 @@ async function saveTo(mount: string, fullPath: string) {
   await writeFile(mount, fullPath, out);
   props.log(NS, `Saved to ${fullPath}`);
 
-  // Clear text area if its content was just saved
-  if (addedNewMessage) {
-    newMessage.value = '';
-  }
   // Update the initial state to reflect the saved state
   updateInitialState(messagesToSave);
 }
@@ -441,7 +437,7 @@ async function handleSaveClick() {
 /* ───────────────────── Toolbar miscellany ───────────────────── */
 function handleNewClick() {
   messages.value = [];
-  Object.assign(current, { dir: null, name: null, mount: null });
+  Object.assign(current, { mount: 'userdata/', dir: 'chats', name: null }); // Set default mount/dir
   temperature.value = 0.7;
   systemPrompt.value = 'You are a helpful assistant.';
   newMessage.value = ''; // Clear text area
