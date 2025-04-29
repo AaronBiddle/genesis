@@ -183,6 +183,8 @@ interface FileDialogOptions {
   mode: 'open' | 'save';
   mimeFilter?: string[];
   suggestedName?: string;
+  initialMount?: string;
+  initialPath?: string;
 }
 interface WindowBus {
   requestFile: (
@@ -366,9 +368,19 @@ function cancelStream() {
 
 /* ───────────────────── File‑dialog helpers ───────────────────── */
 async function openFileDialog() {
-  props.log(NS, 'Open dialog');
-  const res = await bus.requestFile({ mode: 'open', mimeFilter: ['application/json'] });
-  if (res.cancelled) return;
+  props.log(NS, 'Open dialog request');
+  const fileOpts: FileDialogOptions = {
+    mode: 'open',
+    mimeFilter: ['application/json'],
+    initialMount: current.mount ?? undefined,
+    initialPath: current.dir ?? undefined,
+  };
+  const res = await bus.requestFile(fileOpts);
+  if (res.cancelled) {
+    props.log(NS, 'Open dialog cancelled');
+    return;
+  }
+  props.log(NS, `Open dialog returned: mount=${res.mount}, path=${res.path}, name=${res.name}`);
   newMessage.value = ''; // Clear text area before loading
   try {
     const raw = await readFile(res.mount, `${res.path}/${res.name}`);
@@ -419,8 +431,19 @@ async function saveTo(mount: string, fullPath: string) {
 }
 
 async function saveAsDialog() {
-  const tgt = await bus.requestFile({ mode: 'save', suggestedName: current.name ?? 'chat.json' });
-  if (tgt.cancelled) return;
+  props.log(NS, 'Save As dialog request');
+  const fileOpts: FileDialogOptions = {
+    mode: 'save',
+    suggestedName: current.name ?? 'chat.json',
+    initialMount: current.mount ?? undefined,
+    initialPath: current.dir ?? undefined,
+  };
+  const tgt = await bus.requestFile(fileOpts);
+  if (tgt.cancelled) {
+    props.log(NS, 'Save As dialog cancelled');
+    return;
+  }
+  props.log(NS, `Save As dialog returned: mount=${tgt.mount}, path=${tgt.path}, name=${tgt.name}`);
   await saveTo(tgt.mount, `${tgt.path}/${tgt.name}`);
   Object.assign(current, { mount: tgt.mount, dir: tgt.path, name: tgt.name });
   emit('updateTitle', `${tgt.name} - Chat`);
