@@ -245,18 +245,23 @@ const modelsError = ref<string | null>(null);
 const initialSystemPrompt = ref('');
 const initialTemperature = ref<number | null>(null);
 const initialMessagesHash = ref('');
+const initialNewMessage = ref(''); // Track initial text area content
 
 // Helper to set the baseline state for modification tracking
-function updateInitialState(currentMessages: AIMessage[] = messages.value) {
+function updateInitialState(
+  currentMessages: AIMessage[] = messages.value,
+  currentNewMessage: string = newMessage.value, // Add param for text area
+) {
   initialSystemPrompt.value = systemPrompt.value;
   initialTemperature.value = temperature.value;
   initialMessagesHash.value = JSON.stringify(currentMessages);
+  initialNewMessage.value = currentNewMessage; // Store initial text area value
 }
 
 // Computed property to check if the chat has been modified
 const isChatModified = computed(() => {
-  // 1. Check if there is text in the input area
-  if (newMessage.value.trim()) {
+  // 1. Check if the text area content has changed from its initial state
+  if (newMessage.value !== initialNewMessage.value) {
     return true;
   }
   // 2. Check if settings have changed
@@ -370,7 +375,7 @@ function cancelStream() {
 async function openFileDialog() {
   props.log(NS, 'Open dialog request');
   const fileOpts: FileDialogOptions = {
-    mode: 'open',
+    mode: 'open', // Explicit type
     mimeFilter: ['application/json'],
     initialMount: current.mount ?? undefined,
     initialPath: current.dir ?? undefined,
@@ -381,7 +386,7 @@ async function openFileDialog() {
     return;
   }
   props.log(NS, `Open dialog returned: mount=${res.mount}, path=${res.path}, name=${res.name}`);
-  newMessage.value = ''; // Clear text area before loading
+  let loadedNewMessage = ''; // Variable to hold potentially loaded text
   try {
     const raw = await readFile(res.mount, `${res.path}/${res.name}`);
     const parsed = JSON.parse(raw);
@@ -399,35 +404,40 @@ async function openFileDialog() {
     // Check if the last message is a user message and restore it to the textarea
     if (loadedMessages.length > 0 && loadedMessages[loadedMessages.length - 1].role === 'user') {
       const lastMessage = loadedMessages.pop(); // Remove the last message
-      newMessage.value = lastMessage.content; // Set textarea content
+      loadedNewMessage = lastMessage.content; // Store content before assigning
     }
     messages.value = loadedMessages; // Assign the remaining messages
+    newMessage.value = loadedNewMessage; // Assign potentially loaded content *after* messages
 
     Object.assign(current, { mount: res.mount, dir: res.path, name: res.name });
     emit('updateTitle', `${res.name} - Chat`);
-    updateInitialState(loadedMessages); // Set baseline state *after* loading and potential pop
+    // Pass both loaded messages and loaded text area content to set baseline
+    updateInitialState(loadedMessages, loadedNewMessage);
     scrollToBottom();
     nextTick(() => textareaRef.value?.focus()); // Focus textarea after loading
   } catch (e: any) {
     props.log(NS, `Open failed: ${e.message}`, true);
-    // Ensure state is reset even on failure? Maybe not, keep potentially loaded partial state?
-    updateInitialState([]); // Reset baseline on error to avoid thinking it's modified
+    // Ensure state is reset even on failure
+    updateInitialState([], ''); // Reset baseline on error
   }
 }
 
 async function saveTo(mount: string, fullPath: string) {
   const messagesToSave = [...messages.value];
-  const addedNewMessage = newMessage.value.trim();
+  const currentTextAreaContent = newMessage.value; // Store before potentially adding
+  const addedNewMessageTrimmed = currentTextAreaContent.trim();
+
   // If there's text in the input area, add it as the last user message
-  if (addedNewMessage) {
-    messagesToSave.push({ role: 'user', content: addedNewMessage });
+  if (addedNewMessageTrimmed) {
+    messagesToSave.push({ role: 'user', content: addedNewMessageTrimmed });
   }
   const out = JSON.stringify({ systemPrompt: systemPrompt.value, temperature: temperature.value, messages: messagesToSave }, null, 2);
   await writeFile(mount, fullPath, out);
   props.log(NS, `Saved to ${fullPath}`);
 
   // Update the initial state to reflect the saved state
-  updateInitialState(messagesToSave);
+  // The *new* baseline for newMessage is the content *before* trimming/saving
+  updateInitialState(messagesToSave, currentTextAreaContent);
 }
 
 async function saveAsDialog() {
@@ -466,7 +476,7 @@ function handleNewClick() {
   newMessage.value = ''; // Clear text area
   currentThinkingText.value = '';
   emit('updateTitle', 'New Chat');
-  updateInitialState([]); // Set baseline for new chat
+  updateInitialState([], ''); // Set baseline for new chat (empty text area)
 }
 
 function handleSettingsClick() {
@@ -502,7 +512,7 @@ onMounted(async () => {
     modelsLoading.value = false;
   }
   emit('updateTitle', 'Chat');
-  updateInitialState([]); // Initial baseline state on mount
+  updateInitialState([], ''); // Initial baseline state on mount (empty text area)
 });
 </script>
 
