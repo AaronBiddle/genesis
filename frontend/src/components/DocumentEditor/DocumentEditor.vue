@@ -168,6 +168,9 @@ async function saveAsDialog() {
   try {
     await saveTo(tgt.mount, `${tgt.path}/${tgt.name}`);
     Object.assign(currentFile, { dir: tgt.path, name: tgt.name, mount: tgt.mount });
+    if (currentFile.name) {
+      emit('updateTitle', `${currentFile.name} - Document Editor`);
+    }
   } catch (e: any) {
     props.log(NS, `Save‑as failed: ${e.message}`, true);
   }
@@ -176,7 +179,6 @@ async function saveAsDialog() {
 async function saveTo(mount: string, path: string) {
   await writeFile(mount, path, content.value);
   hasUnsavedChanges.value = false;
-  emit('updateTitle', `${currentFile.name} - Document Editor`);
   props.log(NS, `Saved to ${path}`);
 }
 
@@ -184,6 +186,9 @@ async function handleSaveClick() {
   if (fullPath.value && currentFile.mount) {
     try {
       await saveTo(currentFile.mount, fullPath.value);
+      if (currentFile.name) {
+        emit('updateTitle', `${currentFile.name} - Document Editor`);
+      }
     } catch (e: any) {
       props.log(NS, `Save failed: ${e.message}`, true);
     }
