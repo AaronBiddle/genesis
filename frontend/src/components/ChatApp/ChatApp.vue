@@ -10,9 +10,10 @@
         <img src="@/components/Icons/icons8/icons8-open-file-80.png" alt="Open Chat" class="h-6 w-6" />
       </button>
       <button
-        class="p-1 hover:bg-gray-200 rounded ml-1 disabled:opacity-50 disabled:hover:bg-transparent"
+        class="p-1 hover:bg-gray-200 rounded ml-1 disabled:hover:bg-transparent"
         @click="handleSaveClick"
-        :disabled="!canSaveDirectly"
+        :disabled="!isChatModified"
+        title="Save Chat"
       >
         <img
           src="@/components/Icons/icons8/icons8-save-80.png"
@@ -239,6 +240,35 @@ const selectedModel = ref('');
 const modelsLoading = ref(true);
 const modelsError = ref<string | null>(null);
 
+const initialSystemPrompt = ref('');
+const initialTemperature = ref<number | null>(null);
+const initialMessagesHash = ref('');
+
+// Helper to set the baseline state for modification tracking
+function updateInitialState(currentMessages: AIMessage[] = messages.value) {
+  initialSystemPrompt.value = systemPrompt.value;
+  initialTemperature.value = temperature.value;
+  initialMessagesHash.value = JSON.stringify(currentMessages);
+}
+
+// Computed property to check if the chat has been modified
+const isChatModified = computed(() => {
+  // 1. Check if there is text in the input area
+  if (newMessage.value.trim()) {
+    return true;
+  }
+  // 2. Check if settings have changed
+  if (systemPrompt.value !== initialSystemPrompt.value || temperature.value !== initialTemperature.value) {
+    return true;
+  }
+  // 3. Check if messages have changed (simple hash comparison)
+  if (JSON.stringify(messages.value) !== initialMessagesHash.value) {
+    return true;
+  }
+  // No changes detected
+  return false;
+});
+
 /* ───────────────────── Helper Functions ───────────────────── */
 const scrollToBottom = () => {
   nextTick(() => {
@@ -339,26 +369,57 @@ async function openFileDialog() {
   props.log(NS, 'Open dialog');
   const res = await bus.requestFile({ mode: 'open', mimeFilter: ['application/json'] });
   if (res.cancelled) return;
+  newMessage.value = ''; // Clear text area before loading
   try {
     const raw = await readFile(res.mount, `${res.path}/${res.name}`);
     const parsed = JSON.parse(raw);
-    messages.value = Array.isArray(parsed) ? parsed : parsed.messages || [];
+    let loadedMessages = Array.isArray(parsed) ? parsed : parsed.messages || [];
+
+    // Reset settings before potentially loading new ones
+    temperature.value = 0.7; // Default
+    systemPrompt.value = 'You are a helpful assistant.'; // Default
+
     if (!Array.isArray(parsed)) {
       temperature.value = parsed.temperature ?? temperature.value;
       systemPrompt.value = parsed.systemPrompt ?? systemPrompt.value;
     }
+
+    // Check if the last message is a user message and restore it to the textarea
+    if (loadedMessages.length > 0 && loadedMessages[loadedMessages.length - 1].role === 'user') {
+      const lastMessage = loadedMessages.pop(); // Remove the last message
+      newMessage.value = lastMessage.content; // Set textarea content
+    }
+    messages.value = loadedMessages; // Assign the remaining messages
+
     Object.assign(current, { mount: res.mount, dir: res.path, name: res.name });
     emit('updateTitle', `${res.name} - Chat`);
+    updateInitialState(loadedMessages); // Set baseline state *after* loading and potential pop
     scrollToBottom();
+    nextTick(() => textareaRef.value?.focus()); // Focus textarea after loading
   } catch (e: any) {
     props.log(NS, `Open failed: ${e.message}`, true);
+    // Ensure state is reset even on failure? Maybe not, keep potentially loaded partial state?
+    updateInitialState([]); // Reset baseline on error to avoid thinking it's modified
   }
 }
 
 async function saveTo(mount: string, fullPath: string) {
-  const out = JSON.stringify({ systemPrompt: systemPrompt.value, temperature: temperature.value, messages: messages.value }, null, 2);
+  const messagesToSave = [...messages.value];
+  const addedNewMessage = newMessage.value.trim();
+  // If there's text in the input area, add it as the last user message
+  if (addedNewMessage) {
+    messagesToSave.push({ role: 'user', content: addedNewMessage });
+  }
+  const out = JSON.stringify({ systemPrompt: systemPrompt.value, temperature: temperature.value, messages: messagesToSave }, null, 2);
   await writeFile(mount, fullPath, out);
   props.log(NS, `Saved to ${fullPath}`);
+
+  // Clear text area if its content was just saved
+  if (addedNewMessage) {
+    newMessage.value = '';
+  }
+  // Update the initial state to reflect the saved state
+  updateInitialState(messagesToSave);
 }
 
 async function saveAsDialog() {
@@ -383,8 +444,10 @@ function handleNewClick() {
   Object.assign(current, { dir: null, name: null, mount: null });
   temperature.value = 0.7;
   systemPrompt.value = 'You are a helpful assistant.';
+  newMessage.value = ''; // Clear text area
   currentThinkingText.value = '';
   emit('updateTitle', 'New Chat');
+  updateInitialState([]); // Set baseline for new chat
 }
 
 function handleSettingsClick() {
@@ -417,6 +480,7 @@ onMounted(async () => {
     modelsLoading.value = false;
   }
   emit('updateTitle', 'Chat');
+  updateInitialState([]); // Initial baseline state on mount
 });
 </script>
 
@@ -440,7 +504,7 @@ onMounted(async () => {
 
 .icon-disabled {
   filter: grayscale(100%);
-  opacity: 0.5;
+  opacity: 0.9;
 }
 
 button > span > svg {
