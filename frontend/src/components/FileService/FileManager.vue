@@ -250,6 +250,15 @@ async function loadCurrentDirectory() {
   try {
     props.log(NS, `Listing directory: Mount=${state.selectedMount}, Path='${state.currentPath}'`);
     const result = await listDirectory(state.selectedMount, state.currentPath);
+    // Sort items: folders first, then alphabetically
+    // Define a type for clarity
+    interface DirectoryItem { name: string; isDirectory: boolean; }
+    result.sort((a: DirectoryItem, b: DirectoryItem) => {
+      if (a.isDirectory !== b.isDirectory) {
+        return a.isDirectory ? -1 : 1; // Directories come first
+      }
+      return a.name.localeCompare(b.name); // Then sort alphabetically
+    });
     state.items = result.map((item: any) => ({
       name: item.name,
       isDirectory: item.isDirectory,
