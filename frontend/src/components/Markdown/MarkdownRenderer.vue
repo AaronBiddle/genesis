@@ -76,9 +76,10 @@ const renderedMarkdown = computed(() => md.render(props.source || ''));
   overflow-x: auto;
 }
 
-:deep(pre) :deep(code) {
-  background-color: transparent;
+:deep(pre code) {
+  display: block;
   padding: 0;
+  background-color: transparent;
   border-radius: 0;
 }
 
