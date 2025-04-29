@@ -6,11 +6,12 @@ import FileServiceTester from '@/components/FileService/FileServiceTester.vue'; 
 import FileManager from '@/components/FileService/FileManager.vue'; // Import FileManager
 import EventBusInspector from './EventBusInspector.vue'; // Import EventBusInspector
 import Logger from '@/components/Logger/Logger.vue'; // Import Logger
-import WindowInspecter from './WindowInspecter.vue'; // Import the new Window Inspector
+import WindowInspector from './WindowInspector.vue'; // Import the new Window Inspector
 import ChatApp from '@/components/ChatApp/ChatApp.vue'; // Import ChatApp
 import ChatSettings from '@/components/ChatApp/ChatSettings.vue'; // Import ChatSettings
 import AIServiceTester from '@/components/AI/AIServiceTester.vue'; // Import AI Service Tester
 import WsInspecter from '@/components/WS/WsInspecter.vue'; // Import WS Service Tester
+import Scripter from '@/components/Scripter/Scripter.vue'; // Import Scripter
 
 export interface App {
   id: string; // Unique identifier (e.g., 'text-editor', 'web-browser') - Essential
@@ -72,6 +73,18 @@ export const apps: App[] = [
     showInLauncher: false, // Do not show in launcher
     category: 'Utilities', // Keep as utility
     allowMultipleInstances: false, // Probably only need one settings window per chat
+  },
+  {
+    id: "scripter",
+    title: "Scripter",
+    iconId: "scripter", // Use the 'scripter' icon
+    appComponent: Scripter,
+    // Add any desired optional properties here
+    iconColor: 'text-yellow-600', // Example: Yellow theme
+    titleBarColor: 'bg-yellow-100',
+    titleColor: 'text-yellow-900',
+    initialWidth: 500,
+    initialHeight: 400,
   },
   {
     id: "icons",
@@ -146,10 +159,10 @@ export const apps: App[] = [
     category: 'Utilities',
   },
   {
-    id: "window-inspecter",
-    title: "Window Inspecter",
+    id: "window-inspector",
+    title: "Window Inspector",
     iconId: "windows", // Use the 'windows' icon
-    appComponent: WindowInspecter,
+    appComponent: WindowInspector,
     iconColor: 'text-purple-600', // Use the purple color from the original request
     titleBarColor: 'bg-purple-200',
     titleColor: 'text-purple-900',
