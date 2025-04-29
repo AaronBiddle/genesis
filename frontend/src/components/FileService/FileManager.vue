@@ -131,9 +131,13 @@ import {
  * Types & constants
  ************************************************************ */
 interface FileManagerOptions {
+  /** Correlates dialog → promise resolution (injected by Window.vue). */
+  token: number;
   mode: 'open' | 'save' | 'none';
   initialPath?: string;
   initialMount?: string;
+  /** Pre-fills filename when mode === 'save'. */
+  suggestedName?: string;
 }
 
 interface Props {
@@ -150,7 +154,8 @@ const NS = 'FileManager.vue';
 const props = defineProps<Props>();
 const emit = defineEmits<{ (event: 'close'): void }>();
 
-const launchOptions = props.getLaunchOptions?.() ?? { mode: 'none' };
+const launchOptions = props.getLaunchOptions?.() ?? { mode: 'none', token: 0 };
+const token = launchOptions.token;
 
 /* Centralised reactive state */
 const state = reactive({
@@ -168,7 +173,7 @@ const state = reactive({
   // Dialogs / inputs
   showNewDirDialog: false,
   newDirName: '',
-  activeFileName: '',
+  activeFileName: launchOptions.suggestedName ?? '',
 });
 
 /* Computed helpers */
@@ -323,6 +328,8 @@ function openFile(fileName: string) {
   props.sendParent({
     type: 'file',
     payload: {
+      token,
+      cancelled: false,
       mode: 'open',
       mount: state.selectedMount,
       path: state.currentPath,
@@ -345,6 +352,8 @@ function saveFile() {
   props.sendParent({
     type: 'file',
     payload: {
+      token,
+      cancelled: false,
       mode: 'save',
       mount: state.selectedMount,
       path: state.currentPath,
@@ -355,7 +364,11 @@ function saveFile() {
 }
 
 function emitCancel() {
-  props.log(NS, 'File manager closed.');
+  props.log(NS, 'File manager closed (cancel).');
+  props.sendParent({
+    type: 'file',
+    payload: { token, cancelled: true },
+  });
   emit('close');
 }
 
