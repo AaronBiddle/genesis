@@ -1,94 +1,87 @@
 <script setup lang="ts">
-import { ref, computed, provide } from 'vue';
-import { apps, type App } from './apps';
-import Window from './Window.vue';
-import { createWindowStore } from './windowStoreFactory';
-import { svgIcons } from '@/components/Icons/SvgIcons';
-import { categoryConfigs, defaultCategoryIcon } from './categories';
-import { log } from '@/components/Logger/loggerStore';
+import { ref, computed, provide } from 'vue'
+import { apps, type App } from './apps'
+import Window from './Window.vue'
+import { createWindowStore } from './windowStoreFactory'
+import { svgIcons } from '@/components/Icons/SvgIcons'
+import { categoryConfigs, defaultCategoryIcon } from './categories'
+import { log } from '@/components/Logger/loggerStore'
 
 /* ------------------------------------------------------------------
-   1  Per‑workspace window store
+   1 · Create one window‑store for this desktop instance
    ------------------------------------------------------------------ */
+const windowStore = createWindowStore('desktop')
 const {
   windows,
   addWindow,
-  bringToFront,
-  moveWindow,
-  updateWindowBounds,
-  closeWindow,
-} = createWindowStore('desktop');
+} = windowStore
 
-// Expose store API to descendant components (e.g. Window.vue)
-provide('windowStore', {
-  bringToFront,
-  moveWindow,
-  updateWindowBounds,
-  closeWindow,
-  addWindow,
-});
+/* Make the *entire* store available to descendants (Window.vue, 
+   WindowInspector.vue, etc.).  They can now inject whatever fields
+   they need – including the reactive `windows` list. */
+provide('windowStore', windowStore)
 
 /* ------------------------------------------------------------------
-   2  Launcher dropdown state
+   2 · Launcher state / helpers
    ------------------------------------------------------------------ */
 interface CategoryItem {
-  type: 'category';
-  name: string;
-  iconId: string;
-  isExpanded: boolean;
+  type: 'category'
+  name: string
+  iconId: string
+  isExpanded: boolean
 }
 interface AppItem {
-  type: 'app';
-  appData: App;
-  isInCategory: boolean;
+  type: 'app'
+  appData: App
+  isInCategory: boolean
 }
-type DropdownItem = CategoryItem | AppItem;
+type DropdownItem = CategoryItem | AppItem
 
-const showAppDropdown = ref(false);
-const expandedCategories = ref<Set<string>>(new Set());
-const NS = 'Desktop.vue';
+const showAppDropdown = ref(false)
+const expandedCategories = ref<Set<string>>(new Set())
+const NS = 'Desktop.vue'
 
 function toggleAppDropdown() {
-  showAppDropdown.value = !showAppDropdown.value;
+  showAppDropdown.value = !showAppDropdown.value
 }
 function launchApp(app: App) {
-  log(NS, `Launching app: ${app.title} (ID: ${app.id})`);
-  addWindow(app);
-  showAppDropdown.value = false;
+  log(NS, `Launching app: ${app.title} (ID: ${app.id})`)
+  addWindow(app)
+  showAppDropdown.value = false
 }
 function toggleCategory(categoryName: string) {
   expandedCategories.value.has(categoryName)
     ? expandedCategories.value.delete(categoryName)
-    : expandedCategories.value.add(categoryName);
+    : expandedCategories.value.add(categoryName)
 }
 
 /* Group apps by category for the dropdown */
 const groupedItems = computed<DropdownItem[]>(() => {
-  const items: DropdownItem[] = [];
-  const processed = new Set<string>();
-  const appsToShow = apps.filter(a => a.showInLauncher !== false);
+  const items: DropdownItem[] = []
+  const seen = new Set<string>()
+  const appsToShow = apps.filter(a => a.showInLauncher !== false)
 
   appsToShow.forEach(app => {
-    const cat = app.category;
+    const cat = app.category
     if (cat) {
-      if (!processed.has(cat)) {
+      if (!seen.has(cat)) {
         items.push({
           type: 'category',
           name: cat,
           iconId: categoryConfigs[cat]?.iconId || defaultCategoryIcon,
           isExpanded: expandedCategories.value.has(cat),
-        });
-        processed.add(cat);
+        })
+        seen.add(cat)
       }
       if (expandedCategories.value.has(cat)) {
-        items.push({ type: 'app', appData: app, isInCategory: true });
+        items.push({ type: 'app', appData: app, isInCategory: true })
       }
     } else {
-      items.push({ type: 'app', appData: app, isInCategory: false });
+      items.push({ type: 'app', appData: app, isInCategory: false })
     }
-  });
-  return items;
-});
+  })
+  return items
+})
 </script>
 
 <template>
@@ -111,8 +104,8 @@ const groupedItems = computed<DropdownItem[]>(() => {
       class="absolute top-8 left-0 w-56 bg-gray-200 z-10 shadow-lg rounded-b max-h-[75vh] overflow-y-auto"
     >
       <ul class="py-1">
-        <template v-for="(item, index) in groupedItems" :key="item.type === 'category' ? item.name : item.appData.id + '-' + index">
-          <!-- Category Header -->
+        <template v-for="(item, idx) in groupedItems" :key="item.type === 'category' ? item.name : item.appData.id + '-' + idx">
+          <!-- Category header -->
           <li
             v-if="item.type === 'category'"
             @click="toggleCategory(item.name)"
@@ -125,7 +118,7 @@ const groupedItems = computed<DropdownItem[]>(() => {
             </svg>
           </li>
 
-          <!-- App Item -->
+          <!-- App item -->
           <li
             v-else-if="item.type === 'app'"
             @click="launchApp(item.appData)"
@@ -139,7 +132,7 @@ const groupedItems = computed<DropdownItem[]>(() => {
       </ul>
     </div>
 
-    <!-- Workspace Content -->
+    <!-- Workspace content -->
     <div class="content-area flex-grow p-4 bg-gray-500 relative">
       <Window
         v-for="win in windows"
@@ -151,8 +144,9 @@ const groupedItems = computed<DropdownItem[]>(() => {
 </template>
 
 <style scoped>
-.overflow-y-auto::-webkit-scrollbar { width: 6px; }
-.overflow-y-auto::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-.overflow-y-auto::-webkit-scrollbar-thumb { background: #a0a0a0; border-radius: 10px; }
-.overflow-y-auto::-webkit-scrollbar-thumb:hover { background: #808080; }
+/* custom scrollbar for the dropdown */
+.overflow-y-auto::-webkit-scrollbar { width: 6px }
+.overflow-y-auto::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px }
+.overflow-y-auto::-webkit-scrollbar-thumb { background: #a0a0a0; border-radius: 10px }
+.overflow-y-auto::-webkit-scrollbar-thumb:hover { background: #808080 }
 </style>

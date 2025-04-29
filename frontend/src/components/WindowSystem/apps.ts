@@ -6,7 +6,7 @@ import FileServiceTester from '@/components/FileService/FileServiceTester.vue'; 
 import FileManager from '@/components/FileService/FileManager.vue'; // Import FileManager
 import EventBusInspector from './EventBusInspector.vue'; // Import EventBusInspector
 import Logger from '@/components/Logger/Logger.vue'; // Import Logger
-import WindowInspecter from './WindowInspecter.vue'; // Import the new Window Inspector
+import WindowInspector from './WindowInspector.vue'; // Import the new Window Inspector
 import ChatApp from '@/components/ChatApp/ChatApp.vue'; // Import ChatApp
 import ChatSettings from '@/components/ChatApp/ChatSettings.vue'; // Import ChatSettings
 import AIServiceTester from '@/components/AI/AIServiceTester.vue'; // Import AI Service Tester
@@ -159,10 +159,10 @@ export const apps: App[] = [
     category: 'Utilities',
   },
   {
-    id: "window-inspecter",
-    title: "Window Inspecter",
+    id: "window-inspector",
+    title: "Window Inspector",
     iconId: "windows", // Use the 'windows' icon
-    appComponent: WindowInspecter,
+    appComponent: WindowInspector,
     iconColor: 'text-purple-600', // Use the purple color from the original request
     titleBarColor: 'bg-purple-200',
     titleColor: 'text-purple-900',

@@ -41,45 +41,36 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import type { ManagedWindow } from './WindowManager'; // Corrected import path
-import { windows as windowManagerWindows } from './WindowManager'; // Import the reactive windows state
+import { inject, ref, watch } from 'vue'
+import type { ManagedWindow, createWindowStore } from './windowStoreFactory'
 
-// This component doesn't need the full manager, just the 'windows' reactive ref
+// pull the same instance that Desktop.vue provided
+const windowStore = inject<ReturnType<typeof createWindowStore>>('windowStore')
+if (!windowStore) {
+  throw new Error('WindowInspector requires an injected windowStore')
+}
 
-const windows = windowManagerWindows; // Use the imported reactive ref directly
-const selectedWindow = ref<ManagedWindow | null>(null);
+const windows = windowStore.windows        // reactive Ref<ManagedWindow[]>
+const selectedWindow = ref<ManagedWindow | null>(null)
 
-// Watch for changes in windows and clear selectedWindow if it's no longer in the list
-watch(windows, (newWindows) => {
-  if (selectedWindow.value && !newWindows.some(win => win.id === selectedWindow.value?.id)) {
-    selectedWindow.value = null;
+watch(windows, newList => {
+  const currentSelected = selectedWindow.value; // Store the current value
+  if (currentSelected && !newList.some(w => w.id === currentSelected.id)) {
+    selectedWindow.value = null
   }
-});
+})
 
-const formatValue = (value: any, key: string): string => {
-  // Handle appComponent specifically
-  if (key === 'appComponent' && value?.__name) {
-    return value.__name;
-  } else if (key === 'appComponent') {
-      return '[Component]'; // Fallback if __name is not available
-  }
-
-  // Existing formatting logic
+function formatValue(value: unknown, key: string): string {
+  if (key === 'appComponent') return (value as any)?.__name ?? '[Component]'
+  if (typeof value === 'function') return '[Function]'
   if (typeof value === 'object' && value !== null) {
-    try {
-      return JSON.stringify(value);
-    } catch (e) {
-      return '[Object]';
-    }
+    try { return JSON.stringify(value) } catch { /* no-op */ }
+    return '[Object]'
   }
-    if (typeof value === 'function') {
-        return '[Function]';
-    }
-  return String(value);
-};
-
+  return String(value)
+}
 </script>
+
 
 <style scoped>
 /* Add any specific styles if needed */
