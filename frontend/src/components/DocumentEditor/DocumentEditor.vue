@@ -1,237 +1,223 @@
 <template>
   <div class="p-2 pt-0 h-full w-full flex flex-col">
+    <!-- Toolbar -->
     <div class="toolbar flex items-center p-1 mb-0">
       <button class="p-1 hover:bg-gray-200 rounded" @click="createNewFile">
-        <img src="@/components/Icons/icons8/icons8-new-file-80.png" alt="New File" class="h-6 w-6">
+        <img src="@/components/Icons/icons8/icons8-new-file-80.png" alt="New File" class="h-6 w-6" />
       </button>
+
       <button class="p-1 hover:bg-gray-200 rounded" @click="openFileManager('open')">
-        <img src="@/components/Icons/icons8/icons8-open-file-80.png" alt="Open" class="h-6 w-6">
+        <img src="@/components/Icons/icons8/icons8-open-file-80.png" alt="Open" class="h-6 w-6" />
       </button>
-      <button 
+
+      <button
         class="p-1 hover:bg-gray-200 rounded ml-1 disabled:opacity-50 disabled:hover:bg-transparent"
         @click="handleSaveClick"
         :disabled="isSaveDisabled"
       >
-        <img 
-          src="@/components/Icons/icons8/icons8-save-80.png" 
-          alt="Save" 
+        <img
+          src="@/components/Icons/icons8/icons8-save-80.png"
+          alt="Save"
           class="h-6 w-6"
           :class="{ 'icon-disabled': isSaveDisabled }"
-        >
-      </button>
-      <button class="p-1 hover:bg-gray-200 rounded ml-1" @click="openFileManager('save')">
-        <img src="@/components/Icons/icons8/icons8-save-as-80.png" alt="Save As" class="h-6 w-6">
+        />
       </button>
 
-      <!-- Added Eye Toggle Button -->
-      <button 
-        class="p-1 hover:bg-gray-200 rounded ml-auto h-7 w-7 flex items-center justify-center" 
-        :class="isPreviewActive ? 'text-blue-500' : 'text-gray-500'" 
+      <button class="p-1 hover:bg-gray-200 rounded ml-1" @click="openFileManager('save')">
+        <img src="@/components/Icons/icons8/icons8-save-as-80.png" alt="Save As" class="h-6 w-6" />
+      </button>
+
+      <!-- Preview toggle -->
+      <button
+        class="p-1 hover:bg-gray-200 rounded ml-auto h-7 w-7 flex items-center justify-center"
+        :class="isPreviewActive ? 'text-blue-500' : 'text-gray-500'"
         @click="togglePreview"
         v-html="eyeIconSvg"
-      >
-      </button>
+      />
     </div>
-    <!-- Conditionally render textarea or Markdown preview -->
-    <template v-if="!isPreviewActive">
-      <textarea
-        id="document-editor-textarea"
-        name="documentContent"
-        v-model="content"
-        class="flex-grow w-full h-full border p-2 border-gray-300 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
-        placeholder="Start typing..."
-      ></textarea>
-    </template>
-    <template v-else>
-      <div class="flex-grow w-full h-full border p-2 border-gray-300 overflow-y-auto">
-        <MarkdownRenderer :source="content" />
-      </div>
-    </template>
+
+    <!-- Editor / Preview -->
+    <textarea
+      v-if="!isPreviewActive"
+      id="document-editor-textarea"
+      v-model="content"
+      class="flex-grow w-full h-full border p-2 border-gray-300 resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+      placeholder="Start typing..."
+    />
+    <div
+      v-else
+      class="flex-grow w-full h-full border p-2 border-gray-300 overflow-y-auto"
+    >
+      <MarkdownRenderer :source="content" />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { readFile, writeFile } from '@/services/HTTP/HttpFileClient';
-import { svgIcons } from '@/components/Icons/SvgIcons'; // Import svgIcons
-import MarkdownRenderer from '@/components/Markdown/MarkdownRenderer.vue'; // Import MarkdownRenderer
-
-const props = defineProps<{
-  newWindow: (appId: string, launchOptions?: any) => void;
-  log: (namespace: string, message: string, isError?: boolean) => void;
-}>();
-
-const emit = defineEmits(['updateTitle']); // Define emits
+import MarkdownRenderer from '@/components/Markdown/MarkdownRenderer.vue';
+import { svgIcons } from '@/components/Icons/SvgIcons';
 
 const NS = 'DocumentEditor.vue';
 
-let isLoadingFile = false; // Flag to prevent watcher during file load
+/* ------------------------------------------------------------------ *
+ * Props / Emits
+ * ------------------------------------------------------------------ */
+interface NewWindowOptions {
+  mode: 'open' | 'save' | 'none';
+}
+const props = defineProps<{
+  newWindow: (appId: string, launchOptions?: NewWindowOptions) => void;
+  log: (namespace: string, message: string, isError?: boolean) => void;
+}>();
 
+const emit = defineEmits<{
+  (e: 'updateTitle', title: string): void;
+}>();
+
+/* ------------------------------------------------------------------ *
+ * Reactive State
+ * ------------------------------------------------------------------ */
 const content = ref('');
-const currentDirectoryPath = ref<string | null>(null);
-const currentFileName = ref<string | null>(null);
-const currentFileMount = ref<string | null>(null);
-const isPreviewActive = ref(false); // State for the preview toggle
-const hasUnsavedChanges = ref(false); // Track if content has been modified since last save
+const isPreviewActive = ref(false);
+const hasUnsavedChanges = ref(false);
+let isLoadingFile = false;
 
-// Computed property to determine if the save button should be disabled
-const isSaveDisabled = computed(() => {
-  // Only disable if there are no unsaved changes
-  return !hasUnsavedChanges.value;
+const currentFile = reactive<{
+  dir: string | null;
+  name: string | null;
+  mount: string | null;
+}>({
+  dir: null,
+  name: null,
+  mount: null,
 });
 
-// Get the eye icon SVG, remove fixed size/color classes for dynamic control
-const eyeIconSvg = computed(() => {
-  const rawSvg = svgIcons.get('eye') || '';
-  // Remove the entire class attribute to allow dynamic styling via the button
-  return rawSvg.replace(/ class=".*?"/, ''); 
-});
+/* ------------------------------------------------------------------ *
+ * Computed helpers
+ * ------------------------------------------------------------------ */
+const fullPath = computed(() =>
+  currentFile.dir && currentFile.name
+    ? `${currentFile.dir}/${currentFile.name}`.replace('//', '/')
+    : null,
+);
 
+const isSaveDisabled = computed(() => !hasUnsavedChanges.value);
+
+const eyeIconSvg = computed(() =>
+  (svgIcons.get('eye') || '').replace(/ class=".*?"/, ''),
+);
+
+/* ------------------------------------------------------------------ *
+ * Watchers
+ * ------------------------------------------------------------------ */
+watch(
+  content,
+  () => {
+    if (!isLoadingFile) hasUnsavedChanges.value = true;
+  },
+  { flush: 'sync' },
+);
+
+/* ------------------------------------------------------------------ *
+ * UI Actions
+ * ------------------------------------------------------------------ */
+function togglePreview() {
+  isPreviewActive.value = !isPreviewActive.value;
+  props.log(NS, `Preview mode: ${isPreviewActive.value}`);
+}
+
+function openFileManager(mode: 'open' | 'save' | 'none' = 'none') {
+  props.newWindow('file-manager', { mode });
+}
+
+function createNewFile() {
+  content.value = '';
+  currentFile.name = null;
+  hasUnsavedChanges.value = false;
+  emit('updateTitle', 'New File - Document Editor');
+}
+
+/* ------------------------------------------------------------------ *
+ * File helpers
+ * ------------------------------------------------------------------ */
+async function saveFile(path: string, mount: string) {
+  await writeFile(mount, path, content.value);
+  hasUnsavedChanges.value = false;
+  emit('updateTitle', `${currentFile.name} - Document Editor`);
+}
+
+async function handleSaveClick() {
+  if (fullPath.value && currentFile.mount) {
+    try {
+      await saveFile(fullPath.value, currentFile.mount);
+      props.log(NS, `Saved to ${fullPath.value}`);
+    } catch (e: any) {
+      props.log(NS, `Save failed: ${e.message}`, true);
+    }
+  } else if (hasUnsavedChanges.value) {
+    openFileManager('save');
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Message Handling
+ * ------------------------------------------------------------------ */
 interface FileMessagePayload {
   mode: 'open' | 'save';
   mount: string;
   path: string;
-  name?: string; // Present in 'open' mode
+  name?: string;
 }
-
 interface FileMessage {
   type: 'file';
   payload: FileMessagePayload;
 }
 
-const handleMessage = async (senderId: number, message: FileMessage | any) => {
-  props.log(NS, `Received message from sender (${senderId}): type=${message?.type}`);
-
-  if (message.type === 'file') {
-    const payload = message.payload as FileMessagePayload;
-
-    if (payload.mode === 'open') {
-      // Use payload.path as directory and payload.name as filename
-      const dirPath = payload.path;
-      const fileName = payload.name;
-      if (!fileName) {
-          props.log(NS, `Error: Received 'open' message without a filename. Path: ${dirPath}`, true);
-          // Decide how to handle this - maybe treat path as full path?
-          // For now, we'll skip opening.
-          return;
-      }
-      const fullPath = `${dirPath}/${fileName}`; // Reconstruct for logging/API call
-      props.log(NS, `Attempting to open: Mount=${payload.mount}, Path=${fullPath}`);
-      try {
-        const fileContent = await readFile(payload.mount, fullPath);
-        isLoadingFile = true;
-        content.value = fileContent; // This triggers the watcher
-        currentDirectoryPath.value = dirPath;
-        currentFileName.value = fileName;
-        currentFileMount.value = payload.mount;
-        hasUnsavedChanges.value = false;
-        isLoadingFile = false;
-        props.log(NS, `Successfully opened file: ${fullPath}`);
-        emit('updateTitle', `${fileName} - Document Editor`); // Emit title update
-      } catch (error: any) {
-        props.log(NS, `Error opening file ${fullPath}: ${error.message}`, true);
-        isLoadingFile = false; // Ensure flag is reset on error too
-      }
-    } else if (payload.mode === 'save') {
-      // payload.path is now the directory, payload.name is the filename
-      const dirPath = payload.path;
-      const fileName = payload.name;
-      if (!fileName) {
-          props.log(NS, `Error: Received 'save' message without a filename. Path: ${dirPath}`, true);
-          return;
-      }
-      const saveFullPath = `${dirPath}/${fileName}`; // Reconstruct for API call and logging
-      props.log(NS, `Attempting to save content via File Manager to: Mount=${payload.mount}, Path=${saveFullPath}`);
-      try {
-        await writeFile(payload.mount, saveFullPath, content.value);
-        currentDirectoryPath.value = dirPath;   // Update directory from payload
-        currentFileName.value = fileName;     // Update filename from payload
-        currentFileMount.value = payload.mount; // Update mount
-        hasUnsavedChanges.value = false;
-        props.log(NS, `Successfully saved file to: ${saveFullPath}`);
-        emit('updateTitle', `${fileName} - Document Editor`); // Emit title update
-      } catch (error: any) {
-        props.log(NS, `Error saving file to ${saveFullPath}: ${error.message}`, true);
-      }
-    }
-  } else {
-    props.log(NS, `Received unhandled message type: ${message.type ?? 'unknown'}`);
-  }
-};
-
-// Function to handle the Save button click
-async function handleSaveClick() {
-  // Check if all necessary parts are available for a direct save
-  const dir = currentDirectoryPath.value;
-  const name = currentFileName.value;
-  const mount = currentFileMount.value;
-
-  if (dir !== null && name && mount) { // Check if we have a path and name to save to
-    // Reconstruct the full path for saving
-    const fullPath = `${dir}/${name}`.replace('//', '/'); // Basic handling for potential double slash at root
-
-    props.log(NS, `Attempting to save directly to: Mount=${mount}, Path=${fullPath}`);
-    try {
-      await writeFile(mount, fullPath, content.value);
-      hasUnsavedChanges.value = false; // Reset unsaved changes after saving
-      props.log(NS, `Successfully saved file directly to: ${fullPath}`);
-      emit('updateTitle', `${name} - Document Editor`); // Emit title update
-    } catch (error: any) {
-      props.log(NS, `Error saving file directly to ${fullPath}: ${error.message}`, true);
-    }
-  } else if (hasUnsavedChanges.value) {
-    // If we have unsaved changes but no valid path/filename, trigger "Save As"
-    props.log(NS, `No filename set or invalid path. Triggering Save As. Dir=${dir}, Name=${name}, Mount=${mount}`);
-    openFileManager('save');
-  } else {
-    // This case should theoretically not be reachable if the button follows isSaveDisabled,
-    // but log it just in case.
-    props.log(NS, `Save clicked but no unsaved changes? Dir=${dir}, Name=${name}, Mount=${mount}`);
+async function openFile({ mount, path, name }: FileMessagePayload) {
+  if (!name) return props.log(NS, 'Open message missing filename', true);
+  const filePath = `${path}/${name}`;
+  try {
+    isLoadingFile = true;
+    content.value = await readFile(mount, filePath);
+    Object.assign(currentFile, { dir: path, name, mount });
+    hasUnsavedChanges.value = false;
+    emit('updateTitle', `${name} - Document Editor`);
+    props.log(NS, `File opened: ${filePath}`);
+  } catch (e: any) {
+    props.log(NS, `Open failed: ${e.message}`, true);
+  } finally {
+    isLoadingFile = false;
   }
 }
 
-function openFileManager(mode: 'open' | 'save' | 'none') {
-  props.newWindow("file-manager", { mode });
-}
-
-// Function to toggle the preview state
-function togglePreview() {
-  isPreviewActive.value = !isPreviewActive.value;
-  props.log(NS, `Preview mode toggled: ${isPreviewActive.value}`);
-  // Add logic here for what happens when preview is toggled on/off
-}
-
-function createNewFile() {
-  content.value = '';
-  currentFileName.value = null; // Reset filename only
-  hasUnsavedChanges.value = false; // Reset unsaved changes when creating a new file
-  // Keep currentDirectoryPath and currentFileMount to retain context
-  props.log(NS, `Created new file, cleared editor content. Kept directory context: ${currentDirectoryPath.value} on mount ${currentFileMount.value}`);
-  emit('updateTitle', 'New File - Document Editor'); // Emit title update for new file
-}
-
-// Watch for content changes
-watch(content, () => {
-  if (isLoadingFile) {
-    return; // Do nothing if we are loading a file
+async function saveFileAs({ mount, path, name }: FileMessagePayload) {
+  if (!name) return props.log(NS, 'Save message missing filename', true);
+  const filePath = `${path}/${name}`;
+  try {
+    await saveFile(filePath, mount);
+    Object.assign(currentFile, { dir: path, name, mount });
+    props.log(NS, `File saved: ${filePath}`);
+  } catch (e: any) {
+    props.log(NS, `Save failed: ${e.message}`, true);
   }
-  
-  // Only set unsaved changes if it's a user edit
-  hasUnsavedChanges.value = true;
-}, { flush: 'sync' });
+}
 
-// Expose the handleMessage function so Window.vue can access it
+function handleMessage(_senderId: number, message: FileMessage | any) {
+  if (message.type !== 'file') {
+    return props.log(NS, `Unhandled message type: ${message.type}`, true);
+  }
+
+  const { payload } = message;
+  if (payload.mode === 'open') return openFile(payload);
+  if (payload.mode === 'save') return saveFileAs(payload);
+}
+
+/* Expose API for parent Window.vue */
 defineExpose({ handleMessage });
 
-// Emit initial title on mount
-onMounted(() => {
-  if (currentFileName.value) {
-    emit('updateTitle', `${currentFileName.value} - Document Editor`);
-  } else {
-    emit('updateTitle', 'Document Editor'); // Default title if no file loaded initially
-  }
-});
-
+onMounted(() => emit('updateTitle', 'Document Editor'));
 </script>
 
 <style scoped>
