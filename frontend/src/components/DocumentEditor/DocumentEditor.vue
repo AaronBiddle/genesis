@@ -162,7 +162,7 @@ async function openFileDialog() {
 async function saveAsDialog() {
   const tgt = await bus.requestFile({
     mode: 'save',
-    suggestedName: currentFile.name ?? 'untitled.md',
+    suggestedName: currentFile.name ?? '',
   });
   if (tgt.cancelled) return;
   try {
