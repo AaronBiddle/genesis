@@ -1,58 +1,58 @@
 <template>
   <div class="file-manager">
-    <div class="file-manager-header">
+    <!-- Header -->
+    <header class="file-manager-header">
       <h3>{{ modeTitle }}</h3>
       <div class="close-button" @click="emitCancel">×</div>
-    </div>
+    </header>
 
     <!-- Mount Selection -->
-    <div class="control-section">
+    <section class="control-section">
       <label for="mount-select">Storage:</label>
-      <select id="mount-select" v-model="selectedMount" @change="handleMountChange" class="mount-select">
+      <select
+        id="mount-select"
+        v-model="selectedMount"
+        @change="handleMountChange"
+        class="mount-select"
+      >
         <option v-for="mount in mounts" :key="mount.name" :value="mount.name">
           {{ mount.name }}
         </option>
       </select>
-    </div>
+    </section>
 
-    <!-- Current Path and Navigation -->
-    <div class="path-and-actions-container">
+    <!-- Path navigation + folder actions -->
+    <section class="path-and-actions-container">
       <div class="path-navigation">
-        <div class="breadcrumbs">
+        <nav class="breadcrumbs">
           <span v-if="pathSegments.length === 0">&nbsp;</span>
           <span
             v-for="(segment, index) in pathSegments"
             :key="index"
-            @click="navigateToPathSegment(index)"
             class="path-segment"
+            @click="navigateToPathSegment(index)"
           >
             {{ segment || 'root' }}{{ index < pathSegments.length - 1 ? ' / ' : '' }}
           </span>
-        </div>
+        </nav>
       </div>
-      <button @click="navigateUp" :disabled="currentPath === ''" class="nav-button">
-        Up
-      </button>
+
+      <button @click="navigateUp" :disabled="!currentPath" class="nav-button">Up</button>
       <button @click="showNewDirDialog = true" class="action-button">New Folder</button>
-    </div>
+    </section>
 
-    <!-- File/Directory Actions -->
-    <div class="action-buttons">
-      <!-- Removed Save File button -->
-    </div>
-
-    <!-- File List -->
-    <div class="file-list-container">
+    <!-- File list -->
+    <section class="file-list-container">
       <div v-if="loading" class="loading">Loading...</div>
       <div v-else-if="error" class="error-message">{{ error }}</div>
       <div v-else-if="items.length === 0" class="empty-message">This folder is empty</div>
       <div v-else class="file-list">
-        <div 
-          v-for="item in items" 
-          :key="item.name" 
+        <div
+          v-for="item in items"
+          :key="item.name"
+          :class="['file-item', { selected: selectedItem === item.name }]"
           @click="handleItemClick(item)"
           @dblclick="handleItemDoubleClick(item)"
-          :class="['file-item', { 'selected': selectedItem === item.name }]"
         >
           <div class="file-icon">{{ item.isDirectory ? '📁' : '📄' }}</div>
           <div class="file-name">{{ item.name }}</div>
@@ -61,14 +61,14 @@
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Bottom Action Bar -->
-    <div class="bottom-actions">
-      <!-- Unified filename input for Open and Save modes -->
-      <input 
-        v-if="effectiveMode === 'open' || effectiveMode === 'save'"
-        id="file-name-input" 
+    <!-- Bottom bar -->
+    <section class="bottom-actions">
+      <!-- Unified filename input for Open & Save modes -->
+      <input
+        v-if="effectiveMode !== 'none'"
+        id="file-name-input"
         name="fileName"
         v-model="activeFileName"
         :placeholder="effectiveMode === 'open' ? 'Select or type filename to open' : 'Enter filename to save'"
@@ -76,49 +76,49 @@
         @keyup.enter="effectiveMode === 'open' ? openActiveFile() : saveFile()"
       />
 
-      <div class="spacer"></div>
+      <div class="spacer" />
+
       <button @click="emitCancel" class="cancel-button">Cancel</button>
-      
-      <!-- Show Open button in Open mode -->
-      <button 
-        v-if="effectiveMode === 'open'" 
-        @click="openActiveFile" 
-        :disabled="!canOpenFile"
+
+      <button
+        v-if="effectiveMode === 'open'"
         class="confirm-button"
+        @click="openActiveFile"
+        :disabled="!canOpenFile"
       >
         Open
       </button>
 
-      <!-- Show Save button in Save mode -->
       <button
         v-if="effectiveMode === 'save'"
+        class="confirm-button"
         @click="saveFile"
         :disabled="!activeFileName.trim()"
-        class="confirm-button"
       >
         Save
       </button>
+    </section>
 
-    </div>
-
-    <!-- Restore New Directory Dialog -->
+    <!-- New directory dialog -->
     <div v-if="showNewDirDialog" class="dialog-overlay">
       <div class="dialog">
         <h4>Create New Folder</h4>
-        <input v-model="newDirName" placeholder="Folder name" @keyup.enter="createNewDirectory" />
+        <input
+          v-model="newDirName"
+          placeholder="Folder name"
+          @keyup.enter="createNewDirectory"
+        />
         <div class="dialog-buttons">
           <button @click="showNewDirDialog = false" class="cancel-button">Cancel</button>
           <button @click="createNewDirectory" class="confirm-button">Create</button>
         </div>
       </div>
     </div>
-
-    <!-- Removed Save Dialog -->
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { reactive, toRefs, computed, onMounted } from 'vue';
 import {
   deleteFile,
   listDirectory,
@@ -127,259 +127,270 @@ import {
   getMounts,
 } from '@/services/HTTP/HttpFileClient';
 
-const NS = 'FileManager.vue';
-
-// Define expected structure for launch options
+/* *************************************************************
+ * Types & constants
+ ************************************************************ */
 interface FileManagerOptions {
   mode: 'open' | 'save' | 'none';
   initialPath?: string;
   initialMount?: string;
 }
 
-// Define props using TypeScript generic
 interface Props {
   getLaunchOptions: () => FileManagerOptions | undefined | null;
   sendParent: (message: any) => void;
   log: (namespace: string, message: string, isError?: boolean) => void;
 }
 
+const NS = 'FileManager.vue';
+
+/* *************************************************************
+ * Setup
+ ************************************************************ */
 const props = defineProps<Props>();
+const emit = defineEmits<{ (event: 'close'): void }>();
 
-// Define emits
-const emit = defineEmits(['close']);
+const launchOptions = props.getLaunchOptions?.() ?? { mode: 'none' };
 
-// Get launch options and set initial state
-const launchOptions = props.getLaunchOptions() ?? { mode: 'none' }; // Default if options are null/undefined
-const initialMode = launchOptions.mode ?? 'none';
-const initialMountProp = launchOptions.initialMount ?? 'userdata';
-const initialPathProp = launchOptions.initialPath ?? '';
+/* Centralised reactive state */
+const state = reactive({
+  // UI state
+  mounts: [] as Array<{ name: string; path: string }>,
+  selectedMount: launchOptions.initialMount ?? 'userdata',
 
-// Reactive state
-const mounts = ref<Array<{ name: string, path: string }>>([]);
-const selectedMount = ref<string>(initialMountProp);
-const currentPath = ref<string>(initialPathProp);
-const items = ref<Array<{ name: string, isDirectory: boolean }>>([]);
-const selectedItem = ref<string | null>(null);
-const loading = ref<boolean>(true);
-const error = ref<string | null>(null);
-const showNewDirDialog = ref<boolean>(false);
-const newDirName = ref<string>('');
-const activeFileName = ref<string>('');
+  currentPath: launchOptions.initialPath ?? '',
+  items: [] as Array<{ name: string; isDirectory: boolean }>,
+  selectedItem: null as string | null,
 
-// Computed properties
-const effectiveMode = computed<'open' | 'save' | 'none'>(() => {
-  return initialMode; // Use the mode determined at launch
+  loading: true,
+  error: null as string | null,
+
+  // Dialogs / inputs
+  showNewDirDialog: false,
+  newDirName: '',
+  activeFileName: '',
 });
+
+/* Computed helpers */
+const effectiveMode = computed<'open' | 'save' | 'none'>(() => launchOptions.mode ?? 'none');
 
 const modeTitle = computed(() => {
   switch (effectiveMode.value) {
-    case 'open': return 'Open File';
-    case 'save': return 'Save File';
-    default: return 'File Manager';
+    case 'open':
+      return 'Open File';
+    case 'save':
+      return 'Save File';
+    default:
+      return 'File Manager';
   }
 });
 
-const pathSegments = computed(() => {
-  if (!currentPath.value) return [];
-  return currentPath.value.split('/').filter(segment => segment);
-});
+const pathSegments = computed(() =>
+  state.currentPath ? state.currentPath.split('/').filter(Boolean) : []
+);
 
 const canOpenFile = computed(() => {
-  if (effectiveMode.value !== 'open' || !activeFileName.value.trim()) return false;
-  const potentialMatch = items.value.find(item => item.name === activeFileName.value.trim());
-  return potentialMatch && !potentialMatch.isDirectory;
+  if (effectiveMode.value !== 'open' || !state.activeFileName.trim()) return false;
+  const match = state.items.find((i) => i.name === state.activeFileName.trim());
+  return !!match && !match.isDirectory;
 });
 
-// Methods for navigation
-const navigateToPathSegment = (index: number) => {
-  const newPath = pathSegments.value.slice(0, index + 1).join('/');
-  currentPath.value = newPath;
+/* *************************************************************
+ * Navigation helpers
+ ************************************************************ */
+function navigateToPathSegment(index: number) {
+  state.currentPath = pathSegments.value.slice(0, index + 1).join('/') as string;
   loadCurrentDirectory();
-};
+}
 
-const navigateUp = () => {
-  if (!currentPath.value) return;
-  
+function navigateUp() {
+  if (!state.currentPath) return;
   const segments = pathSegments.value;
-  if (segments.length <= 1) {
-    currentPath.value = '';
-  } else {
-    segments.pop();
-    currentPath.value = segments.join('/');
-  }
-  
+  segments.pop();
+  state.currentPath = segments.join('/');
   loadCurrentDirectory();
-};
+}
 
-const handleMountChange = () => {
-  currentPath.value = '';
-  selectedItem.value = null;
+function handleMountChange() {
+  state.currentPath = '';
+  state.selectedItem = null;
   loadCurrentDirectory();
-};
+}
 
-// Methods for file/directory operations
-const loadCurrentDirectory = async () => {
-  if (!selectedMount.value) return;
-  
-  loading.value = true;
-  error.value = null;
-  selectedItem.value = null;
-  
-  try {
-    props.log(NS, `Listing directory: Mount=${selectedMount.value}, Path='${currentPath.value}'`);
-    const result = await listDirectory(selectedMount.value, currentPath.value);
-    items.value = result.map((item: any) => ({
-      name: item.name,
-      isDirectory: item.isDirectory
-    }));
-  } catch (err: any) {
-    props.log(NS, `Error loading directory: Mount=${selectedMount.value}, Path='${currentPath.value}', Error: ${err?.message || err}`, true);
-    error.value = `Error: ${err.message || 'Failed to load directory'}`;
-    items.value = [];
-  } finally {
-    loading.value = false;
-  }
-};
-
-const loadMounts = async () => {
+/* *************************************************************
+ * CRUD helpers
+ ************************************************************ */
+async function loadMounts() {
   try {
     props.log(NS, 'Loading storage mounts.');
     const result = await getMounts();
-    mounts.value = result;
-    
-    // If initially selected mount doesn't exist, select the first available
-    if (mounts.value.length > 0 && !mounts.value.some(m => m.name === selectedMount.value)) {
-      selectedMount.value = mounts.value[0].name;
+    state.mounts = result;
+
+    if (
+      state.mounts.length > 0 &&
+      !state.mounts.some((m) => m.name === state.selectedMount)
+    ) {
+      state.selectedMount = state.mounts[0].name;
     }
   } catch (err: any) {
     props.log(NS, `Error loading mounts: ${err?.message || err}`, true);
-    error.value = `Error: ${err.message || 'Failed to load storage mounts'}`;
+    state.error = err?.message || 'Failed to load storage mounts';
   }
-};
+}
 
-const handleItemClick = (item: { name: string, isDirectory: boolean }) => {
-  selectedItem.value = item.name;
+async function loadCurrentDirectory() {
+  if (!state.selectedMount) return;
+  state.loading = true;
+  state.error = null;
+  try {
+    props.log(NS, `Listing directory: Mount=${state.selectedMount}, Path='${state.currentPath}'`);
+    const result = await listDirectory(state.selectedMount, state.currentPath);
+    state.items = result.map((item: any) => ({
+      name: item.name,
+      isDirectory: item.isDirectory,
+    }));
+  } catch (err: any) {
+    props.log(NS, `Error loading directory: ${err?.message || err}`, true);
+    state.error = err?.message || 'Failed to load directory';
+    state.items = [];
+  } finally {
+    state.loading = false;
+  }
+}
+
+/* *************************************************************
+ * UI event handlers
+ ************************************************************ */
+function handleItemClick(item: { name: string; isDirectory: boolean }) {
+  state.selectedItem = item.name;
+
   if (item.isDirectory) {
-    // Navigate into directory and clear filename input
-    activeFileName.value = '';
-    selectedItem.value = null;
-    currentPath.value = currentPath.value 
-      ? `${currentPath.value}/${item.name}` 
-      : item.name;
+    state.activeFileName = '';
+    state.selectedItem = null;
+    state.currentPath = state.currentPath ? `${state.currentPath}/${item.name}` : item.name;
     loadCurrentDirectory();
   } else {
-    // For files (in any mode), select and populate the filename input
-    activeFileName.value = item.name;
+    state.activeFileName = item.name;
   }
-};
+}
 
-const handleItemDoubleClick = (item: { name: string, isDirectory: boolean }) => {
+function handleItemDoubleClick(item: { name: string; isDirectory: boolean }) {
   if (effectiveMode.value === 'open' && !item.isDirectory) {
-    props.log(NS, `Double-clicked file '${item.name}', attempting to open.`);
     openFile(item.name);
   }
-};
+}
 
-const createNewDirectory = async () => {
-  const name = newDirName.value.trim();
-  if (!name || !selectedMount.value) return;
+async function createNewDirectory() {
+  const name = state.newDirName.trim();
+  if (!name || !state.selectedMount) return;
 
-  const dirPath = currentPath.value ? `${currentPath.value}/${name}` : name;
-  props.log(NS, `Creating new directory: Mount=${selectedMount.value}, Path=${dirPath}`);
+  const dirPath = state.currentPath ? `${state.currentPath}/${name}` : name;
+  props.log(NS, `Creating directory: Mount=${state.selectedMount}, Path=${dirPath}`);
+
   try {
-    await createDirectory(selectedMount.value, dirPath);
-    newDirName.value = '';
-    showNewDirDialog.value = false;
+    await createDirectory(state.selectedMount, dirPath);
+    state.newDirName = '';
+    state.showNewDirDialog = false;
     await loadCurrentDirectory();
   } catch (err: any) {
-    props.log(NS, `Error creating directory: Mount=${selectedMount.value}, Path=${dirPath}, Error: ${err?.message || err}`, true);
-    error.value = `Error: ${err.message || 'Failed to create directory'}`;
-    // Optionally, keep the dialog open or show error within it
+    props.log(NS, `Error creating directory: ${err?.message || err}`, true);
+    state.error = err?.message || 'Failed to create directory';
   }
-};
+}
 
-const deleteItem = async (item: { name: string, isDirectory: boolean }) => {
-  const fullPath = currentPath.value ? `${currentPath.value}/${item.name}` : item.name;
-  if (!selectedMount.value) return;
+async function deleteItem(item: { name: string; isDirectory: boolean }) {
+  const fullPath = state.currentPath ? `${state.currentPath}/${item.name}` : item.name;
+  if (!state.selectedMount) return;
 
-  const confirmation = confirm(`Are you sure you want to delete ${item.isDirectory ? 'folder' : 'file'} '${item.name}'?`);
-  if (!confirmation) return;
+  const confirmed = confirm(`Delete ${item.isDirectory ? 'folder' : 'file'} '${item.name}'?`);
+  if (!confirmed) return;
 
-  props.log(NS, `Attempting to delete: Mount=${selectedMount.value}, Path=${fullPath}, IsDirectory=${item.isDirectory}`);
   try {
     if (item.isDirectory) {
-      await deleteDirectory(selectedMount.value, fullPath);
+      await deleteDirectory(state.selectedMount, fullPath);
     } else {
-      await deleteFile(selectedMount.value, fullPath);
+      await deleteFile(state.selectedMount, fullPath);
     }
-    props.log(NS, `Successfully deleted: Mount=${selectedMount.value}, Path=${fullPath}`);
     await loadCurrentDirectory();
   } catch (err: any) {
-    props.log(NS, `Error deleting item: Mount=${selectedMount.value}, Path=${fullPath}, Error: ${err?.message || err}`, true);
-    error.value = `Error: ${err.message || 'Failed to delete item'}`;
+    props.log(NS, `Error deleting: ${err?.message || err}`, true);
+    state.error = err?.message || 'Failed to delete item';
   }
-};
+}
 
-const openFile = async (fileName: string) => {
-  props.log(NS, `Attempting to open file: ${fileName} from path: ${currentPath.value} on mount: ${selectedMount.value}`);
-  // Example using sendParent:
-  props.sendParent({ 
-    type: 'file', 
-    payload: { mode: 'open', mount: selectedMount.value, path: currentPath.value, name: fileName }
-  });
-
-  emit('close'); // Close after sending
-};
-
-const openActiveFile = () => {
-  if (canOpenFile.value) {
-    openFile(activeFileName.value.trim());
-  }
-};
-
-const saveFile = () => {
-  const fileName = activeFileName.value.trim();
-  if (!fileName) return;
-  const directoryPath = currentPath.value;
-
-  props.log(NS, `Sending 'save' message via sendParent: Mount=${selectedMount.value}, Path=${directoryPath}, Name=${fileName}`);
+function openFile(fileName: string) {
+  props.log(NS, `Opening file: ${fileName}`);
   props.sendParent({
-    type: 'file', 
-    payload: { 
-      mode: 'save', 
-      mount: selectedMount.value, 
-      path: directoryPath,
-      name: fileName
-    }
+    type: 'file',
+    payload: {
+      mode: 'open',
+      mount: state.selectedMount,
+      path: state.currentPath,
+      name: fileName,
+    },
   });
-  emit('close'); // Close file manager after sending message
-};
+  emit('close');
+}
 
-const emitCancel = () => {
+function openActiveFile() {
+  if (canOpenFile.value) {
+    openFile(state.activeFileName.trim());
+  }
+}
+
+function saveFile() {
+  const fileName = state.activeFileName.trim();
+  if (!fileName) return;
+
+  props.sendParent({
+    type: 'file',
+    payload: {
+      mode: 'save',
+      mount: state.selectedMount,
+      path: state.currentPath,
+      name: fileName,
+    },
+  });
+  emit('close');
+}
+
+function emitCancel() {
   props.log(NS, 'File manager closed.');
   emit('close');
-};
+}
 
-// Watch for changes
-watch(effectiveMode, () => { // Watch the computed property directly
-  // Reset state when mode changes
-  selectedItem.value = null;
-});
-
-// Initialize component
+/* *************************************************************
+ * Lifecycle
+ ************************************************************ */
 onMounted(async () => {
-  props.log(NS, `Component mounted. Mode: ${initialMode}, Initial Mount: ${initialMountProp}, Initial Path: '${initialPathProp}'`);
   await loadMounts();
   await loadCurrentDirectory();
 });
+
+/* *************************************************************
+ * Expose state & helpers to template
+ ************************************************************ */
+const {
+  mounts,
+  selectedMount,
+  currentPath,
+  items,
+  selectedItem,
+  loading,
+  error,
+  showNewDirDialog,
+  newDirName,
+  activeFileName,
+} = toRefs(state);
 </script>
 
 <style scoped>
+/******************* core layout *******************/
 .file-manager {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: #f9f9f9;
+  background: #f9f9f9;
   border-radius: 8px;
   padding: 16px;
   font-family: sans-serif;
@@ -405,18 +416,12 @@ onMounted(async () => {
   color: #666;
 }
 
+/******************* controls *******************/
 .control-section {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
-}
-
-.control-section label {
-  margin-bottom: 0;
-  font-weight: 500;
-  color: #444;
-  flex-shrink: 0;
 }
 
 .mount-select {
@@ -427,6 +432,7 @@ onMounted(async () => {
   font-size: 14px;
 }
 
+/******************* breadcrumbs & nav *******************/
 .path-and-actions-container {
   display: flex;
   align-items: center;
@@ -436,14 +442,13 @@ onMounted(async () => {
 
 .path-navigation {
   flex: 1;
-  background-color: #fff;
+  background: #fff;
   border: 1px solid #ddd;
   border-radius: 4px;
   padding: 8px;
 }
 
 .breadcrumbs {
-  flex: 1;
   overflow-x: auto;
   white-space: nowrap;
 }
@@ -457,13 +462,13 @@ onMounted(async () => {
   text-decoration: underline;
 }
 
-.nav-button {
+.nav-button,
+.action-button {
   padding: 8px 12px;
-  background-color: #f0f0f0;
+  background: #f0f0f0;
   border: 1px solid #ddd;
   border-radius: 4px;
   cursor: pointer;
-  box-sizing: border-box;
   flex-shrink: 0;
 }
 
@@ -472,39 +477,20 @@ onMounted(async () => {
   cursor: not-allowed;
 }
 
-.action-buttons {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.action-button {
-  padding: 8px 12px;
-  background-color: #f0f0f0;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
-  box-sizing: border-box;
-  flex-shrink: 0;
-}
-
-.action-button.primary {
-  background-color: #2188ff;
-  color: white;
-  border-color: #2188ff;
-}
-
+/******************* file list *******************/
 .file-list-container {
   flex: 1;
   overflow-y: auto;
-  background-color: white;
+  background: #fff;
   border: 1px solid #ddd;
   border-radius: 4px;
   margin-bottom: 12px;
   min-height: 0;
 }
 
-.loading, .error-message, .empty-message {
+.loading,
+.error-message,
+.empty-message {
   padding: 16px;
   text-align: center;
   color: #666;
@@ -528,11 +514,11 @@ onMounted(async () => {
 }
 
 .file-item:hover {
-  background-color: #f5f5f5;
+  background: #f5f5f5;
 }
 
 .file-item.selected {
-  background-color: #e3f2fd;
+  background: #e3f2fd;
 }
 
 .file-icon {
@@ -555,40 +541,32 @@ onMounted(async () => {
 
 .delete-button {
   padding: 4px 8px;
-  background-color: #f44336;
-  color: white;
+  background: #f44336;
+  color: #fff;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
 }
 
+/******************* bottom bar *******************/
 .bottom-actions {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.selected-file-display {
-  color: #555;
-  font-size: 14px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex-shrink: 1;
-  min-width: 0;
-}
-
-.selected-file-display span {
-  font-weight: bold;
-  margin-left: 4px;
-}
-
-.spacer {
+.filename-input {
   flex-grow: 1;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+  min-width: 100px;
 }
 
-.cancel-button, .confirm-button {
+.cancel-button,
+.confirm-button {
   padding: 10px 16px;
   border-radius: 4px;
   cursor: pointer;
@@ -596,15 +574,15 @@ onMounted(async () => {
 }
 
 .cancel-button {
-  background-color: #f0f0f0;
+  background: #f0f0f0;
   border: 1px solid #ddd;
   color: #333;
 }
 
 .confirm-button {
-  background-color: #2188ff;
+  background: #2188ff;
   border: 1px solid #2188ff;
-  color: white;
+  color: #fff;
 }
 
 .confirm-button:disabled {
@@ -612,14 +590,11 @@ onMounted(async () => {
   cursor: not-allowed;
 }
 
-/* Dialog styles */
+/******************* dialogs *******************/
 .dialog-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -627,7 +602,7 @@ onMounted(async () => {
 }
 
 .dialog {
-  background-color: white;
+  background: #fff;
   border-radius: 8px;
   padding: 16px;
   width: 300px;
@@ -635,9 +610,7 @@ onMounted(async () => {
 }
 
 .dialog h4 {
-  margin-top: 0;
-  margin-bottom: 16px;
-  color: #333;
+  margin: 0 0 16px;
 }
 
 .dialog input {
@@ -654,14 +627,4 @@ onMounted(async () => {
   justify-content: flex-end;
   gap: 8px;
 }
-
-/* Style for the filename input in save mode */
-.filename-input {
-  flex-grow: 1; /* Allow input to take available space */
-  padding: 6px 12px; /* Adjusted padding */
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 16px; /* Increased font size */
-  min-width: 100px; /* Ensure it has some minimum width */
-}
-</style> 
+</style>
