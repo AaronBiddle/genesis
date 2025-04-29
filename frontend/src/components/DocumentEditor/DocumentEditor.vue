@@ -70,6 +70,8 @@ interface FileDialogOptions {
   mode: 'open' | 'save';
   mimeFilter?: string[];
   suggestedName?: string;
+  initialPath?: string;
+  initialMount?: string;
 }
 interface WindowBus {
   requestFile: (
@@ -125,7 +127,20 @@ watch(
 );
 
 /* ------------------------------------------------------------------
- * 4 · UI helpers
+ * 4 · Title Update Logic
+ * ------------------------------------------------------------------ */
+function updateEditorTitle() {
+  const prefix = hasUnsavedChanges.value ? '*' : '';
+  const baseName = currentFile.name ?? 'New File';
+  emit('updateTitle', `${prefix}${baseName} - Document Editor`);
+}
+
+// Watch for changes that affect the title
+watch(hasUnsavedChanges, updateEditorTitle);
+watch(() => currentFile.name, updateEditorTitle);
+
+/* ------------------------------------------------------------------
+ * 5 · UI helpers
  * ------------------------------------------------------------------ */
 function togglePreview() {
   isPreviewActive.value = !isPreviewActive.value;
@@ -134,23 +149,30 @@ function togglePreview() {
 
 function createNewFile() {
   content.value = '';
-  Object.assign(currentFile, { name: null });
-  hasUnsavedChanges.value = false;
-  emit('updateTitle', 'New File - Document Editor');
+  // Reset currentFile state, keeping mount if it exists
+  currentFile.dir = null;
+  currentFile.name = null;
+  hasUnsavedChanges.value = false; // Resetting content triggers the watcher, but explicitly set here too
+  updateEditorTitle(); // Use the central title update function
 }
 
 /* ------------------------------------------------------------------
- * 5 · File‑dialog helpers
+ * 6 · File‑dialog helpers
  * ------------------------------------------------------------------ */
 async function openFileDialog() {
-  const res = await bus.requestFile({ mode: 'open', mimeFilter: ['text/markdown', 'text/plain'] });
+  const res = await bus.requestFile({
+    mode: 'open',
+    mimeFilter: ['text/markdown', 'text/plain'],
+    initialPath: currentFile.dir ?? undefined,
+    initialMount: currentFile.mount ?? undefined,
+  });
   if (res.cancelled) return;
   try {
     isLoadingFile = true;
     content.value = await readFile(res.mount, `${res.path}/${res.name}`);
     Object.assign(currentFile, { dir: res.path, name: res.name, mount: res.mount });
     hasUnsavedChanges.value = false;
-    emit('updateTitle', `${res.name} - Document Editor`);
+    updateEditorTitle(); // Use the central title update function
     props.log(NS, `Opened file: ${res.path}/${res.name}`);
   } catch (e: any) {
     props.log(NS, `Open failed: ${e.message}`, true);
@@ -163,14 +185,15 @@ async function saveAsDialog() {
   const tgt = await bus.requestFile({
     mode: 'save',
     suggestedName: currentFile.name ?? '',
+    initialPath: currentFile.dir ?? undefined,
+    initialMount: currentFile.mount ?? undefined,
   });
   if (tgt.cancelled) return;
   try {
     await saveTo(tgt.mount, `${tgt.path}/${tgt.name}`);
+    // Update currentFile state *after* successful save
     Object.assign(currentFile, { dir: tgt.path, name: tgt.name, mount: tgt.mount });
-    if (currentFile.name) {
-      emit('updateTitle', `${currentFile.name} - Document Editor`);
-    }
+    // Title update will be triggered by the currentFile.name watcher
   } catch (e: any) {
     props.log(NS, `Save‑as failed: ${e.message}`, true);
   }
@@ -178,7 +201,7 @@ async function saveAsDialog() {
 
 async function saveTo(mount: string, path: string) {
   await writeFile(mount, path, content.value);
-  hasUnsavedChanges.value = false;
+  hasUnsavedChanges.value = false; // Title update is triggered by the watcher
   props.log(NS, `Saved to ${path}`);
 }
 
@@ -186,9 +209,7 @@ async function handleSaveClick() {
   if (fullPath.value && currentFile.mount) {
     try {
       await saveTo(currentFile.mount, fullPath.value);
-      if (currentFile.name) {
-        emit('updateTitle', `${currentFile.name} - Document Editor`);
-      }
+      // Title update will be triggered by the hasUnsavedChanges watcher
     } catch (e: any) {
       props.log(NS, `Save failed: ${e.message}`, true);
     }
@@ -198,7 +219,7 @@ async function handleSaveClick() {
 }
 
 /* ------------------------------------------------------------------ */
-onMounted(() => emit('updateTitle', 'Untitled - Document Editor'));
+onMounted(() => updateEditorTitle()); // Use the central title update function on mount
 </script>
 
 <style scoped>

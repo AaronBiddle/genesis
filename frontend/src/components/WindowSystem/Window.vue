@@ -267,6 +267,8 @@ interface FileDialogOptions {
   /** optional filters or hints */
   mimeFilter?: string[];
   suggestedName?: string;
+  initialPath?: string;
+  initialMount?: string;
 }
 
 interface WindowBus {
@@ -292,6 +294,7 @@ function requestFile(opts: FileDialogOptions) {
     const token = nextFileToken++;
     pendingFilePromises.set(token, resolve);
     // Re-use the existing window-spawner
+    // Pass *all* opts through to the file-manager
     newWindow('file-manager', { token, ...opts });
   });
 }
