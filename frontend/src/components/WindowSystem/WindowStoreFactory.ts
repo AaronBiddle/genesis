@@ -1,4 +1,4 @@
-// windowStoreFactory.ts – refactored (stable DOM & bounded z‑index)
+// windowStoreFactory.ts
 // ---------------------------------------------------------------
 import { ref, markRaw } from 'vue'
 import type { Ref, Component } from 'vue'
