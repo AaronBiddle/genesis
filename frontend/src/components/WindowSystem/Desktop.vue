@@ -2,24 +2,19 @@
 import { ref, computed, provide } from 'vue'
 import { apps, type App } from './apps'
 import Window from './Window.vue'
-import { createWindowStore } from './windowStoreFactory'
+import { desktopStore, windows, addWindow } from './desktopWindowStore'
 import { svgIcons } from '@/components/Icons/SvgIcons'
 import { categoryConfigs, defaultCategoryIcon } from './categories'
 import { log } from '@/components/Logger/loggerStore'
 
 /* ------------------------------------------------------------------
-   1 · Create one window‑store for this desktop instance
+   1 · Get window state from the dedicated store
    ------------------------------------------------------------------ */
-const windowStore = createWindowStore('desktop')
-const {
-  windows,
-  addWindow,
-} = windowStore
 
 /* Make the *entire* store available to descendants (Window.vue, 
    WindowInspector.vue, etc.).  They can now inject whatever fields
    they need – including the reactive `windows` list. */
-provide('windowStore', windowStore)
+provide('windowStore', desktopStore)
 
 /* ------------------------------------------------------------------
    2 · Launcher state / helpers
