@@ -18,8 +18,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { svgIcons } from '@/components/Icons/SvgIcons'; // Use @ alias
-import { dummyCommands } from './nodes';
-import type { CommandNode } from './nodes';
+import { dummyCommands } from './nodes/nodes';
+import type { CommandNode } from './nodes/nodes';
 
 const plusIcon = svgIcons.get('plus-3');
 const showCommands = ref(false);
