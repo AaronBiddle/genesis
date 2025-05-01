@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="scripter-container">
     <div class="toolbar">
       <button @click="toggleCommands" v-html="plusIcon"></button>
       <ul v-if="showCommands" class="command-list">
@@ -8,9 +8,10 @@
         <li>Dummy Command 3</li>
       </ul>
     </div>
-    <!-- Scripter Application Placeholder -->
-    
-    <p>Scripter application content will go here.</p>
+    <!-- Wrap application content -->
+    <div class="application-area">
+      <!-- Scripter Application Placeholder -->
+    </div>
   </div>
 </template>
 
@@ -28,13 +29,21 @@ const toggleCommands = () => {
 </script>
 
 <style scoped>
+.scripter-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Make container fill parent height */
+  /* min-height: 300px; */ /* Example minimum height */
+  border: 1px solid #ccc; /* Add border to see container bounds */
+}
+
 .toolbar {
   display: flex;
   align-items: center;
   padding: 5px;
   border-bottom: 1px solid #ccc;
-  margin-bottom: 10px;
   position: relative; /* Add relative positioning */
+  background-color: #f0f0f0; /* Light grey background */
 }
 
 .toolbar button {
@@ -48,7 +57,7 @@ const toggleCommands = () => {
 }
 
 .toolbar button:hover {
-  background-color: #f0f0f0; /* Light grey hover effect */
+  background-color: #dcdcdc; /* Slightly darker grey hover effect */
   border-radius: 4px; /* Add rounded corners */
 }
 
@@ -65,10 +74,10 @@ const toggleCommands = () => {
   border: 1px solid #ccc;
   /* border-radius: 4px; */ /* Remove rounded corners */
   position: absolute;
-  background-color: white;
+  background-color: #f0f0f0; /* Light grey background */
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Remove bevel */
   top: 100%; /* Position below the toolbar */
-  left: 5px; /* Align with the button padding */
+  left: 0; /* Align flush left with the toolbar */
   z-index: 10; /* Ensure it appears above other content */
 }
 
@@ -78,8 +87,13 @@ const toggleCommands = () => {
 }
 
 .command-list li:hover {
-  background-color: #f0f0f0;
+  background-color: #e0e0e0; /* Darker grey hover for list items */
 }
 
 /* Component styles will go here */
+.application-area {
+  background-color: #888888; /* Grey background for application area */
+  padding: 10px;
+  flex-grow: 1; /* Allow this area to grow */
+}
 </style> 
