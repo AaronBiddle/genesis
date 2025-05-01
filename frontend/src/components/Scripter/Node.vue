@@ -4,11 +4,10 @@
       :style="nodeStyle"
       @mousedown="handleFocus"
       @dblclick="toggleCollapse"
-      @pointerdown="startDrag"
     >
       <!-- Title‑bar & Controls (hidden when collapsed) -->
       <template v-if="!isCollapsed">
-        <div class="title-bar">
+        <div class="title-bar" @pointerdown.prevent="startDrag">
           <span class="title">{{ win.title }}</span>
           <button class="close-btn" @click.stop="close" title="Close">×</button>
         </div>
@@ -269,7 +268,6 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 6px;
-    cursor: grab;
     font-size: 12px;
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
