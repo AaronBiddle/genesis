@@ -95,13 +95,23 @@ function applyBounds(
   height: number,
 ) {
   const { left, top, width: cw, height: ch } = props.containerBounds
-  const maxX = cw - width
-  const maxY = ch
+
+  // Apply container bounds clamping
+  // Assume minimum size is already handled before calling this
+
+  // Clamp size against container first (can't be larger than container)
+  let clampedWidth = Math.min(width, cw);
+  let clampedHeight = Math.min(height, ch);
+
+  // Clamp position based on container and clamped size
+  let clampedX = clamp(x, left, cw - clampedWidth);
+  let clampedY = clamp(y, top, ch - clampedHeight);
+
   return {
-    x: clamp(x, left, maxX),
-    y: clamp(y, top, maxY),
-    width: clamp(width,  win.value.minimumWidth  ?? 0, cw),
-    height: clamp(height, win.value.minimumHeight ?? 0, ch),
+    x: clampedX,
+    y: clampedY,
+    width: clampedWidth,
+    height: clampedHeight,
   }
 }
 
@@ -177,11 +187,42 @@ function onResize(e: PointerEvent) {
   let newTop  = startTop
   let newW    = startW
   let newH    = startH
+  const minW = win.value.minimumWidth ?? 0; // Get min dimensions here
+  const minH = win.value.minimumHeight ?? 0;
 
-  if (resizeDir.includes('w')) { newLeft += dx; newW -= dx }
-  if (resizeDir.includes('e')) { newW += dx }
-  if (resizeDir.includes('n')) { newTop  += dy; newH -= dy }
-  if (resizeDir.includes('s')) { newH += dy }
+  if (resizeDir.includes('w')) {
+    const proposedW = startW - dx;
+    if (proposedW >= minW) {
+      newLeft = startLeft + dx;
+      newW = proposedW;
+    } else {
+      newW = minW;
+      newLeft = startLeft + startW - minW;
+    }
+  }
+  if (resizeDir.includes('e')) {
+    if (!resizeDir.includes('w')) {
+      newW = Math.max(minW, startW + dx);
+    }
+  }
+  if (resizeDir.includes('n')) {
+    const proposedH = startH - dy;
+    if (proposedH >= minH) {
+      newTop = startTop + dy;
+      newH = proposedH;
+    } else {
+      newH = minH;
+      newTop = startTop + startH - minH;
+    }
+  }
+  if (resizeDir.includes('s')) {
+    if (!resizeDir.includes('n')) {
+      newH = Math.max(minH, startH + dy);
+    }
+  }
+
+  newW = Math.max(minW, newW);
+  newH = Math.max(minH, newH);
 
   const bounded = applyBounds(newLeft, newTop, newW, newH)
   updateWindowBounds(win.value.id, bounded.x, bounded.y, bounded.width, bounded.height)
