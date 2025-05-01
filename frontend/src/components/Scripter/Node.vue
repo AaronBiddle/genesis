@@ -123,7 +123,6 @@ function onDrag(e: PointerEvent) {
   const proposedX = e.clientX - dragOffsetX;
   const proposedY = e.clientY - dragOffsetY;
   const nodeWidth = win.value.width; // Size is fixed during drag
-  const nodeHeight = win.value.height;
 
   const { left, top, width: cw, height: ch } = props.containerBounds;
   const minVisible = 20; // Pixels to keep visible on left, right, bottom
