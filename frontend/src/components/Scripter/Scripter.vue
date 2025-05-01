@@ -3,7 +3,7 @@
     <div class="toolbar">
       <button @click="toggleCommands" v-html="plusIcon"></button>
       <ul v-if="showCommands" class="command-list">
-        <li v-for="nodeType in availableNodeTypes" :key="nodeType.id">
+        <li v-for="nodeType in availableNodeTypes" :key="nodeType.id" @click="handleCommandClick(nodeType)">
           <span class="icon" v-html="svgIcons.get(nodeType.iconId)"></span>
           <span>{{ nodeType.title }}</span>
         </li>
@@ -17,10 +17,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, defineComponent } from 'vue';
 import { svgIcons } from '@/components/Icons/SvgIcons'; // Use @ alias
 import { sequenceNodeType } from './nodes/nodes';
 import type { NodeTypeDefinition } from './nodes/nodes';
+import { addWindow } from '@/components/Scripter/scripterWindowStore'; // Import addWindow
+import type { App } from '@/components/WindowSystem/apps'; // Import App type
+
+// Define a simple placeholder component
+const PlaceholderComponent = defineComponent({
+  props: ['nodeType'],
+  template: `<div>Placeholder for {{ nodeType?.title || 'Node' }}</div>`,
+});
 
 const plusIcon = svgIcons.get('plus-3');
 const showCommands = ref(false);
@@ -28,6 +36,24 @@ const availableNodeTypes = ref<NodeTypeDefinition[]>([sequenceNodeType]);
 
 const toggleCommands = () => {
   showCommands.value = !showCommands.value;
+};
+
+// Function to handle command click
+const handleCommandClick = (nodeType: NodeTypeDefinition) => {
+  console.log('Adding window for:', nodeType.title); // Debug log
+  const appConfig: App = {
+    id: `scripter-node-${nodeType.id}-${Date.now()}`, // Unique ID for the instance
+    title: nodeType.title,
+    iconId: nodeType.iconId, // Use the node's icon
+    appComponent: PlaceholderComponent, // Use the placeholder for now
+    // Pass nodeType as a prop to the placeholder component if needed via launchOptions
+    // initialWidth: 300, // Optional: Specify size
+    // initialHeight: 200,
+    // Add other App properties as needed
+  };
+
+  addWindow(appConfig, { launchOptions: { nodeType } }); // Pass nodeType via launchOptions
+  showCommands.value = false; // Hide the command list after selection
 };
 // Component logic will go here
 </script>
