@@ -3,9 +3,9 @@
     <div class="toolbar">
       <button @click="toggleCommands" v-html="plusIcon"></button>
       <ul v-if="showCommands" class="command-list">
-        <li>Dummy Command 1</li>
-        <li>Dummy Command 2</li>
-        <li>Dummy Command 3</li>
+        <li v-for="command in commands" :key="command.id">
+          {{ command.name }}
+        </li>
       </ul>
     </div>
     <!-- Wrap application content -->
@@ -18,9 +18,12 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { svgIcons } from '@/components/Icons/SvgIcons'; // Use @ alias
+import { dummyCommands } from './nodes';
+import type { CommandNode } from './nodes';
 
 const plusIcon = svgIcons.get('plus-3');
 const showCommands = ref(false);
+const commands = ref<CommandNode[]>(dummyCommands); // Use imported commands
 
 const toggleCommands = () => {
   showCommands.value = !showCommands.value;
