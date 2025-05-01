@@ -33,10 +33,20 @@
   } from './scripterWindowStore'
   import type { ManagedWindow } from '@/components/WindowSystem/windowStoreFactory'
   
+  interface ContainerBounds {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  }
+  
   /* ------------------------------------------------------------------
    * Props
    * ------------------------------------------------------------------ */
-  const props = defineProps<{ win: ManagedWindow }>()
+  const props = defineProps<{
+    win: ManagedWindow;
+    containerBounds: ContainerBounds;
+  }>()
   
   /* ------------------------------------------------------------------
    * Local reactive state
@@ -80,7 +90,26 @@
   }
   
   function onDrag(e: PointerEvent) {
-    moveWindow(props.win.id, e.clientX - dragStart.x, e.clientY - dragStart.y)
+    // Calculate proposed new position
+    let newX = e.clientX - dragStart.x;
+    let newY = e.clientY - dragStart.y;
+
+    // Get node dimensions (use actual size if collapsed)
+    const nodeWidth = isCollapsed.value ? 24 : props.win.width;
+    const nodeHeight = isCollapsed.value ? 24 : props.win.height;
+
+    // Clamp position within container bounds
+    const maxLeft = props.containerBounds.width - nodeWidth;
+    const maxTop = props.containerBounds.height - nodeHeight;
+
+    newX = Math.max(props.containerBounds.left, Math.min(newX, maxLeft));
+    newY = Math.max(props.containerBounds.top, Math.min(newY, maxTop));
+
+    // Ensure position is not negative if bounds start at 0
+    newX = Math.max(0, newX);
+    newY = Math.max(0, newY);
+
+    moveWindow(props.win.id, newX, newY);
   }
   
   function endDrag() {

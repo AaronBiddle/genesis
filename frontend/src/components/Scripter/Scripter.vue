@@ -10,24 +10,68 @@
       </ul>
     </div>
     <!-- Wrap application content -->
-    <div class="application-area">
-      <!-- Scripter Application Placeholder -->
+    <div class="application-area" ref="applicationAreaRef">
+      <!-- Render Node components for each window -->
+      <Node
+        v-for="win in windows"
+        :key="win.id"
+        :win="win"
+        :container-bounds="containerBounds"
+      >
+        <!-- Pass content or props to the node if needed -->
+      </Node>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, defineComponent } from 'vue';
+import { ref, defineComponent, onMounted, onUnmounted, reactive } from 'vue';
 import { svgIcons } from '@/components/Icons/SvgIcons'; // Use @ alias
 import { sequenceNodeType } from './nodes/nodes';
 import type { NodeTypeDefinition } from './nodes/nodes';
-import { addWindow } from '@/components/Scripter/scripterWindowStore'; // Import addWindow
+import { addWindow, windows } from '@/components/Scripter/scripterWindowStore'; // Import addWindow and windows
 import type { App } from '@/components/WindowSystem/apps'; // Import App type
+import Node from './Node.vue'; // Import Node component
 
-// Define a simple placeholder component
-const PlaceholderComponent = defineComponent({
-  props: ['nodeType'],
-  template: `<div>Placeholder for {{ nodeType?.title || 'Node' }}</div>`,
+// Ref for the application area element
+const applicationAreaRef = ref<HTMLElement | null>(null);
+
+// Reactive state for container bounds
+const containerBounds = reactive({
+  left: 0,
+  top: 0,
+  width: 0,
+  height: 0,
+});
+
+let resizeObserver: ResizeObserver | null = null;
+
+// Function to update bounds
+const updateBounds = () => {
+  if (applicationAreaRef.value) {
+    containerBounds.left = 0; // Assuming drag coords are relative to this container
+    containerBounds.top = 0;  // Assuming drag coords are relative to this container
+    containerBounds.width = applicationAreaRef.value.clientWidth;
+    containerBounds.height = applicationAreaRef.value.clientHeight;
+     console.log("Updated bounds:", containerBounds);
+  }
+};
+
+onMounted(() => {
+  updateBounds(); // Initial bounds calculation
+  if (applicationAreaRef.value) {
+    resizeObserver = new ResizeObserver(updateBounds);
+    resizeObserver.observe(applicationAreaRef.value);
+  }
+  // Also update on window resize, as container size might depend on it
+  window.addEventListener('resize', updateBounds);
+});
+
+onUnmounted(() => {
+  if (resizeObserver && applicationAreaRef.value) {
+    resizeObserver.unobserve(applicationAreaRef.value);
+  }
+  window.removeEventListener('resize', updateBounds);
 });
 
 const plusIcon = svgIcons.get('plus-3');
@@ -55,7 +99,12 @@ const handleCommandClick = (nodeType: NodeTypeDefinition) => {
   addWindow(appConfig, { launchOptions: { nodeType } }); // Pass nodeType via launchOptions
   showCommands.value = false; // Hide the command list after selection
 };
-// Component logic will go here
+
+// Define a simple placeholder component
+const PlaceholderComponent = defineComponent({
+  props: ['nodeType'],
+  template: `<div>Placeholder for {{ nodeType?.title || 'Node' }}</div>`,
+});
 </script>
 
 <style scoped>
@@ -139,5 +188,7 @@ const handleCommandClick = (nodeType: NodeTypeDefinition) => {
   background-color: #888888; /* Grey background for application area */
   padding: 10px;
   flex-grow: 1; /* Allow this area to grow */
+  position: relative; /* Establish positioning context for absolute children */
+  overflow: hidden; /* Prevent children from overflowing */
 }
 </style> 
