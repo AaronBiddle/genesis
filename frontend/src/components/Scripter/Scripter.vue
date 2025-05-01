@@ -3,8 +3,9 @@
     <div class="toolbar">
       <button @click="toggleCommands" v-html="plusIcon"></button>
       <ul v-if="showCommands" class="command-list">
-        <li v-for="command in commands" :key="command.id">
-          {{ command.name }}
+        <li v-for="nodeType in availableNodeTypes" :key="nodeType.id">
+          <span class="icon" v-html="svgIcons.get(nodeType.iconId)"></span>
+          <span>{{ nodeType.title }}</span>
         </li>
       </ul>
     </div>
@@ -18,12 +19,12 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { svgIcons } from '@/components/Icons/SvgIcons'; // Use @ alias
-import { dummyCommands } from './nodes/nodes';
-import type { CommandNode } from './nodes/nodes';
+import { sequenceNodeType } from './nodes/nodes';
+import type { NodeTypeDefinition } from './nodes/nodes';
 
 const plusIcon = svgIcons.get('plus-3');
 const showCommands = ref(false);
-const commands = ref<CommandNode[]>(dummyCommands); // Use imported commands
+const availableNodeTypes = ref<NodeTypeDefinition[]>([sequenceNodeType]);
 
 const toggleCommands = () => {
   showCommands.value = !showCommands.value;
@@ -72,7 +73,7 @@ const toggleCommands = () => {
 
 .command-list {
   list-style: none;
-  padding: 5px 0;
+  /* padding: 5px 0; */
   margin: 0;
   border: 1px solid #ccc;
   /* border-radius: 4px; */ /* Remove rounded corners */
@@ -87,6 +88,20 @@ const toggleCommands = () => {
 .command-list li {
   padding: 8px 12px;
   cursor: pointer;
+  display: flex; /* Use flexbox for alignment */
+  align-items: center; /* Vertically center icon and text */
+}
+
+.command-list li .icon {
+  margin-right: 8px; /* Space between icon and text */
+  display: inline-flex; /* Keep icon dimensions */
+  align-items: center;
+}
+
+.command-list li .icon :deep(svg) {
+    width: 16px; /* Adjust icon size */
+    height: 16px;
+    /* Inherit stroke or fill from parent, or set explicitly */
 }
 
 .command-list li:hover {
