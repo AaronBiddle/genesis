@@ -17,6 +17,13 @@
           <!-- The node's main UI goes here—slot for now -->
           <slot />
         </div>
+  
+        <!-- Resize Handle (Bottom-Right) -->
+        <div
+          v-if="win.resizable && !isCollapsed"
+          class="resize-handle"
+          @pointerdown.stop="startResize"
+        ></div>
       </template>
   
       <!-- Collapsed representation: just a green circle -->
@@ -30,6 +37,7 @@
     bringToFront,
     moveWindow,
     closeWindow,
+    updateWindowBounds,
   } from './scripterWindowStore'
   import type { ManagedWindow } from '@/components/WindowSystem/windowStoreFactory'
   
@@ -116,6 +124,38 @@
     window.removeEventListener('pointermove', onDrag)
     window.removeEventListener('pointerup', endDrag)
   }
+  
+  /* ------------------------------------------------------------------
+   * Resizing support
+   * ------------------------------------------------------------------ */
+  let resizeStart = { x: 0, y: 0, width: 0, height: 0 };
+  
+  function startResize(e: PointerEvent) {
+    resizeStart = {
+      x: e.clientX,
+      y: e.clientY,
+      width: props.win.width,
+      height: props.win.height,
+    };
+    window.addEventListener('pointermove', onResize);
+    window.addEventListener('pointerup', endResize);
+  }
+  
+  function onResize(e: PointerEvent) {
+    const dx = e.clientX - resizeStart.x;
+    const dy = e.clientY - resizeStart.y;
+
+    const newWidth = resizeStart.width + dx;
+    const newHeight = resizeStart.height + dy;
+
+    // updateWindowBounds already handles minimum dimensions
+    updateWindowBounds(props.win.id, props.win.x, props.win.y, newWidth, newHeight);
+  }
+  
+  function endResize() {
+    window.removeEventListener('pointermove', onResize);
+    window.removeEventListener('pointerup', endResize);
+  }
   </script>
   
   <style scoped>
@@ -170,6 +210,23 @@
     height: 100%;
     border-radius: 50%;
     background: #7ebf73; /* Green circle */
+  }
+  
+  .resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 3px,
+      rgba(0, 0, 0, 0.2) 3px,
+      rgba(0, 0, 0, 0.2) 6px
+    );
+    cursor: nwse-resize;
+    border-bottom-right-radius: 5px; /* Match window rounding */
   }
   </style>
   
