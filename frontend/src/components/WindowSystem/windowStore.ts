@@ -1,4 +1,4 @@
-// windowStoreFactory.ts – refactored (stable DOM & bounded z‑index)
+// windowStoreFactory.ts
 // ---------------------------------------------------------------
 import { ref, markRaw } from 'vue'
 import type { Ref, Component } from 'vue'
@@ -141,3 +141,15 @@ export function createWindowStore(scope = 'global') {
     closeWindow,
   }
 }
+
+export const windowStore = createWindowStore('desktop');
+
+// Optionally, convenience named exports
+export const {
+  windows,
+  addWindow,
+  bringToFront,
+  moveWindow,
+  updateWindowBounds,
+  closeWindow,
+} = windowStore;
