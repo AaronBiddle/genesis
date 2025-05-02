@@ -75,7 +75,7 @@ import {
   provide,
 } from 'vue';
 import type { ComponentPublicInstance } from 'vue';
-import type { ManagedWindow } from './windowStoreFactory';
+import type { ManagedWindow } from './windowStore';
 import { apps } from './apps';
 import eventBus from './eventBus';
 import { svgIcons } from '@/components/Icons/SvgIcons';

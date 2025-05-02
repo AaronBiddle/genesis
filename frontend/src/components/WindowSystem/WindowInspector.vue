@@ -42,15 +42,16 @@
 
 <script setup lang="ts">
 import { inject, ref, watch } from 'vue'
-import type { ManagedWindow, createWindowStore } from './windowStoreFactory'
+import { windowStore as desktopWindowStore } from './windowStore'
+import type { ManagedWindow } from './windowStore'
 
 // pull the same instance that Desktop.vue provided
-const windowStore = inject<ReturnType<typeof createWindowStore>>('windowStore')
-if (!windowStore) {
+const injectedStore = inject<typeof desktopWindowStore>('windowStore')
+if (!injectedStore) {
   throw new Error('WindowInspector requires an injected windowStore')
 }
 
-const windows = windowStore.windows        // reactive Ref<ManagedWindow[]>
+const windows = injectedStore.windows        // reactive Ref<ManagedWindow[]>
 const selectedWindow = ref<ManagedWindow | null>(null)
 
 watch(windows, newList => {
